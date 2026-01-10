@@ -571,4 +571,9 @@ $pages->assertNoJavascriptErrors()->assertNoConsoleLogs();
 - **When writing tests**: Query lessons about testing patterns and best practices
 
 All lessons in the database are validated to be generic and reusable across projects, making them reliable guides for future development.
+
+### End-of-Session Workflow
+- **Before committing to git**: Run `php artisan mcp:convert-and-push --source=project-name` to ensure lessons are synced with database
+- **Commit lesson updates**: Include both source files (.cursorrules, AI_*.json) and any code changes in commits
+- **Commit messages**: Use comprehensive commit messages that document what was learned and why it matters
 </laravel-boost-guidelines>

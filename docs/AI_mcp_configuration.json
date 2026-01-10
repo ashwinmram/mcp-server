@@ -22,5 +22,11 @@
   "MCP Inspector can be used to test server configuration: php artisan mcp:inspector mcp/lessons - requires authentication token in headers",
   "Server instructions should mention available resources, tools, and prompts in a structured way to help AI agents discover capabilities",
   "The lessons://overview resource provides a summary that guides AI agents on how to use SearchLessons, GetLessonByCategory, and GetLessonTags tools",
-  "Always include authentication instructions in MCP setup documentation - tokens must be kept secure and never committed to version control"
+  "Always include authentication instructions in MCP setup documentation - tokens must be kept secure and never committed to version control",
+  "After updating lessons learned files (.cursorrules, AI_*.json), always run mcp:convert-and-push command at end of session to sync with MCP server database",
+  "When committing lesson updates to git, use comprehensive commit messages that document what was learned and why it matters",
+  "Stage only modified/created files when committing lesson updates - use git add for specific files rather than git add . for focused commits",
+  "Commit messages for lesson updates should explain the three-pronged approach if applicable: Resource, Server Instructions, and .cursorrules changes",
+  "Document new lessons in both .cursorrules (for AI agents) and AI_*.json files (for database storage) to ensure consistency",
+  "Run mcp:convert-and-push before committing to ensure lessons are in database, then commit both source files (.cursorrules, AI_*.json) and any code changes together"
 ]
