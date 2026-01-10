@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "lessons-learned-local": {
+      "transport": "sse",
+      "url": "https://mcp-server.test/mcp/lessons",
+      "headers": {
+        "Authorization": "Bearer YOUR_SANCTUM_TOKEN_HERE"
+      }
+    }
+  }
+}

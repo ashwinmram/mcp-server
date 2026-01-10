@@ -1,0 +1,12 @@
+[
+  "Tests using Laravel facades (Http::fake(), Config::set(), Artisan::all()) require full Laravel application context - move from tests/Unit/ to tests/Feature/ when interacting with facades",
+  "Use uses(RefreshDatabase::class) or uses(Tests\\TestCase::class) for proper Laravel context in tests that interact with facades or need application bootstrapping",
+  "Place Http::fake() calls before making HTTP requests, not just in beforeEach(), to ensure proper mocking setup and avoid test failures",
+  "Service provider tests that check command registration or configuration merging need full Laravel application context and should be Feature tests, not Unit tests",
+  "When testing artisan commands with HTTP mocking, use expectsOutputToContain() instead of exact expectsOutput() for flexible matching that accounts for formatting and spacing",
+  "Mock HTTP responses with proper structure matching actual API responses (including 'success', 'data', 'message' keys) to avoid test failures from mismatched response format",
+  "Use str_contains() for URL matching in Http::assertSent() callbacks when exact URL matching might fail due to query parameters or path variations",
+  "Extract response data values to variables before using in string interpolation when testing command output to avoid syntax errors with null coalescing operators",
+  "Account for leading spaces in command output when writing test expectations (e.g., '  Created: 1' has two leading spaces from $this->line() formatting)",
+  "Http::fake() should be configured with specific response patterns matching expected API endpoints before service methods are called, not in global beforeEach() if different responses are needed per test"
+]

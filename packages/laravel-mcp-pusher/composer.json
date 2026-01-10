@@ -1,0 +1,32 @@
+{
+    "name": "ashwinmram/mcp-pusher",
+    "description": "Laravel package to push lessons learned to MCP server",
+    "type": "library",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Laravel MCP Pusher",
+            "email": "ashwinmram@gmail.com"
+        }
+    ],
+    "require": {
+        "php": "^8.2",
+        "illuminate/support": "^12.0",
+        "illuminate/http": "^12.0",
+        "illuminate/console": "^12.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "LaravelMcpPusher\\": "src/"
+        }
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "LaravelMcpPusher\\MCPPusherServiceProvider"
+            ]
+        }
+    },
+    "minimum-stability": "dev",
+    "prefer-stable": true
+}

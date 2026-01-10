@@ -1,0 +1,9 @@
+[
+  "Cannot use null coalescing operator (??) directly inside string interpolation in PHP 8.2+ - extract values to variables first, then use in string",
+  "Correct pattern: $created = $result['created'] ?? 0; $this->line('Created: {$created}'); instead of $this->line('Created: {$result['created'] ?? 0}');",
+  "This prevents syntax errors (ParseError) and improves code readability and maintainability",
+  "When using array access with null coalescing in strings, always extract to variable first: $value = $array['key'] ?? 'default'; echo \"Value: {$value}\";",
+  "PHP 8.2+ has stricter parsing rules for string interpolation - complex expressions should be evaluated before interpolation for clarity and correctness",
+  "Variable extraction pattern improves error messages and makes debugging easier when values are null or missing",
+  "This pattern applies to all string interpolation contexts: method arguments, echo statements, string concatenation, and command output formatting"
+]

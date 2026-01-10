@@ -1,0 +1,11 @@
+[
+  "Local Laravel packages require path repository configuration in composer.json under 'repositories' section with type 'path' and url pointing to package directory",
+  "Use '@dev' version constraint for local packages (e.g., 'package-name': '@dev') to allow development stability while maintaining composer requirements",
+  "Package configuration files should reference config/services.php for flexibility using pattern: config('services.key', env('ENV_KEY'))",
+  "Service layer should handle configuration fallback: config('package.key') ?? config('services.key') to allow flexibility while maintaining Laravel conventions",
+  "Package service providers should merge config from package config directory during register() method using mergeConfigFrom()",
+  "Package commands should be registered in boot() method only when running in console using if ($this->app->runningInConsole()) check",
+  "Package config can be published using $this->publishes() with a tag for easy customization by consuming applications",
+  "When developing local packages, symlink them via Composer path repository rather than copying files to enable live development",
+  "Package namespace should match Composer package name structure for proper autoloading and service provider discovery"
+]
