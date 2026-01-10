@@ -9,7 +9,7 @@ return [
     | The URL of your MCP server where lessons will be pushed.
     |
     */
-    'server_url' => config('services.mcp.server_url', env('MCP_SERVER_URL')),
+    'server_url' => env('MCP_SERVER_URL'),
 
     /*
     |--------------------------------------------------------------------------
@@ -17,9 +17,10 @@ return [
     |--------------------------------------------------------------------------
     |
     | The API token for authenticating with the MCP server.
+    | This will fallback to services.mcp.api_token in the service if not set.
     |
     */
-    'api_token' => config('services.mcp.api_token', env('MCP_API_TOKEN')),
+    'api_token' => env('MCP_API_TOKEN'),
 
     /*
     |--------------------------------------------------------------------------

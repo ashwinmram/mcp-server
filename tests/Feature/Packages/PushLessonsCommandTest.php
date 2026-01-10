@@ -15,6 +15,21 @@ beforeEach(function () {
     Config::set('services.mcp.api_token', 'test-api-token');
     Config::set('mcp-pusher.server_url', 'https://mcp-server.test');
     Config::set('mcp-pusher.api_token', 'test-api-token');
+
+    // Clean up any existing .cursorrules file to ensure test isolation
+    $cursorRulesPath = base_path('.cursorrules');
+    if (File::exists($cursorRulesPath)) {
+        File::delete($cursorRulesPath);
+    }
+
+    // Clean up any existing AI_*.json files in docs directory
+    $docsDir = base_path('docs');
+    if (File::isDirectory($docsDir)) {
+        $aiFiles = File::glob($docsDir.'/AI_*.json');
+        foreach ($aiFiles as $file) {
+            File::delete($file);
+        }
+    }
 });
 
 test('pushes lessons from cursorrules file', function () {

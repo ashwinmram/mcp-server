@@ -9,10 +9,6 @@ class LessonPusherService
 {
     /**
      * Push lessons to the MCP server.
-     *
-     * @param  array  $lessons
-     * @param  string  $sourceProject
-     * @return Response
      */
     public function pushLessons(array $lessons, string $sourceProject): Response
     {
@@ -21,7 +17,7 @@ class LessonPusherService
         $apiToken = config('mcp-pusher.api_token') ?? config('services.mcp.api_token');
 
         if (empty($serverUrl) || empty($apiToken)) {
-            throw new \RuntimeException('MCP server URL and API token must be configured. Set MCP_SERVER_URL and MCP_API_TOKEN in your .env file and ensure config/services.php or config/mcp-pusher.php is configured.');
+            throw new \RuntimeException('MCP server URL and API token must be configured');
         }
 
         $url = rtrim($serverUrl, '/').'/api/lessons';

@@ -10,6 +10,21 @@ uses(RefreshDatabase::class);
 beforeEach(function () {
     // Create temporary directories
     Storage::fake('local');
+
+    // Clean up any existing .cursorrules file to ensure test isolation
+    $cursorRulesPath = base_path('.cursorrules');
+    if (File::exists($cursorRulesPath)) {
+        File::delete($cursorRulesPath);
+    }
+
+    // Clean up any existing AI_*.json files in docs directory
+    $docsDir = base_path('docs');
+    if (File::isDirectory($docsDir)) {
+        $aiFiles = File::glob($docsDir.'/AI_*.json');
+        foreach ($aiFiles as $file) {
+            File::delete($file);
+        }
+    }
 });
 
 test('imports lessons from cursorrules file', function () {
