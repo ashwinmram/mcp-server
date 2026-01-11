@@ -17,11 +17,11 @@ test('can store lessons via API', function () {
         'source_project' => 'test-project',
         'lessons' => [
             [
-                'type' => 'cursor',
+                'type' => 'markdown',
                 'content' => 'Always use type hints in PHP functions.',
                 'category' => 'coding',
                 'tags' => ['php', 'best-practices'],
-                'metadata' => ['file' => '.cursorrules'],
+                'metadata' => ['file' => 'lessons-learned.md'],
             ],
         ],
     ];
@@ -48,7 +48,7 @@ test('can store lessons via API', function () {
 
     $this->assertDatabaseHas('lessons', [
         'source_project' => 'test-project',
-        'type' => 'cursor',
+        'type' => 'markdown',
         'category' => 'coding',
     ]);
 });

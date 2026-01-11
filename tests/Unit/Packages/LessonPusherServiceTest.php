@@ -100,7 +100,7 @@ test('sends correct payload structure', function () {
             'content' => 'Lesson 1',
             'category' => 'coding',
             'tags' => ['php', 'laravel'],
-            'metadata' => ['file' => '.cursorrules'],
+            'metadata' => ['file' => 'lessons-learned.md'],
         ],
         [
             'type' => 'ai_output',

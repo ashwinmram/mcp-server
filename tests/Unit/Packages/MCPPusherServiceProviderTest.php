@@ -15,7 +15,7 @@ test('service provider registers command', function () {
 test('configuration is accessible after provider registration', function () {
     // Since service providers are auto-discovered, config should already be merged
     // These values come from the config file defaults
-    expect(config('mcp-pusher.cursorrules_path'))->toBe(base_path('.cursorrules'))
+    expect(config('mcp-pusher.lessons_learned_path'))->toBe(base_path('lessons-learned.md'))
         ->and(config('mcp-pusher.ai_json_directory'))->toBe(base_path('docs'));
 });
 

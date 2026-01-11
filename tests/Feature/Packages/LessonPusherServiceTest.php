@@ -98,11 +98,11 @@ test('sends correct payload structure', function () {
     $service = new LessonPusherService();
     $lessons = [
         [
-            'type' => 'cursor',
+            'type' => 'markdown',
             'content' => 'Lesson 1',
             'category' => 'coding',
             'tags' => ['php', 'laravel'],
-            'metadata' => ['file' => '.cursorrules'],
+            'metadata' => ['file' => 'lessons-learned.md'],
         ],
         [
             'type' => 'ai_output',
@@ -120,7 +120,7 @@ test('sends correct payload structure', function () {
             && isset($data['lessons'])
             && is_array($data['lessons'])
             && count($data['lessons']) === 2
-            && $data['lessons'][0]['type'] === 'cursor'
+            && $data['lessons'][0]['type'] === 'markdown'
             && $data['lessons'][1]['type'] === 'ai_output';
     });
 });

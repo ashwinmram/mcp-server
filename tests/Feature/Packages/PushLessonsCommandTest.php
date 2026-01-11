@@ -15,10 +15,10 @@ beforeEach(function () {
     Config::set('mcp-pusher.server_url', 'https://mcp-server.test');
     Config::set('mcp-pusher.api_token', 'test-api-token');
 
-    // Clean up any existing .cursorrules file to ensure test isolation
-    $cursorRulesPath = base_path('.cursorrules');
-    if (File::exists($cursorRulesPath)) {
-        File::delete($cursorRulesPath);
+    // Clean up any existing lessons-learned.md file to ensure test isolation
+    $lessonsLearnedPath = base_path('lessons-learned.md');
+    if (File::exists($lessonsLearnedPath)) {
+        File::delete($lessonsLearnedPath);
     }
 
     // Clean up any existing AI_*.json files in docs directory
@@ -31,7 +31,7 @@ beforeEach(function () {
     }
 });
 
-test('pushes lessons from cursorrules file', function () {
+test('pushes lessons from lessons-learned.md file', function () {
     Http::fake([
         'https://mcp-server.test/api/lessons' => Http::response([
             'success' => true,
@@ -45,16 +45,16 @@ test('pushes lessons from cursorrules file', function () {
         ], 201),
     ]);
 
-    // Create a temporary .cursorrules file
+    // Create a temporary lessons-learned.md file
     $content = 'Always use type hints in PHP functions.';
-    $path = base_path('.cursorrules');
+    $path = base_path('lessons-learned.md');
     File::put($path, $content);
 
     $this->artisan('mcp:push-lessons', [
         '--source' => 'test-project',
     ])
         ->expectsOutput('Converting and pushing lessons from project: test-project')
-        ->expectsOutputToContain('Reading .cursorrules file')
+        ->expectsOutputToContain('Reading lessons-learned.md file')
         ->expectsOutputToContain('Pushing 1 lesson(s) to MCP server...')
         ->expectsOutput('Push Summary:')
         ->expectsOutputToContain('Created:')
@@ -74,10 +74,10 @@ test('pushes lessons from cursorrules file', function () {
             && isset($data['lessons'])
             && is_array($data['lessons'])
             && count($data['lessons']) === 1
-            && $data['lessons'][0]['type'] === 'cursor';
+            && $data['lessons'][0]['type'] === 'markdown';
     });
 
-    // Verify .cursorrules file was emptied
+    // Verify lessons-learned.md file was emptied
     expect(File::exists($path))->toBeTrue();
     expect(File::get($path))->toBeEmpty();
 
@@ -148,8 +148,8 @@ test('pushes lessons from ai json files', function () {
     }
 });
 
-test('handles missing cursorrules file gracefully', function () {
-    $path = base_path('.cursorrules');
+test('handles missing lessons-learned.md file gracefully', function () {
+    $path = base_path('lessons-learned.md');
     if (File::exists($path)) {
         File::delete($path);
     }
@@ -173,7 +173,7 @@ test('handles missing cursorrules file gracefully', function () {
     $this->artisan('mcp:push-lessons', [
         '--source' => 'test-project',
     ])
-        ->expectsOutputToContain('⚠ .cursorrules file not found')
+        ->expectsOutputToContain('⚠ lessons-learned.md file not found')
         ->assertExitCode(0);
 
     // Verify AI JSON file was emptied
@@ -194,8 +194,8 @@ test('handles invalid json files gracefully', function () {
 
     File::put($docsDir.'/AI_invalid.json', 'invalid json content {');
 
-    // Create a valid .cursorrules file so command doesn't fail completely
-    $path = base_path('.cursorrules');
+    // Create a valid lessons-learned.md file so command doesn't fail completely
+    $path = base_path('lessons-learned.md');
     File::put($path, 'Test content');
 
     Http::fake([
@@ -212,7 +212,7 @@ test('handles invalid json files gracefully', function () {
         ->expectsOutputToContain('✗ Invalid JSON:')
         ->assertExitCode(0);
 
-    // Verify .cursorrules file was emptied (invalid JSON file was skipped, but valid cursorrules was pushed)
+    // Verify lessons-learned.md file was emptied (invalid JSON file was skipped, but valid lessons-learned.md was pushed)
     expect(File::exists($path))->toBeTrue();
     expect(File::get($path))->toBeEmpty();
 
@@ -229,7 +229,7 @@ test('handles invalid json files gracefully', function () {
 });
 
 test('returns failure when no lessons found', function () {
-    $path = base_path('.cursorrules');
+    $path = base_path('lessons-learned.md');
     if (File::exists($path)) {
         File::delete($path);
     }
@@ -257,7 +257,7 @@ test('handles api errors gracefully', function () {
         ], 401),
     ]);
 
-    $path = base_path('.cursorrules');
+    $path = base_path('lessons-learned.md');
     File::put($path, 'Test content');
 
     $this->artisan('mcp:push-lessons', [
@@ -267,7 +267,7 @@ test('handles api errors gracefully', function () {
         ->expectsOutputToContain('401')
         ->assertExitCode(1);
 
-    // Verify .cursorrules file was NOT emptied on failure
+    // Verify lessons-learned.md file was NOT emptied on failure
     expect(File::exists($path))->toBeTrue();
     expect(File::get($path))->toBe('Test content');
 
@@ -285,7 +285,7 @@ test('uses default source project when not specified', function () {
         ], 201),
     ]);
 
-    $path = base_path('.cursorrules');
+    $path = base_path('lessons-learned.md');
     File::put($path, 'Test content');
 
     $this->artisan('mcp:push-lessons')
@@ -319,7 +319,7 @@ test('displays push summary with errors', function () {
         ], 201),
     ]);
 
-    $path = base_path('.cursorrules');
+    $path = base_path('lessons-learned.md');
     File::put($path, 'Test content');
 
     $this->artisan('mcp:push-lessons', [
@@ -332,7 +332,7 @@ test('displays push summary with errors', function () {
         ->expectsOutputToContain('✓ Conversion and push completed successfully!')
         ->assertExitCode(0);
 
-    // Verify .cursorrules file was emptied even with warnings
+    // Verify lessons-learned.md file was emptied even with warnings
     expect(File::exists($path))->toBeTrue();
     expect(File::get($path))->toBeEmpty();
 
@@ -342,8 +342,8 @@ test('displays push summary with errors', function () {
     }
 });
 
-test('handles empty cursorrules file', function () {
-    $path = base_path('.cursorrules');
+test('handles empty lessons-learned.md file', function () {
+    $path = base_path('lessons-learned.md');
     File::put($path, '');
 
     // Create at least one AI JSON file so command doesn't fail completely
@@ -367,12 +367,12 @@ test('handles empty cursorrules file', function () {
     ])
         ->assertExitCode(0);
 
-    // Verify .cursorrules content is not included (empty file)
+    // Verify lessons-learned.md content is not included (empty file)
     Http::assertSent(function (Request $request) {
         $lessons = $request->data()['lessons'] ?? [];
-        $cursorLessons = array_filter($lessons, fn ($lesson) => $lesson['type'] === 'cursor');
+        $markdownLessons = array_filter($lessons, fn ($lesson) => $lesson['type'] === 'markdown');
 
-        return count($cursorLessons) === 0; // Empty .cursorrules should not create a lesson
+        return count($markdownLessons) === 0; // Empty lessons-learned.md should not create a lesson
     });
 
     // Verify AI JSON file was emptied

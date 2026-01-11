@@ -3,7 +3,6 @@
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Support\Facades\Artisan;
 use Illuminate\Support\Facades\Config;
-use LaravelMcpPusher\MCPPusherServiceProvider;
 
 uses(RefreshDatabase::class);
 
@@ -16,7 +15,7 @@ test('service provider registers command', function () {
 
 test('service provider merges configuration', function () {
     // Configuration should be merged and accessible
-    expect(config('mcp-pusher.cursorrules_path'))->toBe(base_path('.cursorrules'))
+    expect(config('mcp-pusher.lessons_learned_path'))->toBe(base_path('lessons-learned.md'))
         ->and(config('mcp-pusher.ai_json_directory'))->toBe(base_path('docs'));
 });
 
@@ -26,7 +25,7 @@ test('service uses package config with fallback to services.mcp', function () {
 
     // The service should use package config with fallback to services.mcp
     // Since package config references services.mcp, both should work
-    $service = new \LaravelMcpPusher\Services\LessonPusherService();
+    $service = new \LaravelMcpPusher\Services\LessonPusherService;
 
     // The service should be able to read from services.mcp when package config references it
     // We test this by checking that config is accessible (actual push requires HTTP which we mock)

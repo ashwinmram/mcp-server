@@ -24,7 +24,7 @@ class StoreLessonsRequest extends FormRequest
         return [
             'source_project' => ['required', 'string', 'max:255'],
             'lessons' => ['required', 'array', 'min:1'],
-            'lessons.*.type' => ['required', 'string', 'in:cursor,ai_output,manual'],
+            'lessons.*.type' => ['required', 'string', 'in:cursor,ai_output,manual,markdown'],
             'lessons.*.content' => ['required', 'string'],
             'lessons.*.category' => ['nullable', 'string', 'max:255'],
             'lessons.*.tags' => ['nullable', 'array'],
@@ -46,7 +46,7 @@ class StoreLessonsRequest extends FormRequest
             'lessons.array' => 'Lessons must be an array.',
             'lessons.min' => 'At least one lesson must be provided.',
             'lessons.*.type.required' => 'Each lesson must have a type.',
-            'lessons.*.type.in' => 'Lesson type must be one of: cursor, ai_output, manual.',
+            'lessons.*.type.in' => 'Lesson type must be one of: cursor, ai_output, manual, markdown.',
             'lessons.*.content.required' => 'Each lesson must have content.',
         ];
     }

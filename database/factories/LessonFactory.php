@@ -23,11 +23,11 @@ class LessonFactory extends Factory
 
         return [
             'source_project' => $this->faker->word(),
-            'type' => $this->faker->randomElement(['cursor', 'ai_output', 'manual']),
+            'type' => $this->faker->randomElement(['cursor', 'ai_output', 'manual', 'markdown']),
             'category' => $this->faker->optional()->randomElement(['validation', 'routing', 'security', 'coding']),
             'tags' => $this->faker->optional()->randomElements(['php', 'laravel', 'api', 'best-practices'], $this->faker->numberBetween(1, 3)),
             'metadata' => $this->faker->optional()->randomElement([
-                ['file' => '.cursorrules'],
+                ['file' => 'lessons-learned.md'],
                 ['file' => 'AI_lessons.json'],
                 [],
             ]),
@@ -64,6 +64,16 @@ class LessonFactory extends Factory
     {
         return $this->state(fn (array $attributes) => [
             'type' => 'ai_output',
+        ]);
+    }
+
+    /**
+     * Indicate that the lesson is of type markdown.
+     */
+    public function markdown(): static
+    {
+        return $this->state(fn (array $attributes) => [
+            'type' => 'markdown',
         ]);
     }
 }
