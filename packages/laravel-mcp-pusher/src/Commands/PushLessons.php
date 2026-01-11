@@ -39,6 +39,7 @@ class PushLessons extends Command
         $this->newLine();
 
         $lessons = [];
+        $filesToEmpty = [];
 
         // Process .cursorrules file
         if (File::exists($cursorRulesPath)) {
@@ -56,6 +57,7 @@ class PushLessons extends Command
                         'path' => $cursorRulesPath,
                     ],
                 ];
+                $filesToEmpty[] = ['path' => $cursorRulesPath, 'type' => 'cursorrules'];
                 $this->info('  ✓ Converted .cursorrules');
             } else {
                 $this->warn('  ⚠ .cursorrules file is empty');
@@ -89,6 +91,8 @@ class PushLessons extends Command
                         // Extract category and tags from filename
                         $categoryInfo = $this->extractCategoryFromFilename($filename);
                         $baseTags = $categoryInfo['tags'];
+
+                        $lessonsBefore = count($lessons);
 
                         // If it's an array, treat each item as a separate lesson
                         if (is_array($jsonData)) {
@@ -125,6 +129,11 @@ class PushLessons extends Command
                                 ],
                             ];
                             $this->info('    ✓ Converted 1 lesson');
+                        }
+
+                        // Track this file for emptying after successful push (only if lessons were created)
+                        if (count($lessons) > $lessonsBefore) {
+                            $filesToEmpty[] = ['path' => $file, 'type' => 'ai_json'];
                         }
                     } catch (\Exception $e) {
                         $this->error("    ✗ Error processing file: {$e->getMessage()}");
@@ -179,6 +188,9 @@ class PushLessons extends Command
 
                 $this->newLine();
                 $this->info('✓ Conversion and push completed successfully!');
+
+                // Empty the source files after successful push
+                $this->emptySourceFiles($filesToEmpty);
 
                 return Command::SUCCESS;
             } else {
@@ -271,5 +283,42 @@ class PushLessons extends Command
         }
 
         return array_values(array_unique($tags)); // Re-index to ensure array format
+    }
+
+    /**
+     * Empty the source files after successful push.
+     *
+     * @param  array  $filesToEmpty  Array of files to empty with 'path' and 'type' keys
+     */
+    protected function emptySourceFiles(array $filesToEmpty): void
+    {
+        if (empty($filesToEmpty)) {
+            // No files to empty - this is normal if files were already empty or didn't produce lessons
+            return;
+        }
+
+        $this->newLine();
+        $this->info('Emptying source files...');
+
+        foreach ($filesToEmpty as $fileInfo) {
+            $path = $fileInfo['path'];
+            $type = $fileInfo['type'];
+
+            try {
+                if ($type === 'cursorrules') {
+                    // Empty .cursorrules file
+                    File::put($path, '');
+                    $this->line("  ✓ Emptied: {$path}");
+                } elseif ($type === 'ai_json') {
+                    // Empty AI_*.json file with empty array
+                    File::put($path, "[]\n");
+                    $this->line("  ✓ Emptied: {$path}");
+                }
+            } catch (\Exception $e) {
+                $this->warn("  ⚠ Failed to empty {$path}: {$e->getMessage()}");
+            }
+        }
+
+        $this->info('✓ Source files emptied successfully');
     }
 }
