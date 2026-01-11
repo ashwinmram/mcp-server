@@ -26,3 +26,7 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+
+# Lesson source files (automatically emptied after push)
+.cursorrules
+docs/AI_*.json
