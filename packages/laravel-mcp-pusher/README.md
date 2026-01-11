@@ -57,20 +57,20 @@ php artisan mcp:push-lessons
 ### Options
 
 - `--source=project-name` - Override the source project name (default: directory name)
-- `--cursorrules=path` - Path to .cursorrules file (default: project root)
+- `--lessons-learned=path` - Path to lessons-learned.md file (default: project root)
 - `--ai-json-dir=path` - Directory containing AI_*.json files (default: docs)
 
 ## How It Works
 
 The command reads and normalizes lessons from:
-1. `.cursorrules` file from project root (if exists)
+1. `lessons-learned.md` file from project root (if exists)
 2. All `AI_*.json` files from `docs/` directory (or specified directory)
 
 ### Normalization
 
 The package automatically normalizes lessons by extracting categories and tags:
 
-- **`.cursorrules` files**: Automatically categorized as `guidelines` with tags: `laravel`, `cursor`, `rules`, `guidelines`, `best-practices`
+- **`lessons-learned.md` files**: Automatically categorized as `guidelines` with tags: `laravel`, `lessons-learned`, `guidelines`, `best-practices`, `markdown`
 - **`AI_*.json` files**: 
   - Category extracted from filename (e.g., `AI_testing_config.json` → category: `testing-config`)
   - Base tags generated from filename parts (e.g., `testing`, `config`, `laravel`)

@@ -15,7 +15,7 @@ class PushLessons extends Command
      */
     protected $signature = 'mcp:push-lessons
                             {--source= : Source project name (default: project directory name)}
-                            {--cursorrules= : Path to .cursorrules file (default: project root)}
+                            {--lessons-learned= : Path to lessons-learned.md file (default: project root)}
                             {--ai-json-dir= : Directory containing AI_*.json files (default: docs)}';
 
     /**
@@ -23,7 +23,7 @@ class PushLessons extends Command
      *
      * @var string
      */
-    protected $description = 'Convert .cursorrules and AI_*.json files to properly formatted lessons with categories/tags and push to MCP server';
+    protected $description = 'Convert lessons-learned.md and AI_*.json files to properly formatted lessons with categories/tags and push to MCP server';
 
     /**
      * Execute the console command.
@@ -31,7 +31,7 @@ class PushLessons extends Command
     public function handle(LessonPusherService $pusherService): int
     {
         $sourceProject = $this->option('source') ?? basename(base_path());
-        $cursorRulesPath = $this->option('cursorrules') ?? base_path('.cursorrules');
+        $lessonsLearnedPath = $this->option('lessons-learned') ?? base_path('lessons-learned.md');
         $aiJsonDir = $this->option('ai-json-dir') ?? 'docs';
         $aiJsonPath = base_path($aiJsonDir);
 
@@ -41,29 +41,29 @@ class PushLessons extends Command
         $lessons = [];
         $filesToEmpty = [];
 
-        // Process .cursorrules file
-        if (File::exists($cursorRulesPath)) {
-            $this->info("Reading .cursorrules file: {$cursorRulesPath}");
-            $content = File::get($cursorRulesPath);
+        // Process lessons-learned.md file
+        if (File::exists($lessonsLearnedPath)) {
+            $this->info("Reading lessons-learned.md file: {$lessonsLearnedPath}");
+            $content = File::get($lessonsLearnedPath);
 
             if (! empty(trim($content))) {
                 $lessons[] = [
-                    'type' => 'cursor',
+                    'type' => 'markdown',
                     'category' => 'guidelines',
-                    'tags' => ['laravel', 'cursor', 'rules', 'guidelines', 'best-practices'],
+                    'tags' => ['laravel', 'lessons-learned', 'guidelines', 'best-practices', 'markdown'],
                     'content' => $content,
                     'metadata' => [
-                        'file' => '.cursorrules',
-                        'path' => $cursorRulesPath,
+                        'file' => 'lessons-learned.md',
+                        'path' => $lessonsLearnedPath,
                     ],
                 ];
-                $filesToEmpty[] = ['path' => $cursorRulesPath, 'type' => 'cursorrules'];
-                $this->info('  ✓ Converted .cursorrules');
+                $filesToEmpty[] = ['path' => $lessonsLearnedPath, 'type' => 'lessons-learned'];
+                $this->info('  ✓ Converted lessons-learned.md');
             } else {
-                $this->warn('  ⚠ .cursorrules file is empty');
+                $this->warn('  ⚠ lessons-learned.md file is empty');
             }
         } else {
-            $this->warn("  ⚠ .cursorrules file not found at: {$cursorRulesPath}");
+            $this->warn("  ⚠ lessons-learned.md file not found at: {$lessonsLearnedPath}");
         }
 
         // Process AI_*.json files
@@ -305,8 +305,8 @@ class PushLessons extends Command
             $type = $fileInfo['type'];
 
             try {
-                if ($type === 'cursorrules') {
-                    // Empty .cursorrules file
+                if ($type === 'lessons-learned') {
+                    // Empty lessons-learned.md file
                     File::put($path, '');
                     $this->line("  ✓ Emptied: {$path}");
                 } elseif ($type === 'ai_json') {

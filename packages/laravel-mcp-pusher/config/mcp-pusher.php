@@ -30,6 +30,6 @@ return [
     | Paths to the files that will be read for lessons.
     |
     */
-    'cursorrules_path' => base_path('.cursorrules'),
+    'lessons_learned_path' => base_path('lessons-learned.md'),
     'ai_json_directory' => base_path('docs'),
 ];
