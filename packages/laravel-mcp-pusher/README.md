@@ -1,6 +1,8 @@
 # Laravel MCP Pusher
 
-Laravel package to push lessons learned from local projects to a central MCP server.
+Laravel package to push lessons learned from local projects to a central MCP server via HTTP API.
+
+**Important**: This package pushes lessons to a **remote MCP server** via HTTP API. It does **not** interact with local database or include Lesson model classes. The remote MCP server handles storage and database operations.
 
 ## Installation
 
@@ -60,8 +62,37 @@ php artisan mcp:push-lessons
 
 ## How It Works
 
-The command reads:
+The command reads and normalizes lessons from:
 1. `.cursorrules` file from project root (if exists)
 2. All `AI_*.json` files from `docs/` directory (or specified directory)
 
-These files are normalized and pushed to the MCP server via HTTP API.
+### Normalization
+
+The package automatically normalizes lessons by extracting categories and tags:
+
+- **`.cursorrules` files**: Automatically categorized as `guidelines` with tags: `laravel`, `cursor`, `rules`, `guidelines`, `best-practices`
+- **`AI_*.json` files**: 
+  - Category extracted from filename (e.g., `AI_testing_config.json` → category: `testing-config`)
+  - Base tags generated from filename parts (e.g., `testing`, `config`, `laravel`)
+  - Additional tags extracted from content keywords (e.g., `pest`, `phpunit`, `facades`)
+
+### Examples
+
+**Filename-based categorization:**
+- `AI_testing_config.json` → category: `testing-config`, tags: `['testing', 'config', 'laravel']`
+- `AI_package_development.json` → category: `package-development`, tags: `['package', 'development', 'laravel', 'package-development']`
+
+**Content-based tag extraction:**
+- Content containing "HTTP::fake" → adds tag: `http-mocking`
+- Content containing "Pest" → adds tag: `pest`
+- Content containing "service provider" → adds tag: `service-provider`
+
+### HTTP API Push
+
+Normalized lessons are pushed to the remote MCP server via HTTP POST request to `/api/lessons` endpoint. The remote server handles:
+- Database storage
+- Deduplication (by content hash)
+- Validation
+- Lesson model management
+
+**Note**: This package does **not** include Lesson model classes or interact with local databases. It is designed to push to a remote MCP server endpoint only.

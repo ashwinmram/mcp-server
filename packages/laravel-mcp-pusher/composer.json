@@ -3,9 +3,15 @@
     "description": "Laravel package to push lessons learned to MCP server",
     "type": "library",
     "license": "MIT",
+    "keywords": [
+        "laravel",
+        "mcp",
+        "lessons-learned",
+        "package"
+    ],
     "authors": [
         {
-            "name": "Laravel MCP Pusher",
+            "name": "Ashwin M Ram",
             "email": "ashwinmram@gmail.com"
         }
     ],
@@ -27,6 +33,6 @@
             ]
         }
     },
-    "minimum-stability": "dev",
+    "minimum-stability": "stable",
     "prefer-stable": true
 }

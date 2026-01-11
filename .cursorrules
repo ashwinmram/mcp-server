@@ -34,3 +34,23 @@ When setting up HTTP fake in Pest tests with `beforeEach`:
 - Always run Laravel Pint (`vendor/bin/pint --dirty`) before finalizing changes
 - Pint automatically fixes formatting issues like `new_with_parentheses`, `no_superfluous_phpdoc_tags`, and other Laravel style rules
 - This ensures consistency with Laravel conventions and project code standards
+
+## Packagist Publication
+
+When preparing a Laravel package for Packagist publication:
+- Create a separate git repository in the package directory (not the parent monorepo)
+- Initialize git with `git init`, commit all package files, create an initial version tag (e.g., `v1.0.0`), and push to GitHub
+- Package `composer.json` should include: proper name (vendor/package), description, keywords array, license, authors with name and email
+- Set `minimum-stability` to `stable` (not `dev`) in package composer.json
+- Remove any `version` field from composer.json as Composer will parse versions from git tags automatically
+- Before publishing, update the main project's composer.json to remove the local path repository and change the package requirement from `@dev` to a version constraint like `^1.0`
+
+## GitHub Webhook for Packagist Auto-Updates
+
+To enable automatic Packagist updates when pushing new tags:
+- Configure GitHub webhook URL as: `https://packagist.org/api/github?username=PACKAGIST_USERNAME`
+- The webhook secret must be your Packagist API token (found on your Packagist profile page)
+- Set content type to `application/json` and events to `push`
+- When bumping package versions, create annotated tags with `git tag -a v1.0.1 -m 'Release v1.0.1'` and push with `git push origin v1.0.1`
+- Use semantic versioning (MAJOR.MINOR.PATCH) for all version tags
+- Packagist will automatically detect new tags and make them available for installation via Composer
