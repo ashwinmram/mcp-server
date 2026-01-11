@@ -2,10 +2,10 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
-use Illuminate\Database\Eloquent\Builder;
 
 class Lesson extends Model
 {
@@ -18,6 +18,7 @@ class Lesson extends Model
      */
     protected $fillable = [
         'source_project',
+        'source_projects',
         'type',
         'category',
         'tags',
@@ -37,6 +38,7 @@ class Lesson extends Model
         return [
             'tags' => 'array',
             'metadata' => 'array',
+            'source_projects' => 'array',
             'is_generic' => 'boolean',
         ];
     }
@@ -93,6 +95,100 @@ class Lesson extends Model
         return static::where('content_hash', $contentHash)
             ->where('source_project', $sourceProject)
             ->first();
+    }
+
+    /**
+     * Find a lesson by content hash across all projects.
+     * Returns the oldest lesson with this content hash.
+     */
+    public static function findByContentHashAcrossProjects(string $contentHash): ?self
+    {
+        return static::where('content_hash', $contentHash)
+            ->orderBy('created_at', 'asc')
+            ->first();
+    }
+
+    /**
+     * Find all lessons with the same content hash (duplicates).
+     */
+    public static function findDuplicatesByContentHash(string $contentHash): \Illuminate\Database\Eloquent\Collection
+    {
+        return static::where('content_hash', $contentHash)
+            ->orderBy('created_at', 'asc')
+            ->get();
+    }
+
+    /**
+     * Merge tags from multiple lessons, removing duplicates.
+     */
+    public static function mergeTags(array ...$tagsArrays): array
+    {
+        $merged = [];
+        foreach ($tagsArrays as $tags) {
+            if (is_array($tags)) {
+                $merged = array_merge($merged, $tags);
+            }
+        }
+
+        return array_values(array_unique($merged));
+    }
+
+    /**
+     * Merge metadata from multiple lessons.
+     * For conflicting keys, newer values overwrite older ones.
+     * Arrays are merged to preserve all values.
+     */
+    public static function mergeMetadata(array ...$metadataArrays): array
+    {
+        $merged = [];
+        foreach ($metadataArrays as $metadata) {
+            if (is_array($metadata) && ! empty($metadata)) {
+                foreach ($metadata as $key => $value) {
+                    if (isset($merged[$key]) && is_array($merged[$key]) && is_array($value)) {
+                        // Both are arrays, merge them
+                        $merged[$key] = array_merge($merged[$key], $value);
+                    } else {
+                        // Overwrite with newer value
+                        $merged[$key] = $value;
+                    }
+                }
+            }
+        }
+
+        return $merged;
+    }
+
+    /**
+     * Flatten metadata arrays that were merged recursively.
+     */
+    public static function flattenMetadata(array $metadata): array
+    {
+        $flattened = [];
+        foreach ($metadata as $key => $value) {
+            if (is_array($value) && isset($value[0]) && is_array($value[0])) {
+                // This was merged recursively, flatten it
+                $flattened[$key] = $value;
+            } else {
+                $flattened[$key] = $value;
+            }
+        }
+
+        return $flattened;
+    }
+
+    /**
+     * Merge source projects arrays, removing duplicates.
+     */
+    public static function mergeSourceProjects(array ...$sourceProjectsArrays): array
+    {
+        $merged = [];
+        foreach ($sourceProjectsArrays as $sourceProjects) {
+            if (is_array($sourceProjects)) {
+                $merged = array_merge($merged, $sourceProjects);
+            }
+        }
+
+        return array_values(array_unique($merged));
     }
 
     /**

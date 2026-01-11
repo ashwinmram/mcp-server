@@ -51,7 +51,8 @@ class SearchLessons extends Tool
                 'category' => $lesson->category,
                 'tags' => $lesson->tags,
                 'content' => $lesson->content,
-                'source_project' => $lesson->source_project,
+                'source_project' => $lesson->source_project, // Keep for backward compatibility
+                'source_projects' => $lesson->source_projects ?? [$lesson->source_project],
                 'created_at' => $lesson->created_at->toIso8601String(),
             ];
         })->toArray();

@@ -9,14 +9,11 @@ class LessonImportService
     public function __construct(
         protected LessonValidationService $validationService,
         protected LessonContentHashService $hashService
-    ) {
-    }
+    ) {}
 
     /**
      * Process and store lessons with deduplication.
      *
-     * @param  array  $lessons
-     * @param  string  $sourceProject
      * @return array{created: int, updated: int, skipped: int, errors: array}
      */
     public function processLessons(array $lessons, string $sourceProject): array
@@ -33,6 +30,7 @@ class LessonImportService
                 // Validate lesson structure
                 if (empty($lessonData['content']) || empty($lessonData['type'])) {
                     $result['errors'][] = "Lesson at index {$index}: Missing required fields (content or type)";
+
                     continue;
                 }
 
@@ -40,28 +38,49 @@ class LessonImportService
                 $validation = $this->validationService->validateIsGeneric($lessonData['content']);
                 if (! $validation['is_valid']) {
                     $result['errors'][] = "Lesson at index {$index}: ".implode(', ', $validation['errors']);
+
                     continue;
                 }
 
                 // Generate content hash
                 $contentHash = $this->hashService->generateHash($lessonData['content']);
 
-                // Check for existing lesson
-                $existingLesson = Lesson::findByContentHash($contentHash, $sourceProject);
+                // Check for existing lesson across ALL projects (cross-project deduplication)
+                $existingLesson = Lesson::findByContentHashAcrossProjects($contentHash);
 
                 if ($existingLesson) {
-                    // Check if metadata has changed
-                    $metadataChanged = $this->hasMetadataChanged(
+                    // Merge tags from existing and new lesson
+                    $mergedTags = Lesson::mergeTags(
+                        $existingLesson->tags ?? [],
+                        $lessonData['tags'] ?? []
+                    );
+
+                    // Merge metadata from existing and new lesson
+                    $mergedMetadata = Lesson::mergeMetadata(
                         $existingLesson->metadata ?? [],
                         $lessonData['metadata'] ?? []
                     );
 
-                    if ($metadataChanged) {
-                        // Update existing lesson
+                    // Merge source projects
+                    $existingSourceProjects = $existingLesson->source_projects ?? [$existingLesson->source_project];
+                    $newSourceProjects = array_unique(array_merge($existingSourceProjects, [$sourceProject]));
+
+                    // Check if anything has changed
+                    $tagsChanged = $mergedTags !== ($existingLesson->tags ?? []);
+                    $metadataChanged = $this->hasMetadataChanged(
+                        $existingLesson->metadata ?? [],
+                        $lessonData['metadata'] ?? []
+                    );
+                    $sourceProjectsChanged = $newSourceProjects !== $existingSourceProjects;
+                    $categoryChanged = ($lessonData['category'] ?? null) !== $existingLesson->category;
+
+                    if ($tagsChanged || $metadataChanged || $sourceProjectsChanged || $categoryChanged) {
+                        // Update existing lesson with merged data
                         $existingLesson->update([
                             'category' => $lessonData['category'] ?? $existingLesson->category,
-                            'tags' => $lessonData['tags'] ?? $existingLesson->tags,
-                            'metadata' => array_merge($existingLesson->metadata ?? [], $lessonData['metadata'] ?? []),
+                            'tags' => $mergedTags,
+                            'metadata' => $mergedMetadata,
+                            'source_projects' => $newSourceProjects,
                             'is_generic' => $validation['is_valid'],
                         ]);
                         $result['updated']++;
@@ -73,6 +92,7 @@ class LessonImportService
                     // Create new lesson
                     Lesson::create([
                         'source_project' => $sourceProject,
+                        'source_projects' => [$sourceProject],
                         'type' => $lessonData['type'],
                         'category' => $lessonData['category'] ?? null,
                         'tags' => $lessonData['tags'] ?? [],

@@ -1,8 +1,8 @@
 <?php
 
 use App\Models\Lesson;
-use App\Services\LessonImportService;
 use App\Services\LessonContentHashService;
+use App\Services\LessonImportService;
 use App\Services\LessonValidationService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 
@@ -10,8 +10,8 @@ uses(RefreshDatabase::class);
 
 test('processes lessons and creates new ones', function () {
     $service = new LessonImportService(
-        new LessonValidationService(),
-        new LessonContentHashService()
+        new LessonValidationService,
+        new LessonContentHashService
     );
 
     $lessons = [
@@ -38,8 +38,8 @@ test('processes lessons and creates new ones', function () {
 
 test('skips duplicate lessons', function () {
     $service = new LessonImportService(
-        new LessonValidationService(),
-        new LessonContentHashService()
+        new LessonValidationService,
+        new LessonContentHashService
     );
 
     $content = 'This is duplicate content';
@@ -63,8 +63,8 @@ test('skips duplicate lessons', function () {
 
 test('updates lesson when metadata changes', function () {
     $service = new LessonImportService(
-        new LessonValidationService(),
-        new LessonContentHashService()
+        new LessonValidationService,
+        new LessonContentHashService
     );
 
     $content = 'Test content';
@@ -91,8 +91,8 @@ test('updates lesson when metadata changes', function () {
 
 test('rejects lessons with project-specific paths', function () {
     $service = new LessonImportService(
-        new LessonValidationService(),
-        new LessonContentHashService()
+        new LessonValidationService,
+        new LessonContentHashService
     );
 
     $lessons = [
@@ -110,8 +110,8 @@ test('rejects lessons with project-specific paths', function () {
 
 test('rejects lessons with missing required fields', function () {
     $service = new LessonImportService(
-        new LessonValidationService(),
-        new LessonContentHashService()
+        new LessonValidationService,
+        new LessonContentHashService
     );
 
     $lessons = [
@@ -128,8 +128,8 @@ test('rejects lessons with missing required fields', function () {
 
 test('processes multiple lessons', function () {
     $service = new LessonImportService(
-        new LessonValidationService(),
-        new LessonContentHashService()
+        new LessonValidationService,
+        new LessonContentHashService
     );
 
     $lessons = [
@@ -153,8 +153,8 @@ test('processes multiple lessons', function () {
 
 test('handles errors gracefully and continues processing', function () {
     $service = new LessonImportService(
-        new LessonValidationService(),
-        new LessonContentHashService()
+        new LessonValidationService,
+        new LessonContentHashService
     );
 
     $lessons = [
@@ -175,4 +175,156 @@ test('handles errors gracefully and continues processing', function () {
 
     expect($result['created'])->toBe(2)
         ->and($result['errors'])->toHaveCount(1);
+});
+
+test('deduplicates lessons across different source projects', function () {
+    $service = new LessonImportService(
+        new LessonValidationService,
+        new LessonContentHashService
+    );
+
+    $content = 'This is duplicate content across projects';
+    $lessons = [
+        [
+            'type' => 'cursor',
+            'content' => $content,
+            'tags' => ['php', 'laravel'],
+        ],
+    ];
+
+    // First processing from project-a
+    $result1 = $service->processLessons($lessons, 'project-a');
+    expect($result1['created'])->toBe(1);
+
+    // Second processing from project-b (same content)
+    $result2 = $service->processLessons($lessons, 'project-b');
+    expect($result2['updated'])->toBe(1)
+        ->and($result2['created'])->toBe(0);
+
+    // Should only have one lesson in database
+    $this->assertDatabaseCount('lessons', 1);
+
+    $lesson = Lesson::first();
+    expect($lesson->source_project)->toBe('project-a') // Oldest project
+        ->and($lesson->source_projects)->toContain('project-a', 'project-b');
+});
+
+test('merges tags when duplicate found across projects', function () {
+    $service = new LessonImportService(
+        new LessonValidationService,
+        new LessonContentHashService
+    );
+
+    $content = 'Test content for tag merging';
+    $lessons1 = [
+        [
+            'type' => 'cursor',
+            'content' => $content,
+            'tags' => ['php', 'laravel'],
+        ],
+    ];
+
+    $lessons2 = [
+        [
+            'type' => 'cursor',
+            'content' => $content,
+            'tags' => ['php', 'testing', 'pest'],
+        ],
+    ];
+
+    // First processing from project-a
+    $service->processLessons($lessons1, 'project-a');
+
+    // Second processing from project-b with different tags
+    $service->processLessons($lessons2, 'project-b');
+
+    $lesson = Lesson::first();
+    $mergedTags = $lesson->tags;
+    sort($mergedTags);
+
+    expect($mergedTags)->toContain('php', 'laravel', 'testing', 'pest')
+        ->and(count($mergedTags))->toBe(4);
+});
+
+test('merges metadata when duplicate found across projects', function () {
+    $service = new LessonImportService(
+        new LessonValidationService,
+        new LessonContentHashService
+    );
+
+    $content = 'Test content for metadata merging';
+    $lessons1 = [
+        [
+            'type' => 'cursor',
+            'content' => $content,
+            'metadata' => ['file' => 'file1.json', 'path' => '/path/to/file1'],
+        ],
+    ];
+
+    $lessons2 = [
+        [
+            'type' => 'cursor',
+            'content' => $content,
+            'metadata' => ['file' => 'file2.json', 'path' => '/path/to/file2'],
+        ],
+    ];
+
+    // First processing from project-a
+    $service->processLessons($lessons1, 'project-a');
+
+    // Second processing from project-b with different metadata
+    $service->processLessons($lessons2, 'project-b');
+
+    $lesson = Lesson::first();
+    // Metadata should be merged (file2 should overwrite file1, path should be merged)
+    expect($lesson->metadata)->toHaveKey('file')
+        ->and($lesson->metadata)->toHaveKey('path');
+});
+
+test('tracks multiple source projects in source_projects array', function () {
+    $service = new LessonImportService(
+        new LessonValidationService,
+        new LessonContentHashService
+    );
+
+    $content = 'Content shared across multiple projects';
+    $lessons = [
+        [
+            'type' => 'cursor',
+            'content' => $content,
+        ],
+    ];
+
+    // Process from three different projects
+    $service->processLessons($lessons, 'project-a');
+    $service->processLessons($lessons, 'project-b');
+    $service->processLessons($lessons, 'project-c');
+
+    $lesson = Lesson::first();
+    expect($lesson->source_projects)->toHaveCount(3)
+        ->and($lesson->source_projects)->toContain('project-a', 'project-b', 'project-c')
+        ->and($lesson->source_project)->toBe('project-a'); // Oldest project
+});
+
+test('initializes source_projects array when creating new lesson', function () {
+    $service = new LessonImportService(
+        new LessonValidationService,
+        new LessonContentHashService
+    );
+
+    $lessons = [
+        [
+            'type' => 'cursor',
+            'content' => 'New lesson content',
+            'tags' => ['php'],
+        ],
+    ];
+
+    $result = $service->processLessons($lessons, 'new-project');
+
+    expect($result['created'])->toBe(1);
+
+    $lesson = Lesson::first();
+    expect($lesson->source_projects)->toBe(['new-project'])
+        ->and($lesson->source_project)->toBe('new-project');
 });
