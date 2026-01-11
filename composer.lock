@@ -8,16 +8,16 @@
     "packages": [
         {
             "name": "ashwinmram/mcp-pusher",
-            "version": "v1.0.1",
+            "version": "v1.0.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/ashwinmram/mcp-pusher.git",
-                "reference": "6a30e3f4d6b829fe40d5b503d963acaf9026caf9"
+                "reference": "0acf096fcf2bbe699a15709741852a5a46d6ab38"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/ashwinmram/mcp-pusher/zipball/6a30e3f4d6b829fe40d5b503d963acaf9026caf9",
-                "reference": "6a30e3f4d6b829fe40d5b503d963acaf9026caf9",
+                "url": "https://api.github.com/repos/ashwinmram/mcp-pusher/zipball/0acf096fcf2bbe699a15709741852a5a46d6ab38",
+                "reference": "0acf096fcf2bbe699a15709741852a5a46d6ab38",
                 "shasum": ""
             },
             "require": {
@@ -58,9 +58,9 @@
             ],
             "support": {
                 "issues": "https://github.com/ashwinmram/mcp-pusher/issues",
-                "source": "https://github.com/ashwinmram/mcp-pusher/tree/v1.0.1"
+                "source": "https://github.com/ashwinmram/mcp-pusher/tree/v1.0.2"
             },
-            "time": "2026-01-11T03:08:36+00:00"
+            "time": "2026-01-11T05:50:56+00:00"
         },
         {
             "name": "bacon/bacon-qr-code",
