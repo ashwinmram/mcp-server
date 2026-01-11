@@ -4,15 +4,21 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "d23f47fe717594c70939d9c52d0e057e",
+    "content-hash": "1ca20e43900ddca3348b02275c69699e",
     "packages": [
         {
             "name": "ashwinmram/mcp-pusher",
-            "version": "dev-main",
+            "version": "v1.0.1",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/ashwinmram/mcp-pusher.git",
+                "reference": "6a30e3f4d6b829fe40d5b503d963acaf9026caf9"
+            },
             "dist": {
-                "type": "path",
-                "url": "./packages/laravel-mcp-pusher",
-                "reference": "0839b020c243dde74fbc1502ccb1e4353a619d91"
+                "type": "zip",
+                "url": "https://api.github.com/repos/ashwinmram/mcp-pusher/zipball/6a30e3f4d6b829fe40d5b503d963acaf9026caf9",
+                "reference": "6a30e3f4d6b829fe40d5b503d963acaf9026caf9",
+                "shasum": ""
             },
             "require": {
                 "illuminate/console": "^12.0",
@@ -33,19 +39,28 @@
                     "LaravelMcpPusher\\": "src/"
                 }
             },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
             "authors": [
                 {
-                    "name": "Laravel MCP Pusher",
+                    "name": "Ashwin M Ram",
                     "email": "ashwinmram@gmail.com"
                 }
             ],
             "description": "Laravel package to push lessons learned to MCP server",
-            "transport-options": {
-                "relative": true
-            }
+            "keywords": [
+                "laravel",
+                "lessons-learned",
+                "mcp",
+                "package"
+            ],
+            "support": {
+                "issues": "https://github.com/ashwinmram/mcp-pusher/issues",
+                "source": "https://github.com/ashwinmram/mcp-pusher/tree/v1.0.1"
+            },
+            "time": "2026-01-11T03:08:36+00:00"
         },
         {
             "name": "bacon/bacon-qr-code",
@@ -10061,9 +10076,7 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {
-        "ashwinmram/mcp-pusher": 20
-    },
+    "stability-flags": {},
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {

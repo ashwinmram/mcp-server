@@ -70,7 +70,7 @@ class ConvertAndPushLessons extends Command
             $aiFiles = File::glob($aiJsonPath.'/AI_*.json');
 
             if (empty($aiFiles)) {
-                $this->warn("  ⚠ No AI_*.json files found");
+                $this->warn('  ⚠ No AI_*.json files found');
             } else {
                 foreach ($aiFiles as $file) {
                     $filename = basename($file);
@@ -81,7 +81,8 @@ class ConvertAndPushLessons extends Command
                         $jsonData = json_decode($content, true);
 
                         if (json_last_error() !== JSON_ERROR_NONE) {
-                            $this->error("    ✗ Invalid JSON: ".json_last_error_msg());
+                            $this->error('    ✗ Invalid JSON: '.json_last_error_msg());
+
                             continue;
                         }
 
@@ -107,7 +108,7 @@ class ConvertAndPushLessons extends Command
                                     ],
                                 ];
                             }
-                            $this->info("    ✓ Converted ".count($jsonData)." lesson(s)");
+                            $this->info('    ✓ Converted '.count($jsonData).' lesson(s)');
                         } else {
                             // Single object or string
                             $lessonContent = is_string($jsonData) ? $jsonData : json_encode($jsonData, JSON_PRETTY_PRINT);
@@ -136,6 +137,7 @@ class ConvertAndPushLessons extends Command
 
         if (empty($lessons)) {
             $this->error('No lessons found to convert and push.');
+
             return Command::FAILURE;
         }
 
@@ -162,6 +164,7 @@ class ConvertAndPushLessons extends Command
             foreach ($result['errors'] as $error) {
                 $this->error("  - {$error}");
             }
+
             return Command::FAILURE;
         }
 

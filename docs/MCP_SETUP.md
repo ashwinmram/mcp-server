@@ -231,14 +231,15 @@ Since this project can also act as a client, you can push its own lessons:
 Push existing lessons from `.cursorrules` and `AI_*.json` files:
 
 ```bash
-php artisan mcp:import-initial --source=mcp-server
+php artisan mcp:convert-and-push --source=mcp-server
 ```
 
 This will:
 
 1. Read `.cursorrules` from the project root
 2. Read all `AI_*.json` files from the `docs/` directory
-3. Push them to the MCP server (which is itself)
+3. Convert them to properly formatted lessons with categories and tags
+4. Store them in the local database (since this is the MCP server itself)
 
 ### Ongoing Usage
 
