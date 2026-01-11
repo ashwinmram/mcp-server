@@ -58,19 +58,42 @@ class LessonsOverviewResource extends Resource
             ->get();
 
         $content = "# Lessons Learned Overview\n\n";
-        $content .= "This document provides an overview of lessons learned from previous coding sessions. ";
+        $content .= 'This document provides an overview of lessons learned from previous coding sessions. ';
         $content .= "Use the SearchLessons, GetLessonByCategory, and GetLessonTags tools to query specific lessons.\n\n";
 
         $content .= "## Summary\n\n";
         $content .= "- **Total Lessons:** {$totalLessons}\n";
-        $content .= "- **Categories:** ".$categories->count()."\n";
-        $content .= "- **Tags:** ".$tags->count()."\n\n";
+        $content .= '- **Categories:** '.$categories->count()."\n";
+        $content .= '- **Tags:** '.$tags->count()."\n\n";
 
         if ($categories->isNotEmpty()) {
             $content .= "## Available Categories\n\n";
             foreach ($categories as $category) {
                 $count = Lesson::query()->generic()->byCategory($category)->count();
                 $content .= "- **{$category}** ({$count} lessons)\n";
+
+                // Show subcategories for lessons-learned category
+                if ($category === 'lessons-learned') {
+                    $subcategories = Lesson::query()
+                        ->generic()
+                        ->where('category', 'lessons-learned')
+                        ->whereNotNull('subcategory')
+                        ->distinct()
+                        ->pluck('subcategory')
+                        ->sort()
+                        ->values();
+
+                    if ($subcategories->isNotEmpty()) {
+                        foreach ($subcategories as $subcategory) {
+                            $subCount = Lesson::query()
+                                ->generic()
+                                ->where('category', 'lessons-learned')
+                                ->where('subcategory', $subcategory)
+                                ->count();
+                            $content .= "  - `{$subcategory}` ({$subCount} lessons) - Queryable as a subcategory\n";
+                        }
+                    }
+                }
             }
             $content .= "\n";
         }
@@ -87,14 +110,14 @@ class LessonsOverviewResource extends Resource
         if ($recentLessons->isNotEmpty()) {
             $content .= "## Recent Lessons\n\n";
             foreach ($recentLessons->take(5) as $lesson) {
-                $content .= "### ".ucfirst($lesson->type)." Lesson";
+                $content .= '### '.ucfirst($lesson->type).' Lesson';
                 if ($lesson->category) {
                     $content .= " ({$lesson->category})";
                 }
                 $content .= "\n\n";
 
                 if (! empty($lesson->tags)) {
-                    $content .= "**Tags:** ".implode(', ', array_slice($lesson->tags, 0, 5));
+                    $content .= '**Tags:** '.implode(', ', array_slice($lesson->tags, 0, 5));
                     if (count($lesson->tags) > 5) {
                         $content .= '...';
                     }
@@ -112,11 +135,13 @@ class LessonsOverviewResource extends Resource
 
         $content .= "\n## How to Use\n\n";
         $content .= "Use the following MCP tools to query lessons:\n\n";
-        $content .= "- **SearchLessons** - Search by keyword, category, or tags\n";
-        $content .= "- **GetLessonByCategory** - Get all lessons in a specific category\n";
+        $content .= "- **SearchLessons** - Search by keyword, category, subcategory, or tags\n";
+        $content .= "- **GetLessonByCategory** - Get all lessons in a specific category or subcategory\n";
         $content .= "- **GetLessonTags** - List all available tags\n";
         $content .= "- **LessonsLearnedOverview** prompt - Get an updated overview\n";
-        $content .= "- **LessonsByCategory** prompt - Get lessons for a specific category\n";
+        $content .= "- **LessonsByCategory** prompt - Get lessons for a specific category\n\n";
+        $content .= '**Note:** Subcategories (like `component-architecture`, `database-backend`) can be queried directly using GetLessonByCategory or SearchLessons. ';
+        $content .= "Querying the parent category `lessons-learned` will return all lessons regardless of subcategory.\n";
 
         return Response::text($content);
     }

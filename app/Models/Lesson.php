@@ -21,6 +21,7 @@ class Lesson extends Model
         'source_projects',
         'type',
         'category',
+        'subcategory',
         'tags',
         'metadata',
         'content',
@@ -57,6 +58,27 @@ class Lesson extends Model
     public function scopeByCategory(Builder $query, string $category): Builder
     {
         return $query->where('category', $category);
+    }
+
+    /**
+     * Scope a query to filter by subcategory.
+     */
+    public function scopeBySubcategory(Builder $query, string $subcategory): Builder
+    {
+        return $query->where('subcategory', $subcategory);
+    }
+
+    /**
+     * Scope a query to filter by category or subcategory.
+     * This maintains backward compatibility - querying "lessons-learned"
+     * will return all lessons in that category regardless of subcategory.
+     */
+    public function scopeByCategoryOrSubcategory(Builder $query, string $categoryOrSubcategory): Builder
+    {
+        return $query->where(function (Builder $q) use ($categoryOrSubcategory) {
+            $q->where('category', $categoryOrSubcategory)
+                ->orWhere('subcategory', $categoryOrSubcategory);
+        });
     }
 
     /**

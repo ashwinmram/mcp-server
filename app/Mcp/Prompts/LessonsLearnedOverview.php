@@ -6,7 +6,6 @@ use App\Models\Lesson;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Prompt;
-use Laravel\Mcp\Server\Prompts\Argument;
 
 class LessonsLearnedOverview extends Prompt
 {
@@ -58,6 +57,30 @@ class LessonsLearnedOverview extends Prompt
             foreach ($categories as $category) {
                 $count = Lesson::query()->generic()->byCategory($category)->count();
                 $content .= "- {$category} ({$count} lessons)\n";
+
+                // Show subcategories for lessons-learned category
+                if ($category === 'lessons-learned') {
+                    $subcategories = Lesson::query()
+                        ->generic()
+                        ->where('category', 'lessons-learned')
+                        ->whereNotNull('subcategory')
+                        ->distinct()
+                        ->pluck('subcategory')
+                        ->sort()
+                        ->values()
+                        ->toArray();
+
+                    if (! empty($subcategories)) {
+                        foreach ($subcategories as $subcategory) {
+                            $subCount = Lesson::query()
+                                ->generic()
+                                ->where('category', 'lessons-learned')
+                                ->where('subcategory', $subcategory)
+                                ->count();
+                            $content .= "  - {$subcategory} ({$subCount} lessons)\n";
+                        }
+                    }
+                }
             }
             $content .= "\n";
         }

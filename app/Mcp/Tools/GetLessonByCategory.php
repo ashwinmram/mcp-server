@@ -30,18 +30,38 @@ class GetLessonByCategory extends Tool
 
         $limit = (int) ($request->get('limit', 10));
 
-        $lessons = Lesson::query()
-            ->generic()
-            ->byCategory($category)
-            ->orderBy('created_at', 'desc')
-            ->limit($limit)
-            ->get();
+        // Check if this is a subcategory query
+        // Subcategories are kebab-case (e.g., component-architecture)
+        // Regular categories are typically single words or snake_case
+        $isSubcategory = str_contains($category, '-') &&
+                         $category !== 'lessons-learned' &&
+                         Lesson::query()->generic()->bySubcategory($category)->exists();
+
+        if ($isSubcategory) {
+            // Query by subcategory
+            $lessons = Lesson::query()
+                ->generic()
+                ->bySubcategory($category)
+                ->orderBy('created_at', 'desc')
+                ->limit($limit)
+                ->get();
+        } else {
+            // Query by category (maintains backward compatibility)
+            // For "lessons-learned", this will return all lessons regardless of subcategory
+            $lessons = Lesson::query()
+                ->generic()
+                ->byCategory($category)
+                ->orderBy('created_at', 'desc')
+                ->limit($limit)
+                ->get();
+        }
 
         $results = $lessons->map(function (Lesson $lesson) {
             return [
                 'id' => $lesson->id,
                 'type' => $lesson->type,
                 'category' => $lesson->category,
+                'subcategory' => $lesson->subcategory,
                 'tags' => $lesson->tags,
                 'content' => $lesson->content,
                 'source_project' => $lesson->source_project, // Keep for backward compatibility

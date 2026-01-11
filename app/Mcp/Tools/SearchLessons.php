@@ -29,9 +29,19 @@ class SearchLessons extends Tool
             $query->where('content', 'like', '%'.$request->get('query').'%');
         }
 
-        // Filter by category
+        // Filter by category or subcategory
         if ($request->get('category')) {
-            $query->byCategory($request->get('category'));
+            $category = $request->get('category');
+            // Check if it's a subcategory
+            $isSubcategory = str_contains($category, '-') &&
+                             $category !== 'lessons-learned' &&
+                             Lesson::query()->generic()->bySubcategory($category)->exists();
+
+            if ($isSubcategory) {
+                $query->bySubcategory($category);
+            } else {
+                $query->byCategory($category);
+            }
         }
 
         // Filter by tags
@@ -49,6 +59,7 @@ class SearchLessons extends Tool
                 'id' => $lesson->id,
                 'type' => $lesson->type,
                 'category' => $lesson->category,
+                'subcategory' => $lesson->subcategory,
                 'tags' => $lesson->tags,
                 'content' => $lesson->content,
                 'source_project' => $lesson->source_project, // Keep for backward compatibility
