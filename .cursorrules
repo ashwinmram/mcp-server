@@ -116,4 +116,97 @@ This project has **402 lessons** across **13 categories** with **42 tags** cover
 These lessons are critical for maintaining code quality and avoiding past mistakes. **You must read them at session start.**
 
 The relevance scoring system ensures that the **most useful and frequently referenced lessons rise to the top**, making it easier to find the right knowledge quickly. As you use lessons and provide feedback, the system learns which lessons are most valuable, creating a continuously improving knowledge base.
+
+## Updating Lessons Learned Files
+
+When asked to "update lessons-learned.md and AI*.json files with any lessons learned during this session", follow these structures:
+
+### lessons-learned.md Structure
+
+The `docs/lessons-learned.md` file is a markdown file that uses:
+- **H2 headings (`##`)** for major topics (e.g., "MCP Tool Development")
+- **H3 headings (`###`)** for subtopics or specific patterns
+- **H4 headings (`####`)** for detailed points within a topic
+- **Bullet lists** for key takeaways and patterns
+- **Code blocks** for code examples when relevant
+- **Horizontal rules (`---`)** to separate major sections
+
+**Format example:**
+```markdown
+## Topic Name (Date)
+
+### Subtopic
+
+#### Key Point
+- Bullet point explaining the pattern
+- Another bullet point with details
+
+#### Code Example (if needed)
+```code
+Example code snippet
+```
+
+### Key Takeaways
+1. **Bold takeaway title** - Description of the lesson
+2. **Another takeaway** - Description
+```
+
+### AI_*.json Structure
+
+AI JSON files (e.g., `docs/AI_mcp_tools_development.json`) must be a **JSON array** with objects following this **exact field order**:
+
+1. **`title`** (string, required) - Descriptive title for the lesson
+2. **`summary`** (string, required) - Brief summary of the lesson (1-2 sentences)
+3. **`category`** (string, required) - Category name (e.g., "mcp-development", "testing-patterns")
+4. **`subcategory`** (string, required) - Subcategory name (e.g., "tool-creation", "mcp-tool-testing")
+5. **`type`** (string, required) - Always `"ai_output"` for AI-generated lessons
+6. **`tags`** (array, required) - Array of relevant tags (e.g., `["mcp", "laravel-mcp", "tools"]`)
+7. **`content`** (string, required) - Full lesson content with detailed explanation (can include markdown-style formatting like `\n` for newlines)
+8. **`metadata`** (object, optional) - Additional metadata:
+   - `file` (string) - Source filename
+   - `session_date` (string) - Date in YYYY-MM-DD format
+
+**JSON Structure Example:**
+```json
+[
+  {
+    "title": "Lesson Title",
+    "summary": "Brief summary of what was learned",
+    "category": "category-name",
+    "subcategory": "subcategory-name",
+    "type": "ai_output",
+    "tags": ["tag1", "tag2", "tag3"],
+    "content": "Detailed lesson content explaining the pattern, practice, or knowledge learned. Can include multiple paragraphs separated by \\n\\n.",
+    "metadata": {
+      "file": "AI_filename.json",
+      "session_date": "2026-01-18"
+    }
+  }
+]
+```
+
+**Important Notes:**
+- **Field order matters** - Always use: title → summary → category → subcategory → type → tags → content → metadata
+- Each lesson must have all required fields
+- Multiple lessons can be in the same file (as array elements)
+- Use descriptive titles and summaries that would help future AI agents understand the lesson
+- Include relevant tags for discoverability
+- Content can include code examples, patterns, or detailed explanations
+
+### File Locations
+
+- **lessons-learned.md**: `docs/lessons-learned.md`
+- **AI_*.json files**: `docs/AI_*.json` (e.g., `docs/AI_mcp_tools_development.json`)
+
+### After Updating
+
+After updating these files, they can be pushed to the MCP server using:
+```bash
+php artisan mcp:push-lessons --source=mcp-server
+```
+
+This command will:
+1. Read `docs/lessons-learned.md` and convert it to lesson format
+2. Read all `docs/AI_*.json` files and convert each array element to a lesson
+3. Push lessons to the MCP server for future AI agent sessions
 </mcp-server-instructions>
