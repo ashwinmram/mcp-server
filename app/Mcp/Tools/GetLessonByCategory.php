@@ -62,6 +62,8 @@ class GetLessonByCategory extends Tool
                 'type' => $lesson->type,
                 'category' => $lesson->category,
                 'subcategory' => $lesson->subcategory,
+                'title' => $lesson->title,
+                'summary' => $lesson->summary,
                 'tags' => $lesson->tags,
                 'content' => $lesson->content,
                 'source_project' => $lesson->source_project, // Keep for backward compatibility

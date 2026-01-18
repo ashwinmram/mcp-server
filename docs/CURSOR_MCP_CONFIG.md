@@ -207,80 +207,7 @@ If you want to avoid hardcoding the token in `mcp.json`, you can:
 
 ## End-of-Session Workflow
 
-**At the end of every coding session, run:**
-
-```bash
-php artisan mcp:convert-and-push --source=your-project-name
-```
-
-Or if you're in the `mcp-server` project itself:
-
-```bash
-php artisan mcp:convert-and-push --source=mcp-server
-```
-
-### What This Command Does
-
-1. **Reads your lesson files:**
-    - `.cursorrules` from the project root
-    - All `AI_*.json` files from the `docs/` directory
-
-2. **Converts and formats lessons:**
-    - Extracts categories and tags from filenames
-    - Adds content-based tags automatically
-    - Ensures proper JSON array format for tags
-
-3. **Pushes to MCP server:**
-    - Automatically deduplicates lessons using content hash
-    - Creates new lessons or updates existing ones
-    - Provides a summary of created/updated/skipped lessons
-
-### Command Options
-
-```bash
-# Specify source project name
-php artisan mcp:convert-and-push --source=my-project
-
-# Custom .cursorrules path
-php artisan mcp:convert-and-push --cursorrules=/path/to/.cursorrules
-
-# Custom AI JSON directory
-php artisan mcp:convert-and-push --ai-json-dir=custom-docs
-```
-
-### After Running
-
-The command will display:
-
-- Number of lessons processed
-- Created/Updated/Skipped counts
-- Summary by category
-- Any errors encountered
-
-**Example output:**
-
-```
-Converting and pushing lessons from project: mcp-server
-
-Reading .cursorrules file: /path/to/.cursorrules
-  ✓ Converted .cursorrules
-Searching for AI_*.json files in: /path/to/docs
-  Processing: AI_testing_patterns.json
-    ✓ Converted 10 lesson(s)
-
-Processing 11 lesson(s)...
-
-Import Summary:
-  Created: 2
-  Updated: 8
-  Skipped: 1
-
-Summary by category:
-  guidelines: 1 lesson(s)
-  testing-patterns: 10 lesson(s)
-
-✓ Conversion and push completed successfully!
-```
+Lessons can be pushed to the MCP server using the `laravel-mcp-pusher` package. Refer to the package documentation for details on how to push lessons from your projects.
 
 ## Next Steps
 
@@ -289,7 +216,7 @@ After configuring Cursor:
 1. **Start a new chat session** and verify lessons are automatically queried
 2. **Test with a question** like "What lessons do we have about testing Laravel packages?"
 3. **Check that lessons are applied** throughout the coding session
-4. **Push new lessons** after each session: `php artisan mcp:convert-and-push --source=your-project`
+4. **Push new lessons** after each session using the `laravel-mcp-pusher` package
 
 ## Additional Resources
 

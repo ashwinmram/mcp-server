@@ -328,3 +328,219 @@ test('initializes source_projects array when creating new lesson', function () {
     expect($lesson->source_projects)->toBe(['new-project'])
         ->and($lesson->source_project)->toBe('new-project');
 });
+
+test('extracts title from lesson data', function () {
+    $service = new LessonImportService(
+        new LessonValidationService,
+        new LessonContentHashService
+    );
+
+    $lessons = [
+        [
+            'type' => 'cursor',
+            'content' => 'Test content',
+            'title' => 'Test Title',
+        ],
+    ];
+
+    $service->processLessons($lessons, 'test-project');
+
+    $lesson = Lesson::first();
+    expect($lesson->title)->toBe('Test Title');
+});
+
+test('extracts title from JSON content', function () {
+    $service = new LessonImportService(
+        new LessonValidationService,
+        new LessonContentHashService
+    );
+
+    $lessons = [
+        [
+            'type' => 'cursor',
+            'content' => json_encode(['title' => 'JSON Title', 'description' => 'Test']),
+        ],
+    ];
+
+    $service->processLessons($lessons, 'test-project');
+
+    $lesson = Lesson::first();
+    expect($lesson->title)->toBe('JSON Title');
+});
+
+test('extracts summary from lesson data', function () {
+    $service = new LessonImportService(
+        new LessonValidationService,
+        new LessonContentHashService
+    );
+
+    $lessons = [
+        [
+            'type' => 'cursor',
+            'content' => 'Test content',
+            'summary' => 'Test Summary',
+        ],
+    ];
+
+    $service->processLessons($lessons, 'test-project');
+
+    $lesson = Lesson::first();
+    expect($lesson->summary)->toBe('Test Summary');
+});
+
+test('extracts summary from JSON description', function () {
+    $service = new LessonImportService(
+        new LessonValidationService,
+        new LessonContentHashService
+    );
+
+    $lessons = [
+        [
+            'type' => 'cursor',
+            'content' => json_encode(['description' => 'JSON Description']),
+        ],
+    ];
+
+    $service->processLessons($lessons, 'test-project');
+
+    $lesson = Lesson::first();
+    expect($lesson->summary)->toBe('JSON Description');
+});
+
+test('generates summary from first sentences when not provided', function () {
+    $service = new LessonImportService(
+        new LessonValidationService,
+        new LessonContentHashService
+    );
+
+    $lessons = [
+        [
+            'type' => 'cursor',
+            'content' => 'First sentence. Second sentence. Third sentence.',
+        ],
+    ];
+
+    $service->processLessons($lessons, 'test-project');
+
+    $lesson = Lesson::first();
+    expect($lesson->summary)->toContain('First sentence')
+        ->and($lesson->summary)->toContain('Second sentence');
+});
+
+test('detects and creates relationships between similar lessons', function () {
+    $service = new LessonImportService(
+        new LessonValidationService,
+        new LessonContentHashService
+    );
+
+    // Create first lesson
+    $lessons1 = [
+        [
+            'type' => 'cursor',
+            'content' => 'Testing Vue components',
+            'category' => 'testing',
+            'tags' => ['vue', 'testing', 'components'],
+        ],
+    ];
+
+    $service->processLessons($lessons1, 'project-a');
+
+    // Create second lesson with same category and overlapping tags
+    $lessons2 = [
+        [
+            'type' => 'cursor',
+            'content' => 'Testing Vue dialogs',
+            'category' => 'testing',
+            'tags' => ['vue', 'testing', 'dialogs'],
+        ],
+    ];
+
+    $service->processLessons($lessons2, 'project-b');
+
+    // Check if relationship was created
+    $lesson1 = Lesson::where('content', 'Testing Vue components')->first();
+    $lesson2 = Lesson::where('content', 'Testing Vue dialogs')->first();
+
+    $relationship = \DB::table('lesson_relationships')
+        ->where('lesson_id', $lesson2->id)
+        ->where('related_lesson_id', $lesson1->id)
+        ->first();
+
+    expect($relationship)->not->toBeNull()
+        ->and($relationship->relationship_type)->toBe('related')
+        ->and($relationship->relevance_score)->toBeGreaterThan(0);
+});
+
+test('does not create relationships when tags do not overlap enough', function () {
+    $service = new LessonImportService(
+        new LessonValidationService,
+        new LessonContentHashService
+    );
+
+    // Create first lesson
+    $lessons1 = [
+        [
+            'type' => 'cursor',
+            'content' => 'Laravel validation',
+            'category' => 'validation',
+            'tags' => ['laravel', 'validation'],
+        ],
+    ];
+
+    $service->processLessons($lessons1, 'project-a');
+
+    // Create second lesson with different tags (no overlap)
+    $lessons2 = [
+        [
+            'type' => 'cursor',
+            'content' => 'Vue components',
+            'category' => 'frontend',
+            'tags' => ['vue', 'components'],
+        ],
+    ];
+
+    $service->processLessons($lessons2, 'project-b');
+
+    // Check that no relationship was created
+    $lesson2 = Lesson::where('content', 'Vue components')->first();
+
+    $relationship = \DB::table('lesson_relationships')
+        ->where('lesson_id', $lesson2->id)
+        ->first();
+
+    expect($relationship)->toBeNull();
+});
+
+test('updates title and summary when updating existing lesson', function () {
+    $service = new LessonImportService(
+        new LessonValidationService,
+        new LessonContentHashService
+    );
+
+    $content = 'Test content';
+    $lessons1 = [
+        [
+            'type' => 'cursor',
+            'content' => $content,
+        ],
+    ];
+
+    $service->processLessons($lessons1, 'project-a');
+
+    // Update with title and summary
+    $lessons2 = [
+        [
+            'type' => 'cursor',
+            'content' => $content,
+            'title' => 'Updated Title',
+            'summary' => 'Updated Summary',
+        ],
+    ];
+
+    $service->processLessons($lessons2, 'project-b');
+
+    $lesson = Lesson::first();
+    expect($lesson->title)->toBe('Updated Title')
+        ->and($lesson->summary)->toBe('Updated Summary');
+});
+

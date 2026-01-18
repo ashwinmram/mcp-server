@@ -91,3 +91,23 @@ test('only returns generic lessons', function () {
 
     expect($data['count'])->toBe(1);
 });
+
+test('includes title and summary in results', function () {
+    Lesson::factory()->create([
+        'category' => 'validation',
+        'title' => 'Validation Best Practices',
+        'summary' => 'Always validate user input',
+        'is_generic' => true,
+    ]);
+
+    $tool = new \App\Mcp\Tools\GetLessonByCategory();
+    $request = new Request(['category' => 'validation']);
+
+    $response = $tool->handle($request);
+    $data = getResponseData($response);
+
+    expect($data['lessons'][0])->toHaveKey('title')
+        ->and($data['lessons'][0])->toHaveKey('summary')
+        ->and($data['lessons'][0]['title'])->toBe('Validation Best Practices')
+        ->and($data['lessons'][0]['summary'])->toBe('Always validate user input');
+});

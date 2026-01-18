@@ -22,6 +22,8 @@ class Lesson extends Model
         'type',
         'category',
         'subcategory',
+        'title',
+        'summary',
         'tags',
         'metadata',
         'content',
@@ -211,6 +213,81 @@ class Lesson extends Model
         }
 
         return array_values(array_unique($merged));
+    }
+
+    /**
+     * Get all related lessons for this lesson.
+     */
+    public function relatedLessons(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(
+            Lesson::class,
+            'lesson_relationships',
+            'lesson_id',
+            'related_lesson_id'
+        )
+            ->withPivot('relationship_type', 'relevance_score')
+            ->withTimestamps();
+    }
+
+    /**
+     * Get lessons that are related to this lesson (reverse relationship).
+     */
+    public function relatedFromLessons(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    {
+        return $this->belongsToMany(
+            Lesson::class,
+            'lesson_relationships',
+            'related_lesson_id',
+            'lesson_id'
+        )
+            ->withPivot('relationship_type', 'relevance_score')
+            ->withTimestamps();
+    }
+
+    /**
+     * Get related lessons filtered by relationship type.
+     */
+    public function getRelatedLessonsByType(string $relationshipType, int $limit = 10): \Illuminate\Database\Eloquent\Collection
+    {
+        return $this->relatedLessons()
+            ->wherePivot('relationship_type', $relationshipType)
+            ->orderByPivot('relevance_score', 'desc')
+            ->limit($limit)
+            ->get();
+    }
+
+    /**
+     * Get all related lessons (all types combined).
+     */
+    public function getAllRelatedLessons(int $limit = 10): \Illuminate\Database\Eloquent\Collection
+    {
+        return $this->relatedLessons()
+            ->orderByPivot('relevance_score', 'desc')
+            ->limit($limit)
+            ->get();
+    }
+
+    /**
+     * Find related lessons based on category and tag similarity.
+     */
+    public function findSimilarLessons(int $limit = 10): \Illuminate\Database\Eloquent\Collection
+    {
+        $query = static::query()
+            ->generic()
+            ->where('id', '!=', $this->id);
+
+        // Same category
+        if ($this->category) {
+            $query->where('category', $this->category);
+        }
+
+        // Overlapping tags
+        if (! empty($this->tags) && is_array($this->tags)) {
+            $query->byTags($this->tags);
+        }
+
+        return $query->limit($limit)->get();
     }
 
     /**

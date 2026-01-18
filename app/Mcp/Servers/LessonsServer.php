@@ -5,6 +5,7 @@ namespace App\Mcp\Servers;
 use App\Mcp\Prompts\LessonsByCategory;
 use App\Mcp\Prompts\LessonsLearnedOverview;
 use App\Mcp\Resources\LessonsOverviewResource;
+use App\Mcp\Tools\FindRelatedLessons;
 use App\Mcp\Tools\GetLessonByCategory;
 use App\Mcp\Tools\GetLessonTags;
 use App\Mcp\Tools\SearchLessons;
@@ -35,9 +36,10 @@ class LessonsServer extends Server
         3. Query relevant lessons based on the current coding task using SearchLessons or GetLessonByCategory
 
         Use the available tools to:
-        - SearchLessons - Search for lessons by keyword, category, or tags
+        - SearchLessons - Search for lessons by keyword, category, or tags (uses MySQL FULLTEXT search)
         - GetLessonByCategory - Browse lessons by category
         - GetLessonTags - Discover available tags
+        - FindRelatedLessons - Find lessons related to a specific lesson
 
         Use the available resources to:
         - lessons://overview - Read overview of all lessons (automatically available as context)
@@ -58,6 +60,7 @@ class LessonsServer extends Server
         SearchLessons::class,
         GetLessonByCategory::class,
         GetLessonTags::class,
+        FindRelatedLessons::class,
     ];
 
     /**

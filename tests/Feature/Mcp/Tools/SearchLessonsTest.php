@@ -34,7 +34,7 @@ beforeEach(function () {
     ]);
 });
 
-test('searches lessons by keyword', function () {
+test('searches lessons by keyword using FULLTEXT search', function () {
     $tool = new \App\Mcp\Tools\SearchLessons();
     $request = new Request(['query' => 'type hints']);
 
@@ -44,6 +44,32 @@ test('searches lessons by keyword', function () {
     expect($response)->toBeInstanceOf(\Laravel\Mcp\Response::class)
         ->and($data['count'])->toBeGreaterThan(0)
         ->and($data['results'][0]['content'])->toContain('type hints');
+});
+
+test('includes title and summary in search results', function () {
+    $lesson = Lesson::factory()->create([
+        'content' => 'Always use type hints in PHP functions for better code quality and type safety',
+        'title' => 'PHP Type Hints Best Practice',
+        'summary' => 'Use type hints for better code quality',
+        'category' => 'coding',
+        'is_generic' => true,
+    ]);
+
+    $tool = new \App\Mcp\Tools\SearchLessons();
+    // Search for a word that definitely exists in the content
+    $request = new Request(['query' => 'functions']);
+
+    $response = $tool->handle($request);
+    $data = getResponseData($response);
+
+    // Find our lesson in the results
+    $ourLesson = collect($data['results'])->firstWhere('id', $lesson->id);
+
+    expect($ourLesson)->not->toBeNull()
+        ->and($ourLesson)->toHaveKey('title')
+        ->and($ourLesson)->toHaveKey('summary')
+        ->and($ourLesson['title'])->toBe('PHP Type Hints Best Practice')
+        ->and($ourLesson['summary'])->toBe('Use type hints for better code quality');
 });
 
 test('filters lessons by category', function () {
@@ -101,4 +127,41 @@ test('returns empty results when no matches', function () {
 
     expect($data['count'])->toBe(0)
         ->and($data['results'])->toBeArray();
+});
+
+test('includes related lessons when include_related is true', function () {
+    $lesson1 = Lesson::factory()->create([
+        'content' => 'Main lesson content',
+        'category' => 'testing',
+        'tags' => ['php', 'pest'],
+        'is_generic' => true,
+    ]);
+
+    $lesson2 = Lesson::factory()->create([
+        'content' => 'Related lesson content',
+        'category' => 'testing',
+        'tags' => ['php', 'pest'],
+        'is_generic' => true,
+    ]);
+
+    // Create relationship
+    \DB::table('lesson_relationships')->insert([
+        'id' => \Str::uuid(),
+        'lesson_id' => $lesson1->id,
+        'related_lesson_id' => $lesson2->id,
+        'relationship_type' => 'related',
+        'relevance_score' => 0.8,
+        'created_at' => now(),
+        'updated_at' => now(),
+    ]);
+
+    $tool = new \App\Mcp\Tools\SearchLessons();
+    $request = new Request(['query' => 'Main lesson', 'include_related' => true]);
+
+    $response = $tool->handle($request);
+    $data = getResponseData($response);
+
+    expect($data['results'][0])->toHaveKey('related_lessons')
+        ->and($data['results'][0]['related_lessons'])->toBeArray()
+        ->and(count($data['results'][0]['related_lessons']))->toBeGreaterThan(0);
 });

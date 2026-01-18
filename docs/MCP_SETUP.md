@@ -224,26 +224,7 @@ The AI agent will automatically query the MCP server to find relevant lessons.
 
 ## Pushing Lessons from This Project
 
-Since this project can also act as a client, you can push its own lessons:
-
-### Initial Import
-
-Push existing lessons from `.cursorrules` and `AI_*.json` files:
-
-```bash
-php artisan mcp:convert-and-push --source=mcp-server
-```
-
-This will:
-
-1. Read `.cursorrules` from the project root
-2. Read all `AI_*.json` files from the `docs/` directory
-3. Convert them to properly formatted lessons with categories and tags
-4. Store them in the local database (since this is the MCP server itself)
-
-### Ongoing Usage
-
-After coding sessions with AI agents, push new lessons:
+Since this project can also act as a client, you can push its own lessons using the `laravel-mcp-pusher` package:
 
 ```bash
 php artisan mcp:push-lessons --source=mcp-server
