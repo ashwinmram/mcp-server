@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\Lesson;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
 
 class LessonImportService
@@ -39,7 +40,16 @@ class LessonImportService
                 // Validate content is generic
                 $validation = $this->validationService->validateIsGeneric($lessonData['content']);
                 if (! $validation['is_valid']) {
-                    $result['errors'][] = "Lesson at index {$index}: ".implode(', ', $validation['errors']);
+                    $errorMessage = "Lesson at index {$index}: ".implode(', ', $validation['errors']);
+                    $result['errors'][] = $errorMessage;
+
+                    // Log validation errors
+                    Log::warning('Lesson failed generic validation', [
+                        'source_project' => $sourceProject,
+                        'lesson_index' => $index,
+                        'errors' => $validation['errors'],
+                        'warnings' => $validation['warnings'] ?? [],
+                    ]);
 
                     continue;
                 }
@@ -132,7 +142,16 @@ class LessonImportService
                     $this->detectAndCreateRelationships($lesson);
                 }
             } catch (\Exception $e) {
-                $result['errors'][] = "Lesson at index {$index}: {$e->getMessage()}";
+                $errorMessage = "Lesson at index {$index}: {$e->getMessage()}";
+                $result['errors'][] = $errorMessage;
+
+                // Log individual lesson processing errors
+                Log::warning('Failed to process individual lesson', [
+                    'source_project' => $sourceProject,
+                    'lesson_index' => $index,
+                    'error' => $e->getMessage(),
+                    'trace' => config('app.debug') ? $e->getTraceAsString() : null,
+                ]);
             }
         }
 

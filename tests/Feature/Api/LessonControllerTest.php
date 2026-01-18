@@ -223,7 +223,12 @@ test('rejects lessons with project-specific paths', function () {
 
     $response = $this->postJson('/api/lessons', $payload);
 
-    $response->assertStatus(201);
+    // All lessons failed validation, should return 422 Unprocessable Entity
+    $response->assertStatus(422);
+    $response->assertJson([
+        'success' => false,
+        'message' => 'All lessons failed validation or processing',
+    ]);
     // Lesson should be rejected and not stored
     $errors = $response->json('data.errors');
     expect($errors)->not->toBeEmpty();

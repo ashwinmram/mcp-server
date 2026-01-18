@@ -35,7 +35,7 @@ beforeEach(function () {
 });
 
 test('searches lessons by keyword using FULLTEXT search', function () {
-    $tool = new \App\Mcp\Tools\SearchLessons();
+    $tool = new \App\Mcp\Tools\SearchLessons;
     $request = new Request(['query' => 'type hints']);
 
     $response = $tool->handle($request);
@@ -55,7 +55,7 @@ test('includes title and summary in search results', function () {
         'is_generic' => true,
     ]);
 
-    $tool = new \App\Mcp\Tools\SearchLessons();
+    $tool = new \App\Mcp\Tools\SearchLessons;
     // Search for a word that definitely exists in the content
     $request = new Request(['query' => 'functions']);
 
@@ -73,7 +73,7 @@ test('includes title and summary in search results', function () {
 });
 
 test('filters lessons by category', function () {
-    $tool = new \App\Mcp\Tools\SearchLessons();
+    $tool = new \App\Mcp\Tools\SearchLessons;
     $request = new Request(['category' => 'validation']);
 
     $response = $tool->handle($request);
@@ -84,7 +84,7 @@ test('filters lessons by category', function () {
 });
 
 test('filters lessons by tags', function () {
-    $tool = new \App\Mcp\Tools\SearchLessons();
+    $tool = new \App\Mcp\Tools\SearchLessons;
     $request = new Request(['tags' => ['php']]);
 
     $response = $tool->handle($request);
@@ -97,7 +97,7 @@ test('filters lessons by tags', function () {
 test('respects limit parameter', function () {
     Lesson::factory()->count(5)->create(['is_generic' => true]);
 
-    $tool = new \App\Mcp\Tools\SearchLessons();
+    $tool = new \App\Mcp\Tools\SearchLessons;
     $request = new Request(['limit' => 2]);
 
     $response = $tool->handle($request);
@@ -107,7 +107,7 @@ test('respects limit parameter', function () {
 });
 
 test('only returns generic lessons', function () {
-    $tool = new \App\Mcp\Tools\SearchLessons();
+    $tool = new \App\Mcp\Tools\SearchLessons;
     $request = new Request([]);
 
     $response = $tool->handle($request);
@@ -119,7 +119,7 @@ test('only returns generic lessons', function () {
 });
 
 test('returns empty results when no matches', function () {
-    $tool = new \App\Mcp\Tools\SearchLessons();
+    $tool = new \App\Mcp\Tools\SearchLessons;
     $request = new Request(['query' => 'nonexistentkeyword12345']);
 
     $response = $tool->handle($request);
@@ -155,7 +155,7 @@ test('includes related lessons when include_related is true', function () {
         'updated_at' => now(),
     ]);
 
-    $tool = new \App\Mcp\Tools\SearchLessons();
+    $tool = new \App\Mcp\Tools\SearchLessons;
     $request = new Request(['query' => 'Main lesson', 'include_related' => true]);
 
     $response = $tool->handle($request);
@@ -164,4 +164,89 @@ test('includes related lessons when include_related is true', function () {
     expect($data['results'][0])->toHaveKey('related_lessons')
         ->and($data['results'][0]['related_lessons'])->toBeArray()
         ->and(count($data['results'][0]['related_lessons']))->toBeGreaterThan(0);
+});
+
+test('tracks usage when lessons are retrieved', function () {
+    // Run migrations for Phase 3 tables
+    $this->artisan('migrate', ['--path' => 'database/migrations/2026_01_18_095617_create_lesson_usages_table.php'])->assertSuccessful();
+
+    $lesson = Lesson::factory()->create([
+        'content' => 'Trackable lesson content',
+        'category' => 'testing',
+        'is_generic' => true,
+    ]);
+
+    $tool = new \App\Mcp\Tools\SearchLessons;
+    $request = new Request(['query' => 'Trackable']);
+
+    $response = $tool->handle($request);
+
+    // Verify usage was tracked
+    $usage = \App\Models\LessonUsage::where('lesson_id', $lesson->id)->first();
+    expect($usage)->not->toBeNull()
+        ->and($usage->query_context)->toContain('query: Trackable');
+});
+
+test('filters out deprecated lessons by default', function () {
+    // Run migrations for Phase 3 tables
+    $this->artisan('migrate', ['--path' => 'database/migrations/2026_01_18_095618_add_relevance_score_and_versioning_to_lessons_table.php'])->assertSuccessful();
+
+    $activeLesson = Lesson::factory()->create([
+        'content' => 'Active lesson content',
+        'category' => 'testing',
+        'is_generic' => true,
+        'deprecated_at' => null,
+    ]);
+
+    $deprecatedLesson = Lesson::factory()->create([
+        'content' => 'Deprecated lesson content',
+        'category' => 'testing',
+        'is_generic' => true,
+        'deprecated_at' => now(),
+    ]);
+
+    $tool = new \App\Mcp\Tools\SearchLessons;
+    $request = new Request(['category' => 'testing']);
+
+    $response = $tool->handle($request);
+    $data = getResponseData($response);
+
+    // Should only return active lesson
+    expect($data['count'])->toBe(1)
+        ->and($data['results'][0]['id'])->toBe($activeLesson->id)
+        ->and($data['results'][0]['id'])->not->toBe($deprecatedLesson->id);
+});
+
+test('includes deprecated lessons when include_deprecated is true', function () {
+    // Run migrations for Phase 3 tables
+    $this->artisan('migrate', ['--path' => 'database/migrations/2026_01_18_095618_add_relevance_score_and_versioning_to_lessons_table.php'])->assertSuccessful();
+
+    $activeLesson = Lesson::factory()->create([
+        'content' => 'Active lesson content',
+        'category' => 'testing',
+        'is_generic' => true,
+        'deprecated_at' => null,
+    ]);
+
+    $deprecatedLesson = Lesson::factory()->create([
+        'content' => 'Deprecated lesson content',
+        'category' => 'testing',
+        'is_generic' => true,
+        'deprecated_at' => now(),
+    ]);
+
+    $tool = new \App\Mcp\Tools\SearchLessons;
+    $request = new Request([
+        'category' => 'testing',
+        'include_deprecated' => true,
+    ]);
+
+    $response = $tool->handle($request);
+    $data = getResponseData($response);
+
+    // Should return both active and deprecated lessons
+    expect($data['count'])->toBe(2);
+    $lessonIds = collect($data['results'])->pluck('id')->toArray();
+    expect($lessonIds)->toContain($activeLesson->id)
+        ->and($lessonIds)->toContain($deprecatedLesson->id);
 });

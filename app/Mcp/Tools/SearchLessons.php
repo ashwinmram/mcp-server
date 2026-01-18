@@ -3,7 +3,10 @@
 namespace App\Mcp\Tools;
 
 use App\Models\Lesson;
+use App\Models\LessonUsage;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Str;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Tool;
@@ -25,6 +28,12 @@ class SearchLessons extends Tool
         $query = Lesson::query()->generic();
         $searchQuery = $request->get('query');
         $includeRelated = (bool) $request->get('include_related', false);
+        $includeDeprecated = (bool) $request->get('include_deprecated', false);
+
+        // Filter out deprecated lessons by default (unless explicitly requested)
+        if (! $includeDeprecated) {
+            $query->active();
+        }
 
         // Search by keyword using FULLTEXT search, fallback to LIKE if no results
         if ($searchQuery) {
@@ -72,7 +81,7 @@ class SearchLessons extends Tool
 
             if ($usingFulltext) {
                 // Check if relevance_score column exists (Phase 3 feature)
-                $hasRelevanceScore = \Schema::hasColumn('lessons', 'relevance_score');
+                $hasRelevanceScore = Schema::hasColumn('lessons', 'relevance_score');
 
                 if ($hasRelevanceScore) {
                     $query->selectRaw('*, MATCH(content) AGAINST(? IN NATURAL LANGUAGE MODE) as relevance', [$searchQuery])
@@ -89,10 +98,20 @@ class SearchLessons extends Tool
                 $query->orderBy('created_at', 'desc');
             }
         } else {
+            // No search query - order by relevance_score if available, otherwise by date
+            $hasRelevanceScore = Schema::hasColumn('lessons', 'relevance_score');
+
+            if ($hasRelevanceScore) {
+                $query->orderBy('relevance_score', 'desc');
+            }
+
             $query->orderBy('created_at', 'desc');
         }
 
         $lessons = $query->limit($limit)->get();
+
+        // Track usage automatically for each retrieved lesson
+        $this->trackUsage($lessons, $searchQuery, $request);
 
         $results = $lessons->map(function (Lesson $lesson) use ($includeRelated) {
             $result = [
@@ -145,6 +164,80 @@ class SearchLessons extends Tool
             'tags' => $schema->array()->nullable()->description('Array of tags to filter by'),
             'limit' => $schema->integer()->default(10)->description('Maximum number of results to return'),
             'include_related' => $schema->boolean()->default(false)->description('Whether to include related lessons in the response'),
+            'include_deprecated' => $schema->boolean()->default(false)->description('Whether to include deprecated lessons in the response'),
         ];
+    }
+
+    /**
+     * Track usage for lessons that were retrieved.
+     */
+    protected function trackUsage($lessons, ?string $searchQuery, Request $request): void
+    {
+        // Check if lesson_usages table exists (Phase 3 feature)
+        if (! Schema::hasTable('lesson_usages')) {
+            return;
+        }
+
+        $queryContext = $this->buildQueryContext($request, $searchQuery);
+        $sessionId = $this->getSessionId($request);
+
+        foreach ($lessons as $lesson) {
+            try {
+                LessonUsage::create([
+                    'lesson_id' => $lesson->id,
+                    'query_context' => $queryContext,
+                    'was_helpful' => null, // Implicit usage tracking
+                    'session_id' => $sessionId,
+                ]);
+            } catch (\Exception $e) {
+                // Silently fail usage tracking to not interrupt search
+                // Log error in debug mode
+                if (config('app.debug')) {
+                    \Log::warning('Failed to track lesson usage', [
+                        'lesson_id' => $lesson->id,
+                        'error' => $e->getMessage(),
+                    ]);
+                }
+            }
+        }
+    }
+
+    /**
+     * Build query context string from request parameters.
+     */
+    protected function buildQueryContext(Request $request, ?string $searchQuery): ?string
+    {
+        $parts = [];
+
+        if ($searchQuery) {
+            $parts[] = "query: {$searchQuery}";
+        }
+
+        if ($request->get('category')) {
+            $parts[] = "category: {$request->get('category')}";
+        }
+
+        if ($request->get('tags') && is_array($request->get('tags'))) {
+            $parts[] = 'tags: '.implode(', ', $request->get('tags'));
+        }
+
+        return ! empty($parts) ? implode(' | ', $parts) : null;
+    }
+
+    /**
+     * Get session ID from request metadata or generate one.
+     */
+    protected function getSessionId(Request $request): ?string
+    {
+        // Try to get session ID from request metadata (if MCP provides it)
+        $metadata = $request->get('_metadata') ?? [];
+
+        if (isset($metadata['session_id'])) {
+            return $metadata['session_id'];
+        }
+
+        // Generate a session ID based on request fingerprint
+        // This is a best-effort approach since MCP might not provide session info
+        return Str::uuid()->toString();
     }
 }

@@ -29,6 +29,9 @@ class Lesson extends Model
         'content',
         'content_hash',
         'is_generic',
+        'relevance_score',
+        'deprecated_at',
+        'superseded_by_lesson_id',
     ];
 
     /**
@@ -43,6 +46,8 @@ class Lesson extends Model
             'metadata' => 'array',
             'source_projects' => 'array',
             'is_generic' => 'boolean',
+            'relevance_score' => 'float',
+            'deprecated_at' => 'datetime',
         ];
     }
 
@@ -288,6 +293,46 @@ class Lesson extends Model
         }
 
         return $query->limit($limit)->get();
+    }
+
+    /**
+     * Get all usages for this lesson.
+     */
+    public function usages(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(LessonUsage::class);
+    }
+
+    /**
+     * Get the lesson that supersedes this lesson.
+     */
+    public function supersededBy(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Lesson::class, 'superseded_by_lesson_id');
+    }
+
+    /**
+     * Get lessons that are superseded by this lesson.
+     */
+    public function supersedes(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(Lesson::class, 'superseded_by_lesson_id');
+    }
+
+    /**
+     * Scope a query to exclude deprecated lessons.
+     */
+    public function scopeActive(Builder $query): Builder
+    {
+        return $query->whereNull('deprecated_at');
+    }
+
+    /**
+     * Scope a query to only include deprecated lessons.
+     */
+    public function scopeDeprecated(Builder $query): Builder
+    {
+        return $query->whereNotNull('deprecated_at');
     }
 
     /**

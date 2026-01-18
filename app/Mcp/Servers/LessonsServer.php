@@ -5,10 +5,15 @@ namespace App\Mcp\Servers;
 use App\Mcp\Prompts\LessonsByCategory;
 use App\Mcp\Prompts\LessonsLearnedOverview;
 use App\Mcp\Resources\LessonsOverviewResource;
+use App\Mcp\Resources\LessonsSearchGuide;
 use App\Mcp\Tools\FindRelatedLessons;
+use App\Mcp\Tools\GetCategoryStatistics;
 use App\Mcp\Tools\GetLessonByCategory;
 use App\Mcp\Tools\GetLessonTags;
+use App\Mcp\Tools\GetTopLessons;
+use App\Mcp\Tools\MarkLessonHelpful;
 use App\Mcp\Tools\SearchLessons;
+use App\Mcp\Tools\SuggestSearchQueries;
 use Laravel\Mcp\Server;
 
 class LessonsServer extends Server
@@ -40,9 +45,14 @@ class LessonsServer extends Server
         - GetLessonByCategory - Browse lessons by category
         - GetLessonTags - Discover available tags
         - FindRelatedLessons - Find lessons related to a specific lesson
+        - MarkLessonHelpful - Mark a lesson as helpful or not helpful (provides feedback for relevance scoring)
+        - SuggestSearchQueries - Get suggested search queries based on a topic (helps expand searches to find all relevant lessons)
+        - GetTopLessons - Get lessons with highest relevance scores (optionally by category) - surfaces most valuable lessons
+        - GetCategoryStatistics - Get statistics about lesson categories (avg relevance, top lessons, usage stats) - helps identify most valuable categories
 
         Use the available resources to:
         - lessons://overview - Read overview of all lessons (automatically available as context)
+        - lessons://search-guide - Comprehensive guide on how to effectively search and use lessons (explains relevance scoring, query examples, best practices)
 
         Use the prompts to:
         - LessonsLearnedOverview - Get an updated overview of available lessons
@@ -61,6 +71,10 @@ class LessonsServer extends Server
         GetLessonByCategory::class,
         GetLessonTags::class,
         FindRelatedLessons::class,
+        MarkLessonHelpful::class,
+        SuggestSearchQueries::class,
+        GetTopLessons::class,
+        GetCategoryStatistics::class,
     ];
 
     /**
@@ -70,6 +84,7 @@ class LessonsServer extends Server
      */
     protected array $resources = [
         LessonsOverviewResource::class,
+        LessonsSearchGuide::class,
     ];
 
     /**
