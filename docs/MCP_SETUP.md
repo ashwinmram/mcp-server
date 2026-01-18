@@ -198,18 +198,29 @@ When you start a new AI agent session in Cursor:
 
 ### Available Tools
 
-- **SearchLessons** - Search for lessons by keyword, category, or tags
-- **GetLessonByCategory** - Retrieve lessons filtered by a specific category
-- **GetLessonByTags** - List all unique tags used across lessons
+- **SearchLessons** - Search for lessons learned by keyword, category, or tags (uses MySQL FULLTEXT search with relevance scoring)
+- **GetLessonByCategory** - Get all lessons in a specific category (useful for browsing by topic)
+- **GetLessonTags** - List all available tags used in lessons (helps discover available tags for filtering)
+- **FindRelatedLessons** - Find lessons related to a specific lesson (explores topic relationships and dependencies)
+- **MarkLessonHelpful** - Mark a lesson as helpful or not helpful (provides feedback for relevance scoring)
+- **SuggestSearchQueries** - Suggest related search queries based on a topic (helps expand searches to find all relevant lessons)
+- **GetTopLessons** - Get lessons with highest relevance scores (optionally by category) - surfaces most valuable lessons
+- **GetCategoryStatistics** - Get statistics about lesson categories (avg relevance, top lessons, usage stats) - helps identify most valuable categories
 
 ### Available Resources
 
 - **lessons://overview** - Automatically loaded overview of all lessons, categories, tags, and recent lessons
+    - **MIME Type:** `text/markdown`
+    - **Content:** Summary, categories list, popular tags, recent lessons preview
+
+- **lessons://search-guide** - Comprehensive guide on how to effectively search and use lessons learned
+    - **MIME Type:** `text/markdown`
+    - **Content:** Query examples, relevance scoring explanation, search strategies, and best practices
 
 ### Available Prompts
 
-- **LessonsLearnedOverview** - Get a summary of available lessons, categories, and tags
-- **LessonsByCategory** - See lessons grouped by a specific category
+- **LessonsLearnedOverview** - Provides an overview of available lessons learned from previous coding sessions (helps AI agents understand what knowledge is available)
+- **LessonsByCategory** - Provides a summary of lessons available in a specific category (helps AI agents understand lessons for a particular topic)
 
 ### Example Usage
 
