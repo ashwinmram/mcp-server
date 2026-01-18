@@ -113,7 +113,6 @@ test('only returns generic lessons', function () {
     $response = $tool->handle($request);
     $data = getResponseData($response);
 
-    // Should not include non-generic lesson (only 2 generic lessons)
     expect($data['count'])->toBe(2)
         ->and($data['results'])->each->toHaveKey('content');
 });
@@ -181,7 +180,6 @@ test('tracks usage when lessons are retrieved', function () {
 
     $response = $tool->handle($request);
 
-    // Verify usage was tracked
     $usage = \App\Models\LessonUsage::where('lesson_id', $lesson->id)->first();
     expect($usage)->not->toBeNull()
         ->and($usage->query_context)->toContain('query: Trackable');
@@ -211,7 +209,6 @@ test('filters out deprecated lessons by default', function () {
     $response = $tool->handle($request);
     $data = getResponseData($response);
 
-    // Should only return active lesson
     expect($data['count'])->toBe(1)
         ->and($data['results'][0]['id'])->toBe($activeLesson->id)
         ->and($data['results'][0]['id'])->not->toBe($deprecatedLesson->id);

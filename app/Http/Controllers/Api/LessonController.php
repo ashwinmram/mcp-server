@@ -29,50 +29,11 @@ class LessonController extends Controller
                 $validated['source_project']
             );
 
-            // Log successful push
-            Log::info('Lessons pushed successfully', [
-                'source_project' => $validated['source_project'],
-                'created' => $result['created'],
-                'updated' => $result['updated'],
-                'skipped' => $result['skipped'],
-                'errors' => count($result['errors']),
-            ]);
+            $this->logSuccessfulPush($validated['source_project'], $result);
 
-            // Determine appropriate status code and message
-            $hasErrors = ! empty($result['errors']);
-            $hasSuccesses = $result['created'] > 0 || $result['updated'] > 0;
-
-            if ($hasErrors && ! $hasSuccesses) {
-                // All lessons failed
-                return response()->json([
-                    'success' => false,
-                    'message' => 'All lessons failed validation or processing',
-                    'data' => $result,
-                ], 422);
-            }
-
-            if ($hasErrors && $hasSuccesses) {
-                // Partial success
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Lessons processed with some errors',
-                    'data' => $result,
-                ], 207); // 207 Multi-Status
-            }
-
-            // All successful
-            return response()->json([
-                'success' => true,
-                'message' => 'Lessons processed successfully',
-                'data' => $result,
-            ], 201);
+            return $this->buildResponse($result);
         } catch (\Exception $e) {
-            // Log unexpected errors
-            Log::error('Failed to process lessons push', [
-                'source_project' => $request->input('source_project'),
-                'error' => $e->getMessage(),
-                'trace' => $e->getTraceAsString(),
-            ]);
+            $this->logUnexpectedError($request, $e);
 
             return response()->json([
                 'success' => false,
@@ -87,33 +48,7 @@ class LessonController extends Controller
      */
     public function index(Request $request): JsonResponse
     {
-        $query = Lesson::query();
-
-        // Filter by source project
-        if ($request->has('source_project')) {
-            $query->bySourceProject($request->source_project);
-        }
-
-        // Filter by type
-        if ($request->has('type')) {
-            $query->where('type', $request->type);
-        }
-
-        // Filter by category
-        if ($request->has('category')) {
-            $query->byCategory($request->category);
-        }
-
-        // Filter by tags
-        if ($request->has('tags')) {
-            $tags = is_array($request->tags) ? $request->tags : [$request->tags];
-            $query->byTags($tags);
-        }
-
-        // Only show generic lessons by default
-        if (! $request->has('include_non_generic')) {
-            $query->generic();
-        }
+        $query = $this->buildFilteredQuery($request);
 
         $lessons = $query->orderBy('created_at', 'desc')
             ->paginate($request->get('per_page', 15));
@@ -147,5 +82,81 @@ class LessonController extends Controller
                 'error' => config('app.debug') ? $e->getMessage() : 'Internal server error',
             ], 500);
         }
+    }
+
+    protected function logSuccessfulPush(string $sourceProject, array $result): void
+    {
+        Log::info('Lessons pushed successfully', [
+            'source_project' => $sourceProject,
+            'created' => $result['created'],
+            'updated' => $result['updated'],
+            'skipped' => $result['skipped'],
+            'errors' => count($result['errors']),
+        ]);
+    }
+
+    protected function buildResponse(array $result): JsonResponse
+    {
+        $hasErrors = ! empty($result['errors']);
+        $hasSuccesses = $result['created'] > 0 || $result['updated'] > 0;
+
+        if ($hasErrors && ! $hasSuccesses) {
+            return response()->json([
+                'success' => false,
+                'message' => 'All lessons failed validation or processing',
+                'data' => $result,
+            ], 422);
+        }
+
+        if ($hasErrors && $hasSuccesses) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Lessons processed with some errors',
+                'data' => $result,
+            ], 207);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Lessons processed successfully',
+            'data' => $result,
+        ], 201);
+    }
+
+    protected function logUnexpectedError(Request $request, \Exception $e): void
+    {
+        Log::error('Failed to process lessons push', [
+            'source_project' => $request->input('source_project'),
+            'error' => $e->getMessage(),
+            'trace' => $e->getTraceAsString(),
+        ]);
+    }
+
+    protected function buildFilteredQuery(Request $request): \Illuminate\Database\Eloquent\Builder
+    {
+        $query = Lesson::query();
+
+        if ($request->has('source_project')) {
+            $query->bySourceProject($request->source_project);
+        }
+
+        if ($request->has('type')) {
+            $query->where('type', $request->type);
+        }
+
+        if ($request->has('category')) {
+            $query->byCategory($request->category);
+        }
+
+        if ($request->has('tags')) {
+            $tags = is_array($request->tags) ? $request->tags : [$request->tags];
+            $query->byTags($tags);
+        }
+
+        if (! $request->has('include_non_generic')) {
+            $query->generic();
+        }
+
+        return $query;
     }
 }

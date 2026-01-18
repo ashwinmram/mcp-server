@@ -30,98 +30,57 @@ class LessonImportService
 
         foreach ($lessons as $index => $lessonData) {
             try {
-                // Validate lesson structure
-                if (empty($lessonData['content']) || empty($lessonData['type'])) {
+                if ($this->isMissingRequiredFields($lessonData)) {
                     $result['errors'][] = "Lesson at index {$index}: Missing required fields (content or type)";
 
                     continue;
                 }
 
-                // Validate content is generic
                 $validation = $this->validationService->validateIsGeneric($lessonData['content']);
                 if (! $validation['is_valid']) {
                     $errorMessage = "Lesson at index {$index}: ".implode(', ', $validation['errors']);
                     $result['errors'][] = $errorMessage;
 
-                    // Log validation errors
-                    Log::warning('Lesson failed generic validation', [
-                        'source_project' => $sourceProject,
-                        'lesson_index' => $index,
-                        'errors' => $validation['errors'],
-                        'warnings' => $validation['warnings'] ?? [],
-                    ]);
+                    $this->logValidationErrors($sourceProject, $index, $validation);
 
                     continue;
                 }
 
-                // Generate content hash
                 $contentHash = $this->hashService->generateHash($lessonData['content']);
 
-                // Check for existing lesson across ALL projects (cross-project deduplication)
                 $existingLesson = Lesson::findByContentHashAcrossProjects($contentHash);
 
                 if ($existingLesson) {
-                    // Merge tags from existing and new lesson
                     $mergedTags = Lesson::mergeTags(
                         $existingLesson->tags ?? [],
                         $lessonData['tags'] ?? []
                     );
 
-                    // Merge metadata from existing and new lesson
                     $mergedMetadata = Lesson::mergeMetadata(
                         $existingLesson->metadata ?? [],
                         $lessonData['metadata'] ?? []
                     );
 
-                    // Merge source projects
                     $existingSourceProjects = $existingLesson->source_projects ?? [$existingLesson->source_project];
                     $newSourceProjects = array_unique(array_merge($existingSourceProjects, [$sourceProject]));
 
-                    // Check if anything has changed
-                    $tagsChanged = $mergedTags !== ($existingLesson->tags ?? []);
-                    $metadataChanged = $this->hasMetadataChanged(
-                        $existingLesson->metadata ?? [],
-                        $lessonData['metadata'] ?? []
-                    );
-                    $sourceProjectsChanged = $newSourceProjects !== $existingSourceProjects;
-                    $categoryChanged = ($lessonData['category'] ?? null) !== $existingLesson->category;
-
-                    // Extract title, summary, and subcategory if not already set
                     $title = $existingLesson->title ?? $this->extractTitle($lessonData);
                     $summary = $existingLesson->summary ?? $this->extractSummary($lessonData);
                     $subcategory = $existingLesson->subcategory ?? $this->extractSubcategory($lessonData, $lessonData['category'] ?? $existingLesson->category);
 
-                    // Check if title/summary changed (only if explicitly provided in lessonData)
-                    $titleChanged = (! empty($lessonData['title']) || ! empty($lessonData['metadata']['title'])) &&
-                        $title !== $existingLesson->title;
-                    $summaryChanged = (! empty($lessonData['summary']) || ! empty($lessonData['metadata']['summary']) || ! empty($lessonData['metadata']['description'])) &&
-                        $summary !== $existingLesson->summary;
+                    if ($this->shouldUpdateExistingLesson($existingLesson, $lessonData, $mergedTags, $mergedMetadata, $newSourceProjects, $title, $summary)) {
+                        $this->updateExistingLesson($existingLesson, $lessonData, $mergedTags, $mergedMetadata, $newSourceProjects, $title, $summary, $subcategory, $validation);
 
-                    if ($tagsChanged || $metadataChanged || $sourceProjectsChanged || $categoryChanged || $titleChanged || $summaryChanged) {
-                        // Update existing lesson with merged data
-                        $existingLesson->update([
-                            'category' => $lessonData['category'] ?? $existingLesson->category,
-                            'subcategory' => $subcategory,
-                            'title' => $title,
-                            'summary' => $summary,
-                            'tags' => $mergedTags,
-                            'metadata' => $mergedMetadata,
-                            'source_projects' => $newSourceProjects,
-                            'is_generic' => $validation['is_valid'],
-                        ]);
                         $result['updated']++;
                     } else {
-                        // Skip identical lesson
                         $result['skipped']++;
                     }
                 } else {
-                    // Extract title, summary, and subcategory from lesson data
                     $title = $this->extractTitle($lessonData);
                     $summary = $this->extractSummary($lessonData);
                     $category = $lessonData['category'] ?? null;
                     $subcategory = $this->extractSubcategory($lessonData, $category);
 
-                    // Create new lesson
                     $lesson = Lesson::create([
                         'source_project' => $sourceProject,
                         'source_projects' => [$sourceProject],
@@ -138,20 +97,13 @@ class LessonImportService
                     ]);
                     $result['created']++;
 
-                    // Detect and create relationships with similar lessons
                     $this->detectAndCreateRelationships($lesson);
                 }
             } catch (\Exception $e) {
                 $errorMessage = "Lesson at index {$index}: {$e->getMessage()}";
                 $result['errors'][] = $errorMessage;
 
-                // Log individual lesson processing errors
-                Log::warning('Failed to process individual lesson', [
-                    'source_project' => $sourceProject,
-                    'lesson_index' => $index,
-                    'error' => $e->getMessage(),
-                    'trace' => config('app.debug') ? $e->getTraceAsString() : null,
-                ]);
+                $this->logProcessingError($sourceProject, $index, $e);
             }
         }
 
@@ -163,7 +115,6 @@ class LessonImportService
      */
     protected function hasMetadataChanged(array $existing, array $new): bool
     {
-        // Merge and compare - if new keys exist or values changed, metadata changed
         $merged = array_merge($existing, $new);
         ksort($merged);
         ksort($existing);
@@ -176,17 +127,14 @@ class LessonImportService
      */
     protected function extractTitle(array $lessonData): ?string
     {
-        // Try title field first
         if (! empty($lessonData['title'])) {
             return $lessonData['title'];
         }
 
-        // Try metadata title
         if (! empty($lessonData['metadata']['title'])) {
             return $lessonData['metadata']['title'];
         }
 
-        // Try parsing JSON content for title
         if (! empty($lessonData['content'])) {
             $content = $lessonData['content'];
             if (str_starts_with(trim($content), '{')) {
@@ -205,17 +153,14 @@ class LessonImportService
      */
     protected function extractSummary(array $lessonData): ?string
     {
-        // Try summary field first
         if (! empty($lessonData['summary'])) {
             return $lessonData['summary'];
         }
 
-        // Try metadata summary
         if (! empty($lessonData['metadata']['summary'])) {
             return $lessonData['metadata']['summary'];
         }
 
-        // Try parsing JSON content for description (often used as summary)
         if (! empty($lessonData['content'])) {
             $content = $lessonData['content'];
             if (str_starts_with(trim($content), '{')) {
@@ -230,12 +175,18 @@ class LessonImportService
                 }
             }
 
-            // Generate summary from first 2-3 sentences of content
-            $text = strip_tags($content);
-            $sentences = preg_split('/(?<=[.!?])\s+/', $text, 3);
-            if (count($sentences) >= 2) {
-                return trim(implode(' ', array_slice($sentences, 0, 2)));
-            }
+            return $this->generateSummaryFromContent($content);
+        }
+
+        return null;
+    }
+
+    protected function generateSummaryFromContent(string $content): ?string
+    {
+        $text = strip_tags($content);
+        $sentences = preg_split('/(?<=[.!?])\s+/', $text, 3);
+        if (count($sentences) >= 2) {
+            return trim(implode(' ', array_slice($sentences, 0, 2)));
         }
 
         return null;
@@ -250,19 +201,11 @@ class LessonImportService
             return null;
         }
 
-        // Get text to search (prioritize summary, fallback to content)
-        $textToSearch = null;
-        if (! empty($lessonData['summary'])) {
-            $textToSearch = strtolower($lessonData['summary']);
-        } elseif (! empty($lessonData['content'])) {
-            $textToSearch = strtolower(substr($lessonData['content'], 0, 1000));
-        }
-
+        $textToSearch = $this->getTextToSearch($lessonData);
         if (empty($textToSearch)) {
             return null;
         }
 
-        // Category to subcategory keyword mappings
         $subcategoryKeywords = $this->getSubcategoryKeywords();
 
         if (! isset($subcategoryKeywords[$category])) {
@@ -270,14 +213,38 @@ class LessonImportService
         }
 
         $keywords = $subcategoryKeywords[$category];
+        $scores = $this->calculateSubcategoryScores($textToSearch, $keywords);
 
-        // Score each subcategory based on keyword matches
+        if (empty($scores)) {
+            return null;
+        }
+
+        arsort($scores);
+
+        return array_key_first($scores);
+    }
+
+    protected function getTextToSearch(array $lessonData): ?string
+    {
+        if (! empty($lessonData['summary'])) {
+            return strtolower($lessonData['summary']);
+        }
+
+        if (! empty($lessonData['content'])) {
+            return strtolower(substr($lessonData['content'], 0, 1000));
+        }
+
+        return null;
+    }
+
+    protected function calculateSubcategoryScores(string $textToSearch, array $keywords): array
+    {
         $scores = [];
         foreach ($keywords as $subcategory => $keywordList) {
             $score = 0;
             foreach ($keywordList as $keyword) {
                 if (str_contains($textToSearch, strtolower($keyword))) {
-                    $score += strlen($keyword); // Longer keywords get higher scores
+                    $score += strlen($keyword);
                 }
             }
             if ($score > 0) {
@@ -285,14 +252,7 @@ class LessonImportService
             }
         }
 
-        if (empty($scores)) {
-            return null;
-        }
-
-        // Return subcategory with highest score
-        arsort($scores);
-
-        return array_key_first($scores);
+        return $scores;
     }
 
     /**
@@ -387,7 +347,6 @@ class LessonImportService
             return;
         }
 
-        // Find similar lessons (same category + overlapping tags)
         $similarLessons = Lesson::query()
             ->generic()
             ->where('id', '!=', $lesson->id)
@@ -397,30 +356,33 @@ class LessonImportService
             ->get();
 
         foreach ($similarLessons as $similarLesson) {
-            // Calculate relevance score based on tag overlap
             $relevanceScore = $this->calculateTagOverlapScore($lesson->tags, $similarLesson->tags ?? []);
 
-            // Only create relationship if relevance is above threshold
-            if ($relevanceScore >= 0.3) {
-                // Check if relationship already exists
-                $exists = DB::table('lesson_relationships')
-                    ->where('lesson_id', $lesson->id)
-                    ->where('related_lesson_id', $similarLesson->id)
-                    ->exists();
-
-                if (! $exists) {
-                    DB::table('lesson_relationships')->insert([
-                        'id' => Str::uuid(),
-                        'lesson_id' => $lesson->id,
-                        'related_lesson_id' => $similarLesson->id,
-                        'relationship_type' => 'related',
-                        'relevance_score' => $relevanceScore,
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-                }
+            if ($relevanceScore >= 0.3 && ! $this->relationshipExists($lesson->id, $similarLesson->id)) {
+                $this->createRelationship($lesson->id, $similarLesson->id, $relevanceScore);
             }
         }
+    }
+
+    protected function relationshipExists(string $lessonId, string $relatedLessonId): bool
+    {
+        return DB::table('lesson_relationships')
+            ->where('lesson_id', $lessonId)
+            ->where('related_lesson_id', $relatedLessonId)
+            ->exists();
+    }
+
+    protected function createRelationship(string $lessonId, string $relatedLessonId, float $relevanceScore): void
+    {
+        DB::table('lesson_relationships')->insert([
+            'id' => Str::uuid(),
+            'lesson_id' => $lessonId,
+            'related_lesson_id' => $relatedLessonId,
+            'relationship_type' => 'related',
+            'relevance_score' => $relevanceScore,
+            'created_at' => now(),
+            'updated_at' => now(),
+        ]);
     }
 
     /**
@@ -440,5 +402,78 @@ class LessonImportService
         }
 
         return $intersection / $union;
+    }
+
+    protected function isMissingRequiredFields(array $lessonData): bool
+    {
+        return empty($lessonData['content']) || empty($lessonData['type']);
+    }
+
+    protected function logValidationErrors(string $sourceProject, int $index, array $validation): void
+    {
+        Log::warning('Lesson failed generic validation', [
+            'source_project' => $sourceProject,
+            'lesson_index' => $index,
+            'errors' => $validation['errors'],
+            'warnings' => $validation['warnings'] ?? [],
+        ]);
+    }
+
+    protected function logProcessingError(string $sourceProject, int $index, \Exception $e): void
+    {
+        Log::warning('Failed to process individual lesson', [
+            'source_project' => $sourceProject,
+            'lesson_index' => $index,
+            'error' => $e->getMessage(),
+            'trace' => config('app.debug') ? $e->getTraceAsString() : null,
+        ]);
+    }
+
+    protected function shouldUpdateExistingLesson(
+        Lesson $existingLesson,
+        array $lessonData,
+        array $mergedTags,
+        array $mergedMetadata,
+        array $newSourceProjects,
+        ?string $title,
+        ?string $summary
+    ): bool {
+        $tagsChanged = $mergedTags !== ($existingLesson->tags ?? []);
+        $metadataChanged = $this->hasMetadataChanged(
+            $existingLesson->metadata ?? [],
+            $lessonData['metadata'] ?? []
+        );
+        $existingSourceProjects = $existingLesson->source_projects ?? [$existingLesson->source_project];
+        $sourceProjectsChanged = $newSourceProjects !== $existingSourceProjects;
+        $categoryChanged = ($lessonData['category'] ?? null) !== $existingLesson->category;
+        $titleChanged = (! empty($lessonData['title']) || ! empty($lessonData['metadata']['title'])) &&
+            $title !== $existingLesson->title;
+        $summaryChanged = (! empty($lessonData['summary']) || ! empty($lessonData['metadata']['summary']) || ! empty($lessonData['metadata']['description'])) &&
+            $summary !== $existingLesson->summary;
+
+        return $tagsChanged || $metadataChanged || $sourceProjectsChanged || $categoryChanged || $titleChanged || $summaryChanged;
+    }
+
+    protected function updateExistingLesson(
+        Lesson $existingLesson,
+        array $lessonData,
+        array $mergedTags,
+        array $mergedMetadata,
+        array $newSourceProjects,
+        ?string $title,
+        ?string $summary,
+        ?string $subcategory,
+        array $validation
+    ): void {
+        $existingLesson->update([
+            'category' => $lessonData['category'] ?? $existingLesson->category,
+            'subcategory' => $subcategory,
+            'title' => $title,
+            'summary' => $summary,
+            'tags' => $mergedTags,
+            'metadata' => $mergedMetadata,
+            'source_projects' => $newSourceProjects,
+            'is_generic' => $validation['is_valid'],
+        ]);
     }
 }
