@@ -1,8 +1,11 @@
 <?php
 
+use App\Http\Controllers\LanguageController;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Laravel\Fortify\Features;
+
+Route::get('lang/{locale}', [LanguageController::class, 'swap'])->name('locale.swap');
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [

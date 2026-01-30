@@ -5,18 +5,21 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Spinner } from '@/components/ui/spinner';
+import { useTranslations } from '@/composables/useTranslations';
 import AuthBase from '@/layouts/AuthLayout.vue';
 import { login } from '@/routes';
 import { store } from '@/routes/register';
 import { Form, Head } from '@inertiajs/vue3';
+
+const { t } = useTranslations();
 </script>
 
 <template>
     <AuthBase
-        title="Create an account"
-        description="Enter your details below to create your account"
+        :title="t('auth.create_account_title')"
+        :description="t('auth.create_account_description')"
     >
-        <Head title="Register" />
+        <Head :title="t('auth.register')" />
 
         <Form
             v-bind="store.form()"
@@ -26,7 +29,7 @@ import { Form, Head } from '@inertiajs/vue3';
         >
             <div class="grid gap-6">
                 <div class="grid gap-2">
-                    <Label for="name">Name</Label>
+                    <Label for="name">{{ t('auth.name') }}</Label>
                     <Input
                         id="name"
                         type="text"
@@ -35,13 +38,13 @@ import { Form, Head } from '@inertiajs/vue3';
                         :tabindex="1"
                         autocomplete="name"
                         name="name"
-                        placeholder="Full name"
+                        :placeholder="t('profile.full_name')"
                     />
                     <InputError :message="errors.name" />
                 </div>
 
                 <div class="grid gap-2">
-                    <Label for="email">Email address</Label>
+                    <Label for="email">{{ t('auth.email_address') }}</Label>
                     <Input
                         id="email"
                         type="email"
@@ -49,13 +52,13 @@ import { Form, Head } from '@inertiajs/vue3';
                         :tabindex="2"
                         autocomplete="email"
                         name="email"
-                        placeholder="email@example.com"
+                        :placeholder="t('auth.email_placeholder')"
                     />
                     <InputError :message="errors.email" />
                 </div>
 
                 <div class="grid gap-2">
-                    <Label for="password">Password</Label>
+                    <Label for="password">{{ t('auth.password') }}</Label>
                     <Input
                         id="password"
                         type="password"
@@ -63,13 +66,15 @@ import { Form, Head } from '@inertiajs/vue3';
                         :tabindex="3"
                         autocomplete="new-password"
                         name="password"
-                        placeholder="Password"
+                        :placeholder="t('auth.password')"
                     />
                     <InputError :message="errors.password" />
                 </div>
 
                 <div class="grid gap-2">
-                    <Label for="password_confirmation">Confirm password</Label>
+                    <Label for="password_confirmation">{{
+                        t('auth.confirm_password')
+                    }}</Label>
                     <Input
                         id="password_confirmation"
                         type="password"
@@ -77,7 +82,7 @@ import { Form, Head } from '@inertiajs/vue3';
                         :tabindex="4"
                         autocomplete="new-password"
                         name="password_confirmation"
-                        placeholder="Confirm password"
+                        :placeholder="t('auth.confirm_password')"
                     />
                     <InputError :message="errors.password_confirmation" />
                 </div>
@@ -90,17 +95,17 @@ import { Form, Head } from '@inertiajs/vue3';
                     data-test="register-user-button"
                 >
                     <Spinner v-if="processing" />
-                    Create account
+                    {{ t('auth.create_account') }}
                 </Button>
             </div>
 
             <div class="text-center text-sm text-muted-foreground">
-                Already have an account?
+                {{ t('auth.already_have_account') }}
                 <TextLink
                     :href="login()"
                     class="underline underline-offset-4"
                     :tabindex="6"
-                    >Log in</TextLink
+                    >{{ t('auth.log_in') }}</TextLink
                 >
             </div>
         </Form>

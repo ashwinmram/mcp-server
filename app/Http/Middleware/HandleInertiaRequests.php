@@ -38,6 +38,15 @@ class HandleInertiaRequests extends Middleware
     {
         [$message, $author] = str(Inspiring::quotes()->random())->explode('-');
 
+        $locale = app()->getLocale();
+        $dir = in_array($locale, config('app.rtl_locales', ['ar']), true) ? 'rtl' : 'ltr';
+
+        $fallbackLocale = config('app.fallback_locale', 'en');
+        $translations = [
+            $locale => trans('messages', [], $locale),
+            $fallbackLocale => trans('messages', [], $fallbackLocale),
+        ];
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
@@ -46,6 +55,32 @@ class HandleInertiaRequests extends Middleware
                 'user' => $request->user(),
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'locale' => $locale,
+            'dir' => $dir,
+            'locales' => [
+                'en' => 'English',
+                'zh' => '中文',
+                'hi' => 'हिन्दी',
+                'es' => 'Español',
+                'fr' => 'Français',
+                'ar' => 'العربية',
+                'bn' => 'বাংলা',
+                'pt' => 'Português',
+                'ru' => 'Русский',
+                'ja' => '日本語',
+                'de' => 'Deutsch',
+                'id' => 'Bahasa Indonesia',
+                'pa' => 'ਪੰਜਾਬੀ',
+                'vi' => 'Tiếng Việt',
+                'tr' => 'Türkçe',
+                'ko' => '한국어',
+                'it' => 'Italiano',
+                'fa' => 'فارسی',
+                'ur' => 'اردو',
+                'ta' => 'தமிழ்',
+                'sw' => 'Kiswahili',
+            ],
+            'translations' => $translations,
         ];
     }
 }

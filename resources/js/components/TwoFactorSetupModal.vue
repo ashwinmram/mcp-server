@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/input-otp';
 import { Spinner } from '@/components/ui/spinner';
 import { useAppearance } from '@/composables/useAppearance';
+import { useTranslations } from '@/composables/useTranslations';
 import { useTwoFactorAuth } from '@/composables/useTwoFactorAuth';
 import { confirm } from '@/routes/two-factor';
 import { Form } from '@inertiajs/vue3';
@@ -29,6 +30,7 @@ interface Props {
 }
 
 const { resolvedAppearance } = useAppearance();
+const { t } = useTranslations();
 
 const props = defineProps<Props>();
 const isOpen = defineModel<boolean>('isOpen');
@@ -49,26 +51,24 @@ const modalConfig = computed<{
 }>(() => {
     if (props.twoFactorEnabled) {
         return {
-            title: 'Two-Factor Authentication Enabled',
-            description:
-                'Two-factor authentication is now enabled. Scan the QR code or enter the setup key in your authenticator app.',
-            buttonText: 'Close',
+            title: t('settings.two_factor_modal_enabled_title'),
+            description: t('settings.two_factor_modal_enabled_description'),
+            buttonText: t('settings.two_factor_modal_close'),
         };
     }
 
     if (showVerificationStep.value) {
         return {
-            title: 'Verify Authentication Code',
-            description: 'Enter the 6-digit code from your authenticator app',
-            buttonText: 'Continue',
+            title: t('settings.two_factor_modal_verify_title'),
+            description: t('settings.two_factor_modal_verify_description'),
+            buttonText: t('settings.two_factor_modal_continue'),
         };
     }
 
     return {
-        title: 'Enable Two-Factor Authentication',
-        description:
-            'To finish enabling two-factor authentication, scan the QR code or enter the setup key in your authenticator app',
-        buttonText: 'Continue',
+        title: t('settings.two_factor_modal_enable_title'),
+        description: t('settings.two_factor_modal_enable_description'),
+        buttonText: t('settings.two_factor_modal_continue'),
     };
 });
 
@@ -198,9 +198,9 @@ watch(
                             <div
                                 class="absolute inset-0 top-1/2 h-px w-full bg-border"
                             />
-                            <span class="relative bg-card px-2 py-1"
-                                >or, enter the code manually</span
-                            >
+                            <span class="relative bg-card px-2 py-1">{{
+                                t('settings.two_factor_modal_enter_manually')
+                            }}</span>
                         </div>
 
                         <div
@@ -284,14 +284,14 @@ watch(
                                     @click="showVerificationStep = false"
                                     :disabled="processing"
                                 >
-                                    Back
+                                    {{ t('settings.two_factor_modal_back') }}
                                 </Button>
                                 <Button
                                     type="submit"
                                     class="w-auto flex-1"
                                     :disabled="processing || code.length < 6"
                                 >
-                                    Confirm
+                                    {{ t('settings.two_factor_modal_confirm') }}
                                 </Button>
                             </div>
                         </div>

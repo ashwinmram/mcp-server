@@ -3,41 +3,49 @@ import Heading from '@/components/Heading.vue';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { useActiveUrl } from '@/composables/useActiveUrl';
+import { useTranslations } from '@/composables/useTranslations';
 import { toUrl } from '@/lib/utils';
 import { edit as editAppearance } from '@/routes/appearance';
+import { edit as editLocale } from '@/routes/locale';
 import { edit as editProfile } from '@/routes/profile';
 import { show } from '@/routes/two-factor';
 import { edit as editPassword } from '@/routes/user-password';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
+import { computed } from 'vue';
 
-const sidebarNavItems: NavItem[] = [
+const { t } = useTranslations();
+const { urlIsActive } = useActiveUrl();
+
+const sidebarNavItems = computed<NavItem[]>(() => [
     {
-        title: 'Profile',
+        title: t('settings.profile'),
         href: editProfile(),
     },
     {
-        title: 'Password',
+        title: t('settings.password'),
         href: editPassword(),
     },
     {
-        title: 'Two-Factor Auth',
+        title: t('settings.two_factor_auth'),
         href: show(),
     },
     {
-        title: 'Appearance',
+        title: t('settings.appearance'),
         href: editAppearance(),
     },
-];
-
-const { urlIsActive } = useActiveUrl();
+    {
+        title: t('settings.locale'),
+        href: editLocale(),
+    },
+]);
 </script>
 
 <template>
     <div class="px-4 py-6">
         <Heading
-            title="Settings"
-            description="Manage your profile and account settings"
+            :title="t('settings.settings')"
+            :description="t('settings.manage_profile_account')"
         />
 
         <div class="flex flex-col lg:flex-row lg:space-x-12">
@@ -53,8 +61,7 @@ const { urlIsActive } = useActiveUrl();
                         ]"
                         as-child
                     >
-                        <Link :href="item.href">
-                            <component :is="item.icon" class="h-4 w-4" />
+                        <Link :href="toUrl(item.href)">
                             {{ item.title }}
                         </Link>
                     </Button>

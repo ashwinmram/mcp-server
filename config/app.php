@@ -84,6 +84,32 @@ return [
 
     'faker_locale' => env('APP_FAKER_LOCALE', 'en_US'),
 
+    'locales' => [
+        'en',  // English
+        'zh',  // Mandarin Chinese
+        'hi',  // Hindi
+        'es',  // Spanish
+        'fr',  // French
+        'ar',  // Arabic
+        'bn',  // Bengali
+        'pt',  // Portuguese
+        'ru',  // Russian
+        'ja',  // Japanese
+        'de',  // German
+        'id',  // Indonesian
+        'pa',  // Punjabi
+        'vi',  // Vietnamese
+        'tr',  // Turkish
+        'ko',  // Korean
+        'it',  // Italian
+        'fa',  // Persian
+        'ur',  // Urdu
+        'ta',  // Tamil
+        'sw',  // Swahili
+    ],
+
+    'rtl_locales' => ['ar', 'fa', 'ur'],
+
     /*
     |--------------------------------------------------------------------------
     | Encryption Key

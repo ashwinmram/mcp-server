@@ -23,6 +23,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
         return Inertia::render('settings/Appearance');
     })->name('appearance.edit');
 
+    Route::get('settings/locale', function () {
+        return Inertia::render('settings/Locale');
+    })->name('locale.edit');
+
     Route::get('settings/two-factor', [TwoFactorAuthenticationController::class, 'show'])
         ->name('two-factor.show');
 });

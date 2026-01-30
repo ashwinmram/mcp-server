@@ -24,6 +24,10 @@ export type AppPageProps<
     quote: { message: string; author: string };
     auth: Auth;
     sidebarOpen: boolean;
+    locale: string;
+    dir: 'ltr' | 'rtl';
+    locales: Record<string, string>;
+    translations: Record<string, Record<string, unknown>>;
 };
 
 export interface User {

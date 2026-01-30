@@ -9,17 +9,24 @@ import {
 import { useActiveUrl } from '@/composables/useActiveUrl';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
+import { computed } from 'vue';
 
-defineProps<{
-    items: NavItem[];
-}>();
+const props = withDefaults(
+    defineProps<{
+        items: NavItem[];
+        platformLabel?: string;
+    }>(),
+    { platformLabel: 'Platform' },
+);
 
 const { urlIsActive } = useActiveUrl();
+
+const platformLabel = computed(() => props.platformLabel);
 </script>
 
 <template>
     <SidebarGroup class="px-2 py-0">
-        <SidebarGroupLabel>Platform</SidebarGroupLabel>
+        <SidebarGroupLabel>{{ platformLabel }}</SidebarGroupLabel>
         <SidebarMenu>
             <SidebarMenuItem v-for="item in items" :key="item.title">
                 <SidebarMenuButton
