@@ -2,6 +2,10 @@
 
 namespace App\Mcp\Servers;
 
+use App\Mcp\Prompts\ProjectDetailsByCategory;
+use App\Mcp\Prompts\ProjectDetailsOverview;
+use App\Mcp\Prompts\WhenToUseProjectDetails;
+use App\Mcp\Resources\ProjectDetailsOverviewResource;
 use App\Mcp\Tools\GetProjectDetailsByCategory;
 use App\Mcp\Tools\GetProjectDetailsOverview;
 use App\Mcp\Tools\SearchProjectDetails;
@@ -32,10 +36,18 @@ class ProjectDetailsServer extends Server
         - Before changing project-specific paths, config, or conventions
         - When you need implementation details that are not generic best practices
 
+        **Resource:**
+        - project-details://overview - Read at session start for summary of categories, tags, recent details, and how to use (or use ProjectDetailsOverview prompt for a quick summary)
+
         **Tools:**
         - SearchProjectDetails - Search by keyword, category, or tags within this project's details
         - GetProjectDetailsByCategory - List all details in a category for this project
         - GetProjectDetailsOverview - Get counts by category for this project (useful at session start)
+
+        **Prompts:**
+        - ProjectDetailsOverview - Quick summary of counts, categories, and recent entries
+        - ProjectDetailsByCategory - Get details for a specific category (requires category argument)
+        - WhenToUseProjectDetails - When to use Project Details vs Lessons Learned; which tool for what
 
         All results are scoped to the project specified in the connection URL.
     MARKDOWN;
@@ -56,12 +68,18 @@ class ProjectDetailsServer extends Server
      *
      * @var array<int, class-string<\Laravel\Mcp\Server\Resource>>
      */
-    protected array $resources = [];
+    protected array $resources = [
+        ProjectDetailsOverviewResource::class,
+    ];
 
     /**
      * The prompts registered with this MCP server.
      *
      * @var array<int, class-string<\Laravel\Mcp\Server\Prompt>>
      */
-    protected array $prompts = [];
+    protected array $prompts = [
+        ProjectDetailsOverview::class,
+        ProjectDetailsByCategory::class,
+        WhenToUseProjectDetails::class,
+    ];
 }

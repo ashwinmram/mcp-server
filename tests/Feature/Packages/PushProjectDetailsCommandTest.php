@@ -48,6 +48,7 @@ test('pushes project details from markdown file', function () {
     $this->artisan('mcp:push-project-details', ['--source' => 'my-app'])
         ->expectsOutputToContain('Converting and pushing project details from project: my-app')
         ->expectsOutputToContain('Pushing 1 project detail(s)')
+        ->expectsOutputToContain('Truncated source file(s):')
         ->assertExitCode(0);
 
     Http::assertSent(function (Request $request) {
@@ -59,5 +60,50 @@ test('pushes project details from markdown file', function () {
             && $data['lessons'][0]['type'] === 'markdown';
     });
 
-    File::delete($path);
+    expect(File::get($path))->toBe('');
+});
+
+test('truncates project-details.md and project_details.json after successful push', function () {
+    Http::fake([
+        'https://mcp-server.test/api/project-details' => Http::response([
+            'success' => true,
+            'data' => ['created' => 2, 'updated' => 0, 'skipped' => 0, 'errors' => []],
+        ], 201),
+    ]);
+
+    $docsDir = base_path('docs');
+    if (! File::isDirectory($docsDir)) {
+        File::makeDirectory($docsDir, 0755, true);
+    }
+    $mdPath = $docsDir.'/project-details.md';
+    $jsonPath = $docsDir.'/project_details.json';
+    File::put($mdPath, '# Overview\nSome content.');
+    File::put($jsonPath, '[{"title":"Test","content":"Body","category":"project-implementation","type":"project_detail"}]');
+
+    $this->artisan('mcp:push-project-details', ['--source' => 'test-project'])
+        ->assertExitCode(0);
+
+    expect(File::get($mdPath))->toBe('')
+        ->and(File::get($jsonPath))->toBe("[]\n");
+});
+
+test('does not truncate when --no-truncate is used', function () {
+    Http::fake([
+        'https://mcp-server.test/api/project-details' => Http::response([
+            'success' => true,
+            'data' => ['created' => 1, 'updated' => 0, 'skipped' => 0, 'errors' => []],
+        ], 201),
+    ]);
+
+    $path = base_path('docs/project-details.md');
+    if (! File::isDirectory(dirname($path))) {
+        File::makeDirectory(dirname($path), 0755, true);
+    }
+    $content = '## Auth\nAuth lives in app/Http/Controllers/Auth/.';
+    File::put($path, $content);
+
+    $this->artisan('mcp:push-project-details', ['--source' => 'my-app', '--no-truncate' => true])
+        ->assertExitCode(0);
+
+    expect(File::get($path))->toBe($content);
 });

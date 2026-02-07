@@ -11,7 +11,8 @@ class PushProjectDetails extends Command
     protected $signature = 'mcp:push-project-details
                             {--source= : Source project name (default: project directory name)}
                             {--project-details-file= : Path to project-details.md (default: docs/project-details.md)}
-                            {--project-details-json-dir= : Directory containing project_details.json or project_details_*.json (default: docs)}';
+                            {--project-details-json-dir= : Directory containing project_details.json or project_details_*.json (default: docs)}
+                            {--no-truncate : Do not truncate source files after a successful push}';
 
     protected $description = 'Convert project-details.md and project_details.json to project implementation details and push to MCP server';
 
@@ -26,6 +27,8 @@ class PushProjectDetails extends Command
         $this->newLine();
 
         $lessons = [];
+        $readMdPath = null;
+        $processedJsonFiles = [];
 
         if (File::exists($mdPath)) {
             $this->info("Reading project-details.md: {$mdPath}");
@@ -42,6 +45,7 @@ class PushProjectDetails extends Command
                         'path' => $mdPath,
                     ],
                 ];
+                $readMdPath = $mdPath;
                 $this->info('  ✓ Converted project-details.md');
             } else {
                 $this->warn('  ⚠ project-details.md is empty');
@@ -97,6 +101,7 @@ class PushProjectDetails extends Command
                                 'metadata' => $item['metadata'] ?? ['file' => $filename, 'index' => $index],
                             ];
                         }
+                        $processedJsonFiles[] = $file;
                         $this->info('    ✓ Converted '.count($jsonData).' entry(ies)');
                     } catch (\Exception $e) {
                         $this->error("    ✗ Error: {$e->getMessage()}");
@@ -140,6 +145,10 @@ class PushProjectDetails extends Command
                 $this->newLine();
                 $this->info('✓ Project details push completed successfully!');
 
+                if (! $this->option('no-truncate')) {
+                    $this->truncateSourceFiles($readMdPath, $processedJsonFiles);
+                }
+
                 return Command::SUCCESS;
             }
 
@@ -151,6 +160,35 @@ class PushProjectDetails extends Command
             $this->error("Error pushing project details: {$e->getMessage()}");
 
             return Command::FAILURE;
+        }
+    }
+
+    /**
+     * Truncate source files after a successful push (project-details.md → empty, project_details.json → []).
+     *
+     * @param  string|null  $mdPath  Path to project-details.md that was read, or null
+     * @param  array<int, string>  $jsonFiles  Paths to project_details*.json files that were processed
+     */
+    protected function truncateSourceFiles(?string $mdPath, array $jsonFiles): void
+    {
+        $truncated = [];
+
+        if ($mdPath !== null) {
+            File::put($mdPath, '');
+            $truncated[] = $mdPath;
+        }
+
+        foreach ($jsonFiles as $file) {
+            File::put($file, "[]\n");
+            $truncated[] = $file;
+        }
+
+        if (! empty($truncated)) {
+            $this->newLine();
+            $this->info('Truncated source file(s):');
+            foreach ($truncated as $path) {
+                $this->line('  '.$path);
+            }
         }
     }
 }
