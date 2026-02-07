@@ -71,9 +71,11 @@ class LessonsByCategory extends Prompt
     public function arguments(): array
     {
         return [
-            Argument::make('category')
-                ->description('The category name to filter lessons by')
-                ->required(),
+            new Argument(
+                name: 'category',
+                description: 'The category name to filter lessons by',
+                required: true
+            ),
         ];
     }
 }
