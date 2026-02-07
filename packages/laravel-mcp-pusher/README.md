@@ -1,31 +1,22 @@
 # Laravel MCP Pusher
 
-Laravel package to push lessons learned from local projects to a central MCP server via HTTP API.
+Laravel package to push lessons learned and project implementation details from your projects to a central MCP server via HTTP API. Works with the [Lessons Learned MCP Server](https://github.com/ashwinmram/mcp-server) so AI agents (e.g. Cursor) can query your knowledge base.
 
-**Important**: This package pushes lessons to a **remote MCP server** via HTTP API. It does **not** interact with local database or include Lesson model classes. The remote MCP server handles storage and database operations.
+- [GitHub](https://github.com/ashwinmram/mcp-pusher)
+- [Packagist](https://packagist.org/packages/ashwinmram/mcp-pusher)
+
+**Important**: This package pushes to a **remote MCP server** via HTTP API. It does **not** interact with your local database or include Lesson model classes.
+
+## Requirements
+
+- PHP 8.2+
+- Laravel 12.x
+- An MCP server that accepts pushes (e.g. [Lessons Learned MCP Server](https://github.com/ashwinmram/mcp-server))
 
 ## Installation
 
-Add the package to your local Laravel project's `composer.json`:
-
-```json
-{
-    "repositories": [
-        {
-            "type": "path",
-            "url": "../mcp-server/packages/laravel-mcp-pusher"
-        }
-    ],
-    "require": {
-        "laravel-mcp/mcp-pusher": "*"
-    }
-}
-```
-
-Then run:
-
 ```bash
-composer require laravel-mcp/mcp-pusher
+composer require ashwinmram/mcp-pusher
 ```
 
 ## Configuration
@@ -48,51 +39,68 @@ MCP_API_TOKEN=your-api-token-here
 
 ## Usage
 
-Push lessons from your project:
+**Workflow:** At the end of each coding session, populate the lessons learned and project details files (`docs/lessons-learned.md`, `docs/lessons_learned.json`, `docs/project-details.md`, `docs/project_details.json`) as required. You need content in at least one source file per command before you can push. **Source files are truncated (emptied) after each successful push** — this prevents duplicate pushes. Regenerate the files at the end of the next session and push again.
+
+### Push lessons
 
 ```bash
-php artisan mcp:push-lessons
+php artisan mcp:push-lessons --source=your-project
 ```
 
-### Options
+| Option | Description |
+|--------|-------------|
+| `--source=` | Source project name (default: directory name). Must match the `project` query param when connecting to Project Details MCP. |
+| `--lessons-learned=` | Path to `lessons-learned.md` (default: `docs/lessons-learned.md`) |
+| `--lessons-json=` | Path to `lessons_learned.json` (default: `docs/lessons_learned.json`) |
 
-- `--source=project-name` - Override the source project name (default: directory name)
-- `--lessons-learned=path` - Path to lessons-learned.md file (default: project root)
-- `--ai-json-dir=path` - Directory containing AI_*.json files (default: docs)
+### Push project details
+
+```bash
+php artisan mcp:push-project-details --source=your-project
+```
+
+| Option | Description |
+|--------|-------------|
+| `--source=` | Source project name (must match `?project=` in Project Details MCP URL) |
+| `--project-details-file=` | Path to markdown file (default: `docs/project-details.md`) |
+| `--project-details-json-dir=` | Directory for `project_details.json` or `project_details_*.json` (default: `docs`) |
+| `--no-truncate` | Do not empty source files after a successful push |
+
+## File Layout
+
+By default, the package reads from these locations:
+
+```
+your-project/
+└── docs/
+    ├── lessons-learned.md      ← Markdown lessons (optional)
+    ├── lessons_learned.json    ← JSON array of lessons (optional)
+    ├── project-details.md      ← Markdown project details (optional)
+    └── project_details.json    ← JSON array of project details (optional)
+```
+
+**Lessons** are pushed to `/api/lessons`; **project details** to `/api/project-details`. You need at least one source file with content for each command.
 
 ## How It Works
 
-The command reads and normalizes lessons from:
-1. `lessons-learned.md` file from project root (if exists)
-2. All `AI_*.json` files from `docs/` directory (or specified directory)
+### Lessons
 
-### Normalization
+- **`lessons-learned.md`**: Categorized as `guidelines` with tags: `laravel`, `lessons-learned`, `guidelines`, `best-practices`, `markdown`
+- **`lessons_learned.json`**: JSON array; each object can have `title`, `summary`, `category`, `subcategory`, `type`, `tags`, `content`, `metadata`. Category and tags from the object are used; content keywords add more tags (e.g. "Pest" → `pest`).
 
-The package automatically normalizes lessons by extracting categories and tags:
+### Project details
 
-- **`lessons-learned.md` files**: Automatically categorized as `guidelines` with tags: `laravel`, `lessons-learned`, `guidelines`, `best-practices`, `markdown`
-- **`AI_*.json` files**: 
-  - Category extracted from filename (e.g., `AI_testing_config.json` → category: `testing-config`)
-  - Base tags generated from filename parts (e.g., `testing`, `config`, `laravel`)
-  - Additional tags extracted from content keywords (e.g., `pest`, `phpunit`, `facades`)
+- **`project-details.md`**: Same H2/H3/H4 structure as lessons-learned.md
+- **`project_details.json`** or **`project_details_*.json`**: JSON array with same field order as lessons (`title`, `summary`, `category`, `subcategory`, `type`, `tags`, `content`, `metadata`). Use `type` `"project_detail"` or `"ai_output"`.
 
-### Examples
+### API
 
-**Filename-based categorization:**
-- `AI_testing_config.json` → category: `testing-config`, tags: `['testing', 'config', 'laravel']`
-- `AI_package_development.json` → category: `package-development`, tags: `['package', 'development', 'laravel', 'package-development']`
+Normalized data is POSTed to the remote MCP server. The server handles storage, deduplication (by content hash), and validation.
 
-**Content-based tag extraction:**
-- Content containing "HTTP::fake" → adds tag: `http-mocking`
-- Content containing "Pest" → adds tag: `pest`
-- Content containing "service provider" → adds tag: `service-provider`
+## MCP Server
 
-### HTTP API Push
+This package pushes to an MCP server that exposes `/api/lessons` and `/api/project-details`. For a ready-made server, see the [Lessons Learned MCP Server](https://github.com/ashwinmram/mcp-server).
 
-Normalized lessons are pushed to the remote MCP server via HTTP POST request to `/api/lessons` endpoint. The remote server handles:
-- Database storage
-- Deduplication (by content hash)
-- Validation
-- Lesson model management
+## License
 
-**Note**: This package does **not** include Lesson model classes or interact with local databases. It is designed to push to a remote MCP server endpoint only.
+MIT

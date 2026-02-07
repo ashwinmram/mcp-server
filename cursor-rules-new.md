@@ -119,7 +119,7 @@ The relevance scoring system ensures that the **most useful and frequently refer
 
 ## Updating Lessons Learned Files
 
-When asked to "update lessons-learned.md and AI*.json files with any lessons learned during this session", follow these structures:
+When asked to "update lessons-learned.md and lessons_learned.json files with any lessons learned during this session", follow these structures:
 
 ### lessons-learned.md Structure
 
@@ -151,9 +151,9 @@ Example code snippet
 2. **Another takeaway** - Description
 ```
 
-### AI_*.json Structure
+### lessons_learned.json Structure
 
-AI JSON files (e.g., `docs/AI_mcp_tools_development.json`) must be a **JSON array** with objects following this **exact field order**:
+The `docs/lessons_learned.json` file must be a **JSON array** with objects following this **exact field order**:
 
 1. **`title`** (string, required) - Descriptive title for the lesson
 2. **`summary`** (string, required) - Brief summary of the lesson (1-2 sentences)
@@ -178,7 +178,7 @@ AI JSON files (e.g., `docs/AI_mcp_tools_development.json`) must be a **JSON arra
     "tags": ["tag1", "tag2", "tag3"],
     "content": "Detailed lesson content explaining the pattern, practice, or knowledge learned. Can include multiple paragraphs separated by \\n\\n.",
     "metadata": {
-      "file": "AI_filename.json",
+      "file": "lessons_learned.json",
       "session_date": "2026-01-18"
     }
   }
@@ -196,7 +196,7 @@ AI JSON files (e.g., `docs/AI_mcp_tools_development.json`) must be a **JSON arra
 ### File Locations
 
 - **lessons-learned.md**: `docs/lessons-learned.md`
-- **AI_*.json files**: `docs/AI_*.json` (e.g., `docs/AI_mcp_tools_development.json`)
+- **lessons_learned.json**: `docs/lessons_learned.json`
 
 ### After Updating
 
@@ -207,6 +207,6 @@ php artisan mcp:push-lessons --source=mcp-server
 
 This command will:
 1. Read `docs/lessons-learned.md` and convert it to lesson format
-2. Read all `docs/AI_*.json` files and convert each array element to a lesson
+2. Read `docs/lessons_learned.json` and convert each array element to a lesson
 3. Push lessons to the MCP server for future AI agent sessions
 </mcp-server-instructions>

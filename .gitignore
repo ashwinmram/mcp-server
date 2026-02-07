@@ -28,5 +28,5 @@ yarn-error.log
 /.zed
 
 # Lesson source files (automatically emptied after push)
-lessons-learned.md
-docs/AI_*.json
+docs/lessons-learned.md
+docs/lessons_learned.json

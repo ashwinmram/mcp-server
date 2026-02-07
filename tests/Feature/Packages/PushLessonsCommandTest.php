@@ -9,25 +9,24 @@ use Illuminate\Support\Facades\Http;
 uses(RefreshDatabase::class);
 
 beforeEach(function () {
-    // Set up test configuration
     Config::set('services.mcp.server_url', 'https://mcp-server.test');
     Config::set('services.mcp.api_token', 'test-api-token');
     Config::set('mcp-pusher.server_url', 'https://mcp-server.test');
     Config::set('mcp-pusher.api_token', 'test-api-token');
 
-    // Clean up any existing lessons-learned.md file to ensure test isolation
-    $lessonsLearnedPath = base_path('lessons-learned.md');
+    $lessonsLearnedPath = base_path('docs/lessons-learned.md');
     if (File::exists($lessonsLearnedPath)) {
         File::delete($lessonsLearnedPath);
     }
 
-    // Clean up any existing AI_*.json files in docs directory
+    $lessonsJsonPath = base_path('docs/lessons_learned.json');
+    if (File::exists($lessonsJsonPath)) {
+        File::delete($lessonsJsonPath);
+    }
+
     $docsDir = base_path('docs');
-    if (File::isDirectory($docsDir)) {
-        $aiFiles = File::glob($docsDir.'/AI_*.json');
-        foreach ($aiFiles as $file) {
-            File::delete($file);
-        }
+    if (! File::isDirectory($docsDir)) {
+        File::makeDirectory($docsDir, 0755, true);
     }
 });
 
@@ -45,9 +44,8 @@ test('pushes lessons from lessons-learned.md file', function () {
         ], 201),
     ]);
 
-    // Create a temporary lessons-learned.md file
     $content = 'Always use type hints in PHP functions.';
-    $path = base_path('lessons-learned.md');
+    $path = base_path('docs/lessons-learned.md');
     File::put($path, $content);
 
     $this->artisan('mcp:push-lessons', [
@@ -61,7 +59,6 @@ test('pushes lessons from lessons-learned.md file', function () {
         ->expectsOutputToContain('✓ Conversion and push completed successfully!')
         ->assertExitCode(0);
 
-    // Verify HTTP request was made correctly
     Http::assertSent(function (Request $request) {
         $url = $request->url();
         $data = $request->data();
@@ -77,17 +74,15 @@ test('pushes lessons from lessons-learned.md file', function () {
             && $data['lessons'][0]['type'] === 'markdown';
     });
 
-    // Verify lessons-learned.md file was emptied
     expect(File::exists($path))->toBeTrue();
     expect(File::get($path))->toBeEmpty();
 
-    // Cleanup
     if (File::exists($path)) {
         File::delete($path);
     }
 });
 
-test('pushes lessons from ai json files', function () {
+test('pushes lessons from lessons_learned.json file', function () {
     Http::fake([
         'https://mcp-server.test/api/lessons' => Http::response([
             'success' => true,
@@ -101,33 +96,26 @@ test('pushes lessons from ai json files', function () {
         ], 201),
     ]);
 
-    // Create docs directory and AI JSON file
     $docsDir = base_path('docs');
-    if (! File::isDirectory($docsDir)) {
-        File::makeDirectory($docsDir, 0755, true);
-    }
-
     $jsonContent = json_encode([
-        'lesson1' => 'Always validate user input',
-        'lesson2' => 'Use dependency injection',
+        ['content' => 'Always validate user input', 'category' => 'validation', 'tags' => ['validation']],
+        ['content' => 'Use dependency injection', 'category' => 'architecture', 'tags' => ['di']],
     ]);
-    File::put($docsDir.'/AI_lessons.json', $jsonContent);
-
-    $aiJsonPath = $docsDir.'/AI_lessons.json';
+    File::put($docsDir.'/lessons_learned.json', $jsonContent);
+    $lessonsJsonPath = $docsDir.'/lessons_learned.json';
 
     $this->artisan('mcp:push-lessons', [
         '--source' => 'test-project',
-        '--ai-json-dir' => 'docs',
+        '--lessons-json' => $lessonsJsonPath,
     ])
         ->expectsOutput('Converting and pushing lessons from project: test-project')
-        ->expectsOutputToContain('Searching for AI_*.json files')
+        ->expectsOutputToContain('Reading lessons_learned.json file')
         ->expectsOutputToContain('lesson(s) to MCP server...')
         ->expectsOutput('Push Summary:')
         ->expectsOutputToContain('Created:')
         ->expectsOutputToContain('✓ Conversion and push completed successfully!')
         ->assertExitCode(0);
 
-    // Verify HTTP request
     Http::assertSent(function (Request $request) {
         $data = $request->data();
 
@@ -138,28 +126,22 @@ test('pushes lessons from ai json files', function () {
             && $data['lessons'][1]['type'] === 'ai_output';
     });
 
-    // Verify AI JSON file was emptied (should contain empty array)
-    expect(File::exists($aiJsonPath))->toBeTrue();
-    expect(trim(File::get($aiJsonPath)))->toBe('[]');
+    expect(File::exists($lessonsJsonPath))->toBeTrue();
+    expect(trim(File::get($lessonsJsonPath)))->toBe('[]');
 
-    // Cleanup
-    if (File::exists($aiJsonPath)) {
-        File::delete($aiJsonPath);
+    if (File::exists($lessonsJsonPath)) {
+        File::delete($lessonsJsonPath);
     }
 });
 
 test('handles missing lessons-learned.md file gracefully', function () {
-    $path = base_path('lessons-learned.md');
+    $path = base_path('docs/lessons-learned.md');
     if (File::exists($path)) {
         File::delete($path);
     }
 
-    // Create at least one AI JSON file so command doesn't fail completely
     $docsDir = base_path('docs');
-    if (! File::isDirectory($docsDir)) {
-        File::makeDirectory($docsDir, 0755, true);
-    }
-    File::put($docsDir.'/AI_test.json', json_encode(['test' => 'content']));
+    File::put($docsDir.'/lessons_learned.json', json_encode([['content' => 'test', 'category' => 'test']]));
 
     Http::fake([
         'https://mcp-server.test/api/lessons' => Http::response([
@@ -168,7 +150,7 @@ test('handles missing lessons-learned.md file gracefully', function () {
         ], 201),
     ]);
 
-    $aiJsonPath = $docsDir.'/AI_test.json';
+    $lessonsJsonPath = $docsDir.'/lessons_learned.json';
 
     $this->artisan('mcp:push-lessons', [
         '--source' => 'test-project',
@@ -176,26 +158,19 @@ test('handles missing lessons-learned.md file gracefully', function () {
         ->expectsOutputToContain('⚠ lessons-learned.md file not found')
         ->assertExitCode(0);
 
-    // Verify AI JSON file was emptied
-    expect(File::exists($aiJsonPath))->toBeTrue();
-    expect(trim(File::get($aiJsonPath)))->toBe('[]');
+    expect(File::exists($lessonsJsonPath))->toBeTrue();
+    expect(trim(File::get($lessonsJsonPath)))->toBe('[]');
 
-    // Cleanup
-    if (File::exists($aiJsonPath)) {
-        File::delete($aiJsonPath);
+    if (File::exists($lessonsJsonPath)) {
+        File::delete($lessonsJsonPath);
     }
 });
 
 test('handles invalid json files gracefully', function () {
     $docsDir = base_path('docs');
-    if (! File::isDirectory($docsDir)) {
-        File::makeDirectory($docsDir, 0755, true);
-    }
+    File::put($docsDir.'/lessons_learned.json', 'invalid json content {');
 
-    File::put($docsDir.'/AI_invalid.json', 'invalid json content {');
-
-    // Create a valid lessons-learned.md file so command doesn't fail completely
-    $path = base_path('lessons-learned.md');
+    $path = base_path('docs/lessons-learned.md');
     File::put($path, 'Test content');
 
     Http::fake([
@@ -207,40 +182,31 @@ test('handles invalid json files gracefully', function () {
 
     $this->artisan('mcp:push-lessons', [
         '--source' => 'test-project',
-        '--ai-json-dir' => 'docs',
+        '--lessons-json' => base_path('docs/lessons_learned.json'),
     ])
         ->expectsOutputToContain('✗ Invalid JSON:')
         ->assertExitCode(0);
 
-    // Verify lessons-learned.md file was emptied (invalid JSON file was skipped, but valid lessons-learned.md was pushed)
     expect(File::exists($path))->toBeTrue();
     expect(File::get($path))->toBeEmpty();
 
-    // Verify invalid JSON file still exists (was not processed, so not emptied)
-    expect(File::exists($docsDir.'/AI_invalid.json'))->toBeTrue();
-
-    // Cleanup
-    if (File::exists($docsDir.'/AI_invalid.json')) {
-        File::delete($docsDir.'/AI_invalid.json');
-    }
     if (File::exists($path)) {
         File::delete($path);
+    }
+    if (File::exists($docsDir.'/lessons_learned.json')) {
+        File::delete($docsDir.'/lessons_learned.json');
     }
 });
 
 test('returns failure when no lessons found', function () {
-    $path = base_path('lessons-learned.md');
+    $path = base_path('docs/lessons-learned.md');
     if (File::exists($path)) {
         File::delete($path);
     }
 
-    // Ensure no AI JSON files exist
-    $docsDir = base_path('docs');
-    if (File::isDirectory($docsDir)) {
-        $files = File::glob($docsDir.'/AI_*.json');
-        foreach ($files as $file) {
-            File::delete($file);
-        }
+    $lessonsJsonPath = base_path('docs/lessons_learned.json');
+    if (File::exists($lessonsJsonPath)) {
+        File::delete($lessonsJsonPath);
     }
 
     $this->artisan('mcp:push-lessons', [
@@ -257,7 +223,7 @@ test('handles api errors gracefully', function () {
         ], 401),
     ]);
 
-    $path = base_path('lessons-learned.md');
+    $path = base_path('docs/lessons-learned.md');
     File::put($path, 'Test content');
 
     $this->artisan('mcp:push-lessons', [
@@ -267,11 +233,9 @@ test('handles api errors gracefully', function () {
         ->expectsOutputToContain('401')
         ->assertExitCode(1);
 
-    // Verify lessons-learned.md file was NOT emptied on failure
     expect(File::exists($path))->toBeTrue();
     expect(File::get($path))->toBe('Test content');
 
-    // Cleanup
     if (File::exists($path)) {
         File::delete($path);
     }
@@ -285,19 +249,17 @@ test('uses default source project when not specified', function () {
         ], 201),
     ]);
 
-    $path = base_path('lessons-learned.md');
+    $path = base_path('docs/lessons-learned.md');
     File::put($path, 'Test content');
 
     $this->artisan('mcp:push-lessons')
         ->assertExitCode(0);
 
-    // Verify the source_project is the directory name
     Http::assertSent(function (Request $request) {
         return isset($request->data()['source_project'])
             && $request->data()['source_project'] === basename(base_path());
     });
 
-    // Cleanup
     if (File::exists($path)) {
         File::delete($path);
     }
@@ -319,7 +281,7 @@ test('displays push summary with errors', function () {
         ], 201),
     ]);
 
-    $path = base_path('lessons-learned.md');
+    $path = base_path('docs/lessons-learned.md');
     File::put($path, 'Test content');
 
     $this->artisan('mcp:push-lessons', [
@@ -332,26 +294,20 @@ test('displays push summary with errors', function () {
         ->expectsOutputToContain('✓ Conversion and push completed successfully!')
         ->assertExitCode(0);
 
-    // Verify lessons-learned.md file was emptied even with warnings
     expect(File::exists($path))->toBeTrue();
     expect(File::get($path))->toBeEmpty();
 
-    // Cleanup
     if (File::exists($path)) {
         File::delete($path);
     }
 });
 
 test('handles empty lessons-learned.md file', function () {
-    $path = base_path('lessons-learned.md');
+    $path = base_path('docs/lessons-learned.md');
     File::put($path, '');
 
-    // Create at least one AI JSON file so command doesn't fail completely
     $docsDir = base_path('docs');
-    if (! File::isDirectory($docsDir)) {
-        File::makeDirectory($docsDir, 0755, true);
-    }
-    File::put($docsDir.'/AI_test.json', json_encode(['test' => 'content']));
+    File::put($docsDir.'/lessons_learned.json', json_encode([['content' => 'test', 'category' => 'test']]));
 
     Http::fake([
         'https://mcp-server.test/api/lessons' => Http::response([
@@ -360,30 +316,27 @@ test('handles empty lessons-learned.md file', function () {
         ], 201),
     ]);
 
-    $aiJsonPath = $docsDir.'/AI_test.json';
+    $lessonsJsonPath = $docsDir.'/lessons_learned.json';
 
     $this->artisan('mcp:push-lessons', [
         '--source' => 'test-project',
     ])
         ->assertExitCode(0);
 
-    // Verify lessons-learned.md content is not included (empty file)
     Http::assertSent(function (Request $request) {
         $lessons = $request->data()['lessons'] ?? [];
         $markdownLessons = array_filter($lessons, fn ($lesson) => $lesson['type'] === 'markdown');
 
-        return count($markdownLessons) === 0; // Empty lessons-learned.md should not create a lesson
+        return count($markdownLessons) === 0;
     });
 
-    // Verify AI JSON file was emptied
-    expect(File::exists($aiJsonPath))->toBeTrue();
-    expect(trim(File::get($aiJsonPath)))->toBe('[]');
+    expect(File::exists($lessonsJsonPath))->toBeTrue();
+    expect(trim(File::get($lessonsJsonPath)))->toBe('[]');
 
-    // Cleanup
     if (File::exists($path)) {
         File::delete($path);
     }
-    if (File::exists($aiJsonPath)) {
-        File::delete($aiJsonPath);
+    if (File::exists($lessonsJsonPath)) {
+        File::delete($lessonsJsonPath);
     }
 });

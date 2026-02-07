@@ -107,7 +107,7 @@ test('sends correct payload structure', function () {
         [
             'type' => 'ai_output',
             'content' => 'Lesson 2',
-            'metadata' => ['file' => 'AI_test.json'],
+            'metadata' => ['file' => 'lessons_learned.json'],
         ],
     ];
 

@@ -30,6 +30,6 @@ return [
     | Paths to the files that will be read for lessons.
     |
     */
-    'lessons_learned_path' => base_path('lessons-learned.md'),
-    'ai_json_directory' => base_path('docs'),
+    'lessons_learned_path' => base_path('docs/lessons-learned.md'),
+    'lessons_learned_json_path' => base_path('docs/lessons_learned.json'),
 ];

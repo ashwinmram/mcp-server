@@ -15,15 +15,15 @@ class PushLessons extends Command
      */
     protected $signature = 'mcp:push-lessons
                             {--source= : Source project name (default: project directory name)}
-                            {--lessons-learned= : Path to lessons-learned.md file (default: project root)}
-                            {--ai-json-dir= : Directory containing AI_*.json files (default: docs)}';
+                            {--lessons-learned= : Path to lessons-learned.md file (default: docs/lessons-learned.md)}
+                            {--lessons-json= : Path to lessons_learned.json file (default: docs/lessons_learned.json)}';
 
     /**
      * The console command description.
      *
      * @var string
      */
-    protected $description = 'Convert lessons-learned.md and AI_*.json files to properly formatted lessons with categories/tags and push to MCP server';
+    protected $description = 'Convert lessons-learned.md and lessons_learned.json files to properly formatted lessons with categories/tags and push to MCP server';
 
     /**
      * Execute the console command.
@@ -31,9 +31,8 @@ class PushLessons extends Command
     public function handle(LessonPusherService $pusherService): int
     {
         $sourceProject = $this->option('source') ?? basename(base_path());
-        $lessonsLearnedPath = $this->option('lessons-learned') ?? base_path('lessons-learned.md');
-        $aiJsonDir = $this->option('ai-json-dir') ?? 'docs';
-        $aiJsonPath = base_path($aiJsonDir);
+        $lessonsLearnedPath = $this->option('lessons-learned') ?? base_path('docs/lessons-learned.md');
+        $lessonsJsonPath = $this->option('lessons-json') ?? base_path('docs/lessons_learned.json');
 
         $this->info("Converting and pushing lessons from project: {$sourceProject}");
         $this->newLine();
@@ -66,82 +65,71 @@ class PushLessons extends Command
             $this->warn("  ⚠ lessons-learned.md file not found at: {$lessonsLearnedPath}");
         }
 
-        // Process AI_*.json files
-        if (File::isDirectory($aiJsonPath)) {
-            $this->info("Searching for AI_*.json files in: {$aiJsonPath}");
-            $aiFiles = File::glob($aiJsonPath.'/AI_*.json');
+        // Process lessons_learned.json file
+        if (File::exists($lessonsJsonPath)) {
+            $this->info("Reading lessons_learned.json file: {$lessonsJsonPath}");
 
-            if (empty($aiFiles)) {
-                $this->warn('  ⚠ No AI_*.json files found');
-            } else {
-                foreach ($aiFiles as $file) {
-                    $filename = basename($file);
-                    $this->info("  Processing: {$filename}");
+            try {
+                $content = File::get($lessonsJsonPath);
+                $jsonData = json_decode($content, true);
 
-                    try {
-                        $content = File::get($file);
-                        $jsonData = json_decode($content, true);
-
-                        if (json_last_error() !== JSON_ERROR_NONE) {
-                            $this->error('    ✗ Invalid JSON: '.json_last_error_msg());
-
-                            continue;
-                        }
-
-                        // Extract category and tags from filename
-                        $categoryInfo = $this->extractCategoryFromFilename($filename);
-                        $baseTags = $categoryInfo['tags'];
-
-                        $lessonsBefore = count($lessons);
-
-                        // If it's an array, treat each item as a separate lesson
-                        if (is_array($jsonData)) {
-                            foreach ($jsonData as $index => $item) {
-                                $lessonContent = is_string($item) ? $item : json_encode($item, JSON_PRETTY_PRINT);
-                                $contentTags = $this->extractTagsFromContent($lessonContent, $baseTags);
-
-                                $lessons[] = [
-                                    'type' => 'ai_output',
-                                    'category' => $categoryInfo['category'],
-                                    'tags' => $contentTags,
-                                    'content' => $lessonContent,
-                                    'metadata' => [
-                                        'file' => $filename,
-                                        'path' => $file,
-                                        'index' => $index,
-                                    ],
-                                ];
-                            }
-                            $this->info('    ✓ Converted '.count($jsonData).' lesson(s)');
-                        } else {
-                            // Single object or string
-                            $lessonContent = is_string($jsonData) ? $jsonData : json_encode($jsonData, JSON_PRETTY_PRINT);
-                            $contentTags = $this->extractTagsFromContent($lessonContent, $baseTags);
-
+                if (json_last_error() !== JSON_ERROR_NONE) {
+                    $this->error('    ✗ Invalid JSON: '.json_last_error_msg());
+                } elseif (! is_array($jsonData)) {
+                    $this->warn('    ⚠ Expected JSON array, skipping');
+                } else {
+                    foreach ($jsonData as $index => $item) {
+                        if (is_string($item)) {
+                            $lessonContent = $item;
+                            $contentTags = $this->extractTagsFromContent($lessonContent, []);
                             $lessons[] = [
                                 'type' => 'ai_output',
-                                'category' => $categoryInfo['category'],
-                                'tags' => $contentTags,
+                                'category' => 'guidelines',
+                                'tags' => array_values(array_unique(array_merge($contentTags, ['laravel']))),
                                 'content' => $lessonContent,
-                                'metadata' => [
-                                    'file' => $filename,
-                                    'path' => $file,
-                                ],
+                                'metadata' => ['file' => 'lessons_learned.json', 'path' => $lessonsJsonPath, 'index' => $index],
                             ];
-                            $this->info('    ✓ Converted 1 lesson');
+                        } elseif (is_array($item)) {
+                            $lessonContent = $item['content'] ?? json_encode($item, JSON_PRETTY_PRINT);
+                            $contentTags = $this->extractTagsFromContent($lessonContent, $item['tags'] ?? []);
+                            $tags = array_values(array_unique(array_merge(
+                                $contentTags,
+                                $item['tags'] ?? [],
+                                ['laravel']
+                            )));
+                            $lesson = [
+                                'type' => $item['type'] ?? 'ai_output',
+                                'category' => $item['category'] ?? 'guidelines',
+                                'tags' => $tags,
+                                'content' => $lessonContent,
+                                'metadata' => array_merge(
+                                    $item['metadata'] ?? [],
+                                    ['file' => 'lessons_learned.json', 'path' => $lessonsJsonPath, 'index' => $index]
+                                ),
+                            ];
+                            if (! empty($item['title'])) {
+                                $lesson['title'] = $item['title'];
+                            }
+                            if (! empty($item['summary'])) {
+                                $lesson['summary'] = $item['summary'];
+                            }
+                            if (array_key_exists('subcategory', $item)) {
+                                $lesson['subcategory'] = $item['subcategory'];
+                            }
+                            $lessons[] = $lesson;
                         }
+                    }
 
-                        // Track this file for emptying after successful push (only if lessons were created)
-                        if (count($lessons) > $lessonsBefore) {
-                            $filesToEmpty[] = ['path' => $file, 'type' => 'ai_json'];
-                        }
-                    } catch (\Exception $e) {
-                        $this->error("    ✗ Error processing file: {$e->getMessage()}");
+                    if (count($jsonData) > 0) {
+                        $filesToEmpty[] = ['path' => $lessonsJsonPath, 'type' => 'lessons_json'];
+                        $this->info('  ✓ Converted '.count($jsonData).' lesson(s) from lessons_learned.json');
                     }
                 }
+            } catch (\Exception $e) {
+                $this->error("    ✗ Error processing file: {$e->getMessage()}");
             }
         } else {
-            $this->warn("  ⚠ Directory not found: {$aiJsonPath}");
+            $this->warn("  ⚠ lessons_learned.json file not found at: {$lessonsJsonPath}");
         }
 
         if (empty($lessons)) {
@@ -210,46 +198,6 @@ class PushLessons extends Command
     }
 
     /**
-     * Extract category and base tags from filename.
-     */
-    protected function extractCategoryFromFilename(string $filename): array
-    {
-        // Remove AI_ prefix and .json extension
-        $name = str_replace(['AI_', '.json'], '', $filename);
-        $name = strtolower($name);
-
-        // Convert underscores to hyphens for category
-        $category = str_replace('_', '-', $name);
-
-        // Generate base tags from filename parts
-        $parts = explode('_', str_replace(['AI_', '.json'], '', $filename));
-        $tags = array_map('strtolower', $parts);
-        $tags[] = 'laravel';
-
-        // Add specific tags based on category patterns
-        if (str_contains($category, 'package')) {
-            $tags[] = 'package-development';
-        }
-        if (str_contains($category, 'test')) {
-            $tags[] = 'testing';
-            $tags[] = 'pest';
-        }
-        if (str_contains($category, 'php')) {
-            $tags[] = 'php';
-            $tags[] = 'syntax';
-        }
-        if (str_contains($category, 'syntax')) {
-            $tags[] = 'php';
-            $tags[] = 'syntax';
-        }
-
-        return [
-            'category' => $category,
-            'tags' => array_values(array_unique($tags)), // Re-index to ensure array format
-        ];
-    }
-
-    /**
      * Extract additional tags from lesson content.
      */
     protected function extractTagsFromContent(string $content, array $baseTags): array
@@ -282,7 +230,7 @@ class PushLessons extends Command
             }
         }
 
-        return array_values(array_unique($tags)); // Re-index to ensure array format
+        return array_values(array_unique($tags));
     }
 
     /**
@@ -293,7 +241,6 @@ class PushLessons extends Command
     protected function emptySourceFiles(array $filesToEmpty): void
     {
         if (empty($filesToEmpty)) {
-            // No files to empty - this is normal if files were already empty or didn't produce lessons
             return;
         }
 
@@ -306,11 +253,9 @@ class PushLessons extends Command
 
             try {
                 if ($type === 'lessons-learned') {
-                    // Empty lessons-learned.md file
                     File::put($path, '');
                     $this->line("  ✓ Emptied: {$path}");
-                } elseif ($type === 'ai_json') {
-                    // Empty AI_*.json file with empty array
+                } elseif ($type === 'lessons_json') {
                     File::put($path, "[]\n");
                     $this->line("  ✓ Emptied: {$path}");
                 }

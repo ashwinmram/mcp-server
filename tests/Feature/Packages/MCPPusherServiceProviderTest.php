@@ -18,8 +18,8 @@ test('service provider registers push-project-details command', function () {
 
 test('service provider merges configuration', function () {
     // Configuration should be merged and accessible
-    expect(config('mcp-pusher.lessons_learned_path'))->toBe(base_path('lessons-learned.md'))
-        ->and(config('mcp-pusher.ai_json_directory'))->toBe(base_path('docs'));
+    expect(config('mcp-pusher.lessons_learned_path'))->toBe(base_path('docs/lessons-learned.md'))
+        ->and(config('mcp-pusher.lessons_learned_json_path'))->toBe(base_path('docs/lessons_learned.json'));
 });
 
 test('service uses package config with fallback to services.mcp', function () {

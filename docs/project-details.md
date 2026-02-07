@@ -1,0 +1,1 @@
+## Auth\nAuth lives in app/Http/Controllers/Auth/.

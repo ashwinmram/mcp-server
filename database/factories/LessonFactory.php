@@ -28,7 +28,7 @@ class LessonFactory extends Factory
             'tags' => $this->faker->optional()->randomElements(['php', 'laravel', 'api', 'best-practices'], $this->faker->numberBetween(1, 3)),
             'metadata' => $this->faker->optional()->randomElement([
                 ['file' => 'lessons-learned.md'],
-                ['file' => 'AI_lessons.json'],
+                ['file' => 'lessons_learned.json'],
                 [],
             ]),
             'content' => $content,
