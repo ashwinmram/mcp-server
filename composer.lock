@@ -4,21 +4,15 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "572cf4a06652b60f53eadfa5087aa452",
+    "content-hash": "6e51e108fb35510cf81119c65d8b6fdf",
     "packages": [
         {
             "name": "ashwinmram/mcp-pusher",
-            "version": "v1.0.3",
-            "source": {
-                "type": "git",
-                "url": "https://github.com/ashwinmram/mcp-pusher.git",
-                "reference": "aa2fb8b095745cf64decefd82e905df55b6de268"
-            },
+            "version": "dev-main",
             "dist": {
-                "type": "zip",
-                "url": "https://api.github.com/repos/ashwinmram/mcp-pusher/zipball/aa2fb8b095745cf64decefd82e905df55b6de268",
-                "reference": "aa2fb8b095745cf64decefd82e905df55b6de268",
-                "shasum": ""
+                "type": "path",
+                "url": "./packages/laravel-mcp-pusher",
+                "reference": "aa2fb8b095745cf64decefd82e905df55b6de268"
             },
             "require": {
                 "illuminate/console": "^12.0",
@@ -39,7 +33,6 @@
                     "LaravelMcpPusher\\": "src/"
                 }
             },
-            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
@@ -56,11 +49,9 @@
                 "mcp",
                 "package"
             ],
-            "support": {
-                "issues": "https://github.com/ashwinmram/mcp-pusher/issues",
-                "source": "https://github.com/ashwinmram/mcp-pusher/tree/v1.0.3"
-            },
-            "time": "2026-01-11T06:42:53+00:00"
+            "transport-options": {
+                "relative": true
+            }
         },
         {
             "name": "bacon/bacon-qr-code",
@@ -10089,7 +10080,9 @@
     ],
     "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {},
+    "stability-flags": {
+        "ashwinmram/mcp-pusher": 20
+    },
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Api\StoreLessonsRequest;
+use App\Http\Requests\Api\StoreProjectDetailsRequest;
 use App\Models\Lesson;
 use App\Services\LessonImportService;
 use Illuminate\Http\JsonResponse;
@@ -38,6 +39,33 @@ class LessonController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'An unexpected error occurred while processing lessons',
+                'error' => config('app.debug') ? $e->getMessage() : 'Internal server error',
+            ], 500);
+        }
+    }
+
+    /**
+     * Store project-specific implementation details (no generic validation).
+     */
+    public function storeProjectDetails(StoreProjectDetailsRequest $request): JsonResponse
+    {
+        try {
+            $validated = $request->validated();
+
+            $result = $this->importService->processProjectDetails(
+                $validated['lessons'],
+                $validated['source_project']
+            );
+
+            $this->logSuccessfulPush($validated['source_project'], $result);
+
+            return $this->buildResponse($result);
+        } catch (\Exception $e) {
+            $this->logUnexpectedError($request, $e);
+
+            return response()->json([
+                'success' => false,
+                'message' => 'An unexpected error occurred while processing project details',
                 'error' => config('app.debug') ? $e->getMessage() : 'Internal server error',
             ], 500);
         }

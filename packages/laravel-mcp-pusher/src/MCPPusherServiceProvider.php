@@ -4,6 +4,7 @@ namespace LaravelMcpPusher;
 
 use Illuminate\Support\ServiceProvider;
 use LaravelMcpPusher\Commands\PushLessons;
+use LaravelMcpPusher\Commands\PushProjectDetails;
 
 class MCPPusherServiceProvider extends ServiceProvider
 {
@@ -26,6 +27,7 @@ class MCPPusherServiceProvider extends ServiceProvider
         if ($this->app->runningInConsole()) {
             $this->commands([
                 PushLessons::class,
+                PushProjectDetails::class,
             ]);
 
             $this->publishes([

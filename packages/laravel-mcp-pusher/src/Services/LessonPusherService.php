@@ -46,4 +46,32 @@ class LessonPusherService
                 'lessons' => $lessons,
             ]);
     }
+
+    /**
+     * Push project-specific implementation details to the remote MCP server.
+     *
+     * @param  array  $lessons  Array of lesson data (same shape as pushLessons)
+     * @param  string  $sourceProject  Source project identifier
+     * @return Response HTTP response from the remote MCP server
+     *
+     * @throws \RuntimeException If server URL or API token is not configured
+     */
+    public function pushProjectDetails(array $lessons, string $sourceProject): Response
+    {
+        $serverUrl = config('mcp-pusher.server_url') ?? config('services.mcp.server_url');
+        $apiToken = config('mcp-pusher.api_token') ?? config('services.mcp.api_token');
+
+        if (empty($serverUrl) || empty($apiToken)) {
+            throw new \RuntimeException('MCP server URL and API token must be configured');
+        }
+
+        $url = rtrim($serverUrl, '/').'/api/project-details';
+
+        return Http::withToken($apiToken)
+            ->acceptJson()
+            ->post($url, [
+                'source_project' => $sourceProject,
+                'lessons' => $lessons,
+            ]);
+    }
 }

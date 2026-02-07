@@ -10,6 +10,7 @@ Route::get('/user', function (Request $request) {
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::post('/lessons', [LessonController::class, 'store']);
+    Route::post('/project-details', [LessonController::class, 'storeProjectDetails']);
     Route::get('/lessons', [LessonController::class, 'index']);
     Route::get('/lessons/{id}', [LessonController::class, 'show']);
 });

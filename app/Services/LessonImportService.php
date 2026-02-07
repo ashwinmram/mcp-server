@@ -111,6 +111,82 @@ class LessonImportService
     }
 
     /**
+     * Process and store project-specific implementation details (no generic validation, same-project dedupe only).
+     *
+     * @return array{created: int, updated: int, skipped: int, errors: array}
+     */
+    public function processProjectDetails(array $lessons, string $sourceProject): array
+    {
+        $result = [
+            'created' => 0,
+            'updated' => 0,
+            'skipped' => 0,
+            'errors' => [],
+        ];
+
+        foreach ($lessons as $index => $lessonData) {
+            try {
+                if ($this->isMissingRequiredFields($lessonData)) {
+                    $result['errors'][] = "Lesson at index {$index}: Missing required fields (content or type)";
+
+                    continue;
+                }
+
+                $contentHash = $this->hashService->generateHash($lessonData['content']);
+                $existingLesson = Lesson::findByContentHash($contentHash, $sourceProject);
+
+                if ($existingLesson) {
+                    $mergedTags = Lesson::mergeTags(
+                        $existingLesson->tags ?? [],
+                        $lessonData['tags'] ?? []
+                    );
+                    $mergedMetadata = Lesson::mergeMetadata(
+                        $existingLesson->metadata ?? [],
+                        $lessonData['metadata'] ?? []
+                    );
+                    $title = $existingLesson->title ?? $this->extractTitle($lessonData);
+                    $summary = $existingLesson->summary ?? $this->extractSummary($lessonData);
+                    $subcategory = $existingLesson->subcategory ?? $this->extractSubcategory($lessonData, $lessonData['category'] ?? $existingLesson->category);
+
+                    if ($this->shouldUpdateExistingLesson($existingLesson, $lessonData, $mergedTags, $mergedMetadata, [$sourceProject], $title, $summary)) {
+                        $this->updateExistingProjectDetail($existingLesson, $lessonData, $mergedTags, $mergedMetadata, $title, $summary, $subcategory);
+                        $result['updated']++;
+                    } else {
+                        $result['skipped']++;
+                    }
+                } else {
+                    $title = $this->extractTitle($lessonData);
+                    $summary = $this->extractSummary($lessonData);
+                    $category = $lessonData['category'] ?? null;
+                    $subcategory = $this->extractSubcategory($lessonData, $category);
+
+                    Lesson::create([
+                        'source_project' => $sourceProject,
+                        'source_projects' => [$sourceProject],
+                        'type' => $lessonData['type'],
+                        'category' => $category,
+                        'subcategory' => $subcategory,
+                        'title' => $title,
+                        'summary' => $summary,
+                        'tags' => $lessonData['tags'] ?? [],
+                        'metadata' => $lessonData['metadata'] ?? [],
+                        'content' => $lessonData['content'],
+                        'content_hash' => $contentHash,
+                        'is_generic' => false,
+                    ]);
+                    $result['created']++;
+                }
+            } catch (\Exception $e) {
+                $errorMessage = "Lesson at index {$index}: {$e->getMessage()}";
+                $result['errors'][] = $errorMessage;
+                $this->logProcessingError($sourceProject, $index, $e);
+            }
+        }
+
+        return $result;
+    }
+
+    /**
      * Check if metadata has changed.
      */
     protected function hasMetadataChanged(array $existing, array $new): bool
@@ -474,6 +550,26 @@ class LessonImportService
             'metadata' => $mergedMetadata,
             'source_projects' => $newSourceProjects,
             'is_generic' => $validation['is_valid'],
+        ]);
+    }
+
+    protected function updateExistingProjectDetail(
+        Lesson $existingLesson,
+        array $lessonData,
+        array $mergedTags,
+        array $mergedMetadata,
+        ?string $title,
+        ?string $summary,
+        ?string $subcategory
+    ): void {
+        $existingLesson->update([
+            'category' => $lessonData['category'] ?? $existingLesson->category,
+            'subcategory' => $subcategory,
+            'title' => $title,
+            'summary' => $summary,
+            'tags' => $mergedTags,
+            'metadata' => $mergedMetadata,
+            'is_generic' => false,
         ]);
     }
 }

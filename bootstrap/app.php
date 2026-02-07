@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Middleware\BindMcpProject;
 use App\Http\Middleware\HandleAppearance;
 use App\Http\Middleware\HandleInertiaRequests;
 use App\Http\Middleware\HandleLocale;
@@ -18,6 +19,10 @@ return Application::configure(basePath: dirname(__DIR__))
     )
     ->withMiddleware(function (Middleware $middleware): void {
         $middleware->encryptCookies(except: ['appearance', 'sidebar_state']);
+
+        $middleware->alias([
+            'mcp.project' => BindMcpProject::class,
+        ]);
 
         $middleware->web(append: [
             HandleLocale::class,

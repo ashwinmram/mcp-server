@@ -6,10 +6,13 @@ use Illuminate\Support\Facades\Config;
 
 uses(RefreshDatabase::class);
 
-test('service provider registers command', function () {
-    // The command should be registered via package discovery
-    // Check that it exists in the Artisan command list
+test('service provider registers push-lessons command', function () {
     $commandExists = array_key_exists('mcp:push-lessons', Artisan::all());
+    expect($commandExists)->toBeTrue();
+});
+
+test('service provider registers push-project-details command', function () {
+    $commandExists = array_key_exists('mcp:push-project-details', Artisan::all());
     expect($commandExists)->toBeTrue();
 });
 

@@ -8,9 +8,15 @@
         "framework"
     ],
     "license": "MIT",
+    "repositories": [
+        {
+            "type": "path",
+            "url": "./packages/laravel-mcp-pusher"
+        }
+    ],
     "require": {
         "php": "^8.2",
-        "ashwinmram/mcp-pusher": "^1.0",
+        "ashwinmram/mcp-pusher": "@dev",
         "inertiajs/inertia-laravel": "^2.0",
         "laravel/fortify": "^1.30",
         "laravel/framework": "^12.0",

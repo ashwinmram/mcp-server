@@ -544,3 +544,85 @@ test('updates title and summary when updating existing lesson', function () {
         ->and($lesson->summary)->toBe('Updated Summary');
 });
 
+test('processProjectDetails creates lesson with is_generic false', function () {
+    $service = new LessonImportService(
+        new LessonValidationService,
+        new LessonContentHashService
+    );
+
+    $lessons = [
+        [
+            'type' => 'project_detail',
+            'content' => 'Project-specific: config lives in config/app.php',
+            'category' => 'project-implementation',
+        ],
+    ];
+
+    $result = $service->processProjectDetails($lessons, 'my-app');
+
+    expect($result['created'])->toBe(1);
+    $lesson = Lesson::first();
+    expect($lesson->is_generic)->toBeFalse()
+        ->and($lesson->source_project)->toBe('my-app');
+});
+
+test('processProjectDetails does not run generic validation', function () {
+    $service = new LessonImportService(
+        new LessonValidationService,
+        new LessonContentHashService
+    );
+
+    $lessons = [
+        [
+            'type' => 'project_detail',
+            'content' => 'The file is at /var/www/myproject/app/Models/User.php',
+        ],
+    ];
+
+    $result = $service->processProjectDetails($lessons, 'my-app');
+
+    expect($result['created'])->toBe(1)
+        ->and($result['errors'])->toBeEmpty();
+});
+
+test('processProjectDetails deduplicates only within same project', function () {
+    $service = new LessonImportService(
+        new LessonValidationService,
+        new LessonContentHashService
+    );
+
+    $content = 'Shared content';
+    $lessons = [['type' => 'project_detail', 'content' => $content]];
+
+    $result1 = $service->processProjectDetails($lessons, 'project-a');
+    $result2 = $service->processProjectDetails($lessons, 'project-b');
+
+    expect($result1['created'])->toBe(1)
+        ->and($result2['created'])->toBe(1);
+    $this->assertDatabaseCount('lessons', 2);
+});
+
+test('processProjectDetails updates existing lesson within same project', function () {
+    $service = new LessonImportService(
+        new LessonValidationService,
+        new LessonContentHashService
+    );
+
+    $content = 'Same content';
+    $lessons1 = [['type' => 'project_detail', 'content' => $content]];
+    $service->processProjectDetails($lessons1, 'my-app');
+
+    $lessons2 = [
+        [
+            'type' => 'project_detail',
+            'content' => $content,
+            'title' => 'Updated Title',
+        ],
+    ];
+    $result = $service->processProjectDetails($lessons2, 'my-app');
+
+    expect($result['updated'])->toBe(1)
+        ->and($result['created'])->toBe(0);
+    $lesson = Lesson::where('source_project', 'my-app')->first();
+    expect($lesson->title)->toBe('Updated Title');
+});

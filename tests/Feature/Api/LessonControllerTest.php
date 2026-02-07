@@ -233,3 +233,94 @@ test('rejects lessons with project-specific paths', function () {
     $errors = $response->json('data.errors');
     expect($errors)->not->toBeEmpty();
 });
+
+test('can store project details via API', function () {
+    $payload = [
+        'source_project' => 'my-app',
+        'lessons' => [
+            [
+                'type' => 'project_detail',
+                'content' => 'Auth lives in app/Http/Controllers/Auth/. Env uses APP_KEY for encryption.',
+                'category' => 'project-implementation',
+                'tags' => ['project-details', 'auth'],
+                'metadata' => ['file' => 'project-details.md'],
+            ],
+        ],
+    ];
+
+    $response = $this->postJson('/api/project-details', $payload);
+
+    $response->assertStatus(201)
+        ->assertJson([
+            'success' => true,
+            'data' => [
+                'created' => 1,
+            ],
+        ]);
+
+    $this->assertDatabaseHas('lessons', [
+        'source_project' => 'my-app',
+        'is_generic' => false,
+        'type' => 'project_detail',
+    ]);
+});
+
+test('project details endpoint accepts project-specific paths', function () {
+    $payload = [
+        'source_project' => 'test-project',
+        'lessons' => [
+            [
+                'type' => 'project_detail',
+                'content' => 'The file is at /var/www/myproject/app/Models/User.php',
+            ],
+        ],
+    ];
+
+    $response = $this->postJson('/api/project-details', $payload);
+
+    $response->assertStatus(201);
+    $this->assertDatabaseHas('lessons', [
+        'source_project' => 'test-project',
+        'is_generic' => false,
+        'content' => 'The file is at /var/www/myproject/app/Models/User.php',
+    ]);
+});
+
+test('requires authentication to store project details', function () {
+    $this->refreshApplication();
+
+    $response = $this->postJson('/api/project-details', [
+        'source_project' => 'my-app',
+        'lessons' => [
+            [
+                'type' => 'project_detail',
+                'content' => 'Test content',
+            ],
+        ],
+    ]);
+
+    $response->assertStatus(401);
+});
+
+test('project details deduplicate only within same project', function () {
+    $content = 'Same content in two projects';
+    $payload = [
+        'source_project' => 'project-a',
+        'lessons' => [
+            [
+                'type' => 'project_detail',
+                'content' => $content,
+            ],
+        ],
+    ];
+
+    $this->postJson('/api/project-details', $payload)->assertStatus(201);
+    $this->postJson('/api/project-details', [
+        'source_project' => 'project-b',
+        'lessons' => [['type' => 'project_detail', 'content' => $content]],
+    ])->assertStatus(201);
+
+    // Two lessons (one per project), not merged
+    $this->assertDatabaseCount('lessons', 2);
+    expect(Lesson::where('content', $content)->count())->toBe(2);
+});

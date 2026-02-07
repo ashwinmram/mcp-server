@@ -243,6 +243,34 @@ php artisan mcp:push-lessons --source=mcp-server
 
 This ensures lessons learned during development are captured and made available for future sessions.
 
+## Project Details MCP Server
+
+A second MCP server exposes **project-specific** implementation details (file locations, env vars, conventions) for a given project. Use it when working in a codebase that has pushed project details.
+
+### Connection URL
+
+The project is determined by the query parameter `project`. Use the same value as `--source` when pushing:
+
+- **URL:** `https://mcp-server.test/mcp/project-details?project=<source_project>`
+- Example: `https://mcp-server.test/mcp/project-details?project=my-app`
+
+Use the same Authorization header (Bearer token) as the lessons server. Add a **separate** MCP server entry in Cursor for each project you want project details for (each with its own `?project=...`).
+
+### Pushing project details
+
+From a project that wants to expose implementation details to the AI:
+
+```bash
+php artisan mcp:push-project-details --source=my-app
+```
+
+Options:
+
+- `--project-details-file=` — Path to markdown file (default: `docs/project-details.md`)
+- `--project-details-json-dir=` — Directory for `project_details.json` or `project_details_*.json` (default: `docs`)
+
+Files: `docs/project-details.md` (same structure as lessons-learned.md) and/or `docs/project_details.json` (JSON array of objects with title, summary, category, subcategory, type, tags, content, metadata). No generic validation is applied; project-specific paths and names are allowed.
+
 ## Managing Tokens
 
 ### List All MCP Tokens

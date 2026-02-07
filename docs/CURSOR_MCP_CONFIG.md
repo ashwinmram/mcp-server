@@ -60,10 +60,19 @@ Copy the token that's displayed (you'll only see it once).
             "headers": {
                 "Authorization": "Bearer YOUR_SANCTUM_TOKEN_HERE"
             }
+        },
+        "project-details-my-app": {
+            "transport": "sse",
+            "url": "https://mcp-server.test/mcp/project-details?project=my-app",
+            "headers": {
+                "Authorization": "Bearer YOUR_SANCTUM_TOKEN_HERE"
+            }
         }
     }
 }
 ```
+
+Add one **project-details** entry per project; replace `my-app` with the same value you use for `--source` when running `php artisan mcp:push-project-details`.
 
 2. Replace `YOUR_SANCTUM_TOKEN_HERE` with the token you generated
 

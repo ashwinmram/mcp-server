@@ -31,6 +31,14 @@
 
 5. **Keep responses succinct** and in ordered or unordered bullet format when discussing lessons
 
+## Project implementation details
+
+A second MCP server exposes **project-specific** implementation details (file locations, env vars, conventions, APIs) for the current project.
+
+- **When to use:** Prefer the **Project Details** MCP connection when working in a project that has pushed project details, especially for "how is X done in this project?" or "where is Y in this codebase?"
+- **Connection URL:** Same base URL as lessons, path `/mcp/project-details?project=<source_project>`. The `project` query param must match the `--source` value used when pushing project details.
+- **At session start:** If the Project Details server is connected, consider calling GetProjectDetailsOverview to see what implementation details exist for the current project.
+
 ## Query Lessons During Development
 
 **When to Query Lessons:**
@@ -209,4 +217,21 @@ This command will:
 1. Read `docs/lessons-learned.md` and convert it to lesson format
 2. Read all `docs/AI_*.json` files and convert each array element to a lesson
 3. Push lessons to the MCP server for future AI agent sessions
+
+## Updating project implementation details
+
+When asked to update project-specific implementation details (paths, env, conventions for this codebase):
+
+### File locations
+
+- **project-details.md**: `docs/project-details.md` (same structure as lessons-learned.md: H2/H3/H4, bullets, code blocks)
+- **project_details.json**: `docs/project_details.json` (or `docs/project_details_*.json`) — JSON array of objects with the same field order as AI_*.json (title, summary, category, subcategory, type, tags, content, metadata). Use `type` `"project_detail"` or `"ai_output"`.
+
+### Push command
+
+```bash
+php artisan mcp:push-project-details --source=<project>
+```
+
+Options: `--project-details-file=` (default: docs/project-details.md), `--project-details-json-dir=` (default: docs). The `--source` value must match the `project` query param used in the Project Details MCP connection URL.
 </mcp-server-instructions>

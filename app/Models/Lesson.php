@@ -60,6 +60,14 @@ class Lesson extends Model
     }
 
     /**
+     * Scope a query to only include project-specific implementation details (non-generic).
+     */
+    public function scopeProjectDetails(Builder $query): Builder
+    {
+        return $query->where('is_generic', false);
+    }
+
+    /**
      * Scope a query to filter by category.
      */
     public function scopeByCategory(Builder $query, string $category): Builder
