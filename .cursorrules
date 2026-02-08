@@ -33,9 +33,12 @@
 
 ## Project implementation details
 
-A second MCP server exposes **project-specific** implementation details (file locations, env vars, conventions, APIs) for the current project.
+**CRITICAL – Project Details MCP server only:** For project-specific implementation details, use ONLY the **mcp-server-project-details** MCP server. NEVER use the gifted-seeds-project-details server or any other Project Details MCP servers.
 
-- **When to use:** Prefer the **Project Details** MCP connection when working in a project that has pushed project details, especially for "how is X done in this project?" or "where is Y in this codebase?"
+The mcp-server-project-details server exposes **project-specific** implementation details (file locations, env vars, conventions, APIs) for the current project.
+
+- **When to use:** Prefer the **mcp-server-project-details** MCP connection when working in a project that has pushed project details, especially for "how is X done in this project?" or "where is Y in this codebase?"
+- **Tools to use:** `mcp_mcp-server-project-details_search-project-details`, `mcp_mcp-server-project-details_get-project-details-by-category`, `mcp_mcp-server-project-details_get-project-details-overview`
 - **Connection URL:** Same base URL as lessons, path `/mcp/project-details?project=<source_project>`. The `project` query param must match the `--source` value used when pushing project details.
 - **At session start:** If the Project Details server is connected, consider calling GetProjectDetailsOverview to see what implementation details exist for the current project.
 
