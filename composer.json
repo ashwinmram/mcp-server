@@ -1,11 +1,14 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
-    "name": "laravel/vue-starter-kit",
+    "name": "ashwinmram/mcp-server",
     "type": "project",
-    "description": "The skeleton application for the Laravel framework.",
+    "description": "Laravel Vue starter kit enhanced with MCP (Model Context Protocol) tooling and lessons-learned workflows.",
     "keywords": [
         "laravel",
-        "framework"
+        "framework",
+        "mcp",
+        "vue",
+        "inertia"
     ],
     "license": "MIT",
     "repositories": [
@@ -16,7 +19,7 @@
     ],
     "require": {
         "php": "^8.2",
-        "ashwinmram/mcp-pusher": "@dev",
+        "ashwinmram/mcp-pusher": "*",
         "inertiajs/inertia-laravel": "^2.0",
         "laravel/fortify": "^1.30",
         "laravel/framework": "^12.0",
@@ -50,7 +53,8 @@
     },
     "scripts": {
         "post-update-cmd": [
-            "@php artisan boost:update --ansi"
+            "@php artisan boost:update --ansi",
+            "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
         ],
         "setup": [
             "composer install",
@@ -76,9 +80,6 @@
         "post-autoload-dump": [
             "Illuminate\\Foundation\\ComposerScripts::postAutoloadDump",
             "@php artisan package:discover --ansi"
-        ],
-        "post-update-cmd": [
-            "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
         ],
         "post-root-package-install": [
             "@php -r \"file_exists('.env') || copy('.env.example', '.env');\""
@@ -106,6 +107,6 @@
             "php-http/discovery": true
         }
     },
-    "minimum-stability": "stable",
+    "minimum-stability": "dev",
     "prefer-stable": true
 }
