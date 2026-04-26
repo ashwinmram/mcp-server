@@ -10,7 +10,7 @@ Laravel package to push lessons learned and project implementation details from 
 ## Requirements
 
 - PHP 8.2+
-- Laravel 12.x
+- Laravel 12.x or 13.x
 - An MCP server that accepts pushes (e.g. [Lessons Learned MCP Server](https://github.com/ashwinmram/mcp-server))
 
 ## Installation
