@@ -41,6 +41,24 @@ MCP_API_TOKEN=your-api-token-here
 
 **Workflow:** At the end of each coding session, populate the lessons learned and project details files (`docs/lessons-learned.md`, `docs/lessons_learned.json`, `docs/project-details.md`, `docs/project_details.json`) as required. You need content in at least one source file per command before you can push. **Source files are truncated (emptied) after each successful push** — this prevents duplicate pushes. Regenerate the files at the end of the next session and push again.
 
+### Recommended AI prompts
+
+#### Generic lessons
+
+Use this prompt to generate session-agnostic lessons:
+
+```text
+Let's update lessons-learned.md and lessons_learned.json files and with any lessons learned during this session and save it to the docs folder.    Please ensure the json title and summary are AI friendly so that an AI Agent will easily be able to discern whether or not to use the skill.
+```
+
+#### Project-specific lessons
+
+Use this prompt to capture repository/project implementation details:
+
+```text
+Let's update two files in the docs folder: project-details.md and project_details.json with any project specific lessons learned during this session.  Please ensure the json title and summary are AI friendly so that an AI Agent will easily be able to discern whether or not to use the skill.
+```
+
 ### Push lessons
 
 ```bash

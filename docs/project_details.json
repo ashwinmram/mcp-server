@@ -1,1 +1,59 @@
-[]
+[
+  {
+    "title": "When working in this repo, use mcp-pusher package constraint widening for Laravel 13 support",
+    "summary": "Use this project detail when updating `packages/laravel-mcp-pusher` for Laravel major-version compatibility. In this repository, Laravel 13 support was implemented by widening `illuminate/*` constraints in the package composer file and syncing README support wording.",
+    "category": "package-maintenance",
+    "subcategory": "laravel-version-compatibility",
+    "type": "project_detail",
+    "tags": [
+      "mcp-pusher",
+      "composer",
+      "laravel-13",
+      "project-specific",
+      "docs-sync"
+    ],
+    "content": "Project-specific implementation for this repository: Laravel 13 compatibility for `packages/laravel-mcp-pusher` was achieved by updating `packages/laravel-mcp-pusher/composer.json` constraints (`illuminate/support`, `illuminate/http`, `illuminate/console`) from `^12.0` to `^12.0|^13.0`, plus updating `packages/laravel-mcp-pusher/README.md` requirements text to indicate Laravel 12.x or 13.x support. No package source-code behavior changes were required.",
+    "metadata": {
+      "file": "project_details.json",
+      "session_date": "2026-04-26"
+    }
+  },
+  {
+    "title": "When package feature tests fail locally here, treat MySQL auth and SQLite migration issues as environment blockers first",
+    "summary": "Use this project detail when package feature tests in this repo fail unexpectedly during compatibility work. The common blocker pattern is local MySQL auth failure for `mcp_server_test` and SQLite incompatibility with a MySQL-specific migration.",
+    "category": "testing",
+    "subcategory": "environment-constraints",
+    "type": "project_detail",
+    "tags": [
+      "tests",
+      "mysql",
+      "sqlite",
+      "migration-compatibility",
+      "mcp-server"
+    ],
+    "content": "In this project, package feature tests under `tests/Feature/Packages/*` may fail in local environments when MySQL test credentials are unavailable for `mcp_server_test`. Attempting to switch to SQLite can still fail because migration `database/migrations/2026_01_11_064321_add_markdown_type_to_lessons_table.php` uses `ALTER TABLE ... MODIFY COLUMN ... ENUM`, which SQLite does not support. Preferred fallback: run DB-independent unit tests and separately validate package installation/discovery in a throwaway target-version Laravel app.",
+    "metadata": {
+      "file": "project_details.json",
+      "session_date": "2026-04-26"
+    }
+  },
+  {
+    "title": "How to validate local mcp-pusher changes against Laravel 13 in this repository",
+    "summary": "Use this project detail when you need high-confidence validation of local package changes in `packages/laravel-mcp-pusher` without publishing to Packagist. The repository-specific method is creating a temporary Laravel 13 app and requiring the package via a Composer path repository.",
+    "category": "package-maintenance",
+    "subcategory": "local-validation-workflow",
+    "type": "project_detail",
+    "tags": [
+      "laravel-13",
+      "path-repository",
+      "composer",
+      "validation",
+      "mcp-pusher"
+    ],
+    "content": "Repository-specific validation workflow used in this session: create a temporary Laravel 13 app, add a Composer path repository pointing to `/Users/ashwinmram/Herd/mcp-server/packages/laravel-mcp-pusher`, then run `composer require ashwinmram/mcp-pusher:@dev`. Successful dependency resolution and Laravel package discovery confirms practical compatibility for local package changes before release.",
+    "metadata": {
+      "file": "project_details.json",
+      "session_date": "2026-04-26"
+    }
+  }
+]
