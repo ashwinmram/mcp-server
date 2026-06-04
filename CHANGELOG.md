@@ -13,7 +13,7 @@ Documentation release aligned with **mcp-pusher 3.0.0**. No API or database chan
 
 ### Added
 
-- Link to package [CURSOR-HOOKS.md](packages/laravel-mcp-pusher/docs/CURSOR-HOOKS.md) for optional compaction hooks
+- Cursor hooks setup documented in [packages/laravel-mcp-pusher/README.md](packages/laravel-mcp-pusher/README.md#optional-cursor-hooks)
 
 ### Package migration (consumer Laravel projects)
 

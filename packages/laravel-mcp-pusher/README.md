@@ -7,6 +7,8 @@ Laravel package to push lessons learned and project implementation details from 
 
 **Version 3.0** — see [CHANGELOG.md](CHANGELOG.md) for migration from 1.x/2.0.x (`mcp:push-lessons` / `mcp:push-project-details` removed).
 
+**Optional:** [Cursor hooks](#optional-cursor-hooks) — copy stubs from `stubs/cursor-hooks/` to automate `mcp:append` before compaction and remind you to `mcp:push` at session end.
+
 ## Best practices (read this first)
 
 | Command | Role | How often |
@@ -27,10 +29,14 @@ End of session (once):
   php artisan mcp:push --source=your-project
 ```
 
+### Optional: automate with Cursor hooks
+
+See [Optional: Cursor hooks](#optional-cursor-hooks) below for first-time setup (`stubs/cursor-hooks/` → `.cursor/hooks.json`). Hooks are optional; frequent `mcp:append` remains the primary capture path.
+
 ### What `mcp:extract-session` is NOT
 
 - Not a substitute for frequent `mcp:append`
-- Not run automatically when Cursor compacts (unless you configure hooks yourself)
+- Not run automatically when Cursor compacts (unless you configure [Cursor hooks](#optional-cursor-hooks))
 - Not guaranteed accurate — review before push
 - Not required if drafts already capture the session
 
@@ -133,9 +139,108 @@ your-project/
 
 ## Optional: Cursor hooks
 
-First-time setup: **[docs/CURSOR-HOOKS.md](docs/CURSOR-HOOKS.md)** — copy `stubs/cursor-hooks/` into `.cursor/hooks`, `chmod +x`, verify in Settings → Hooks.
+Optional [Cursor Agent Hooks](https://docs.cursor.com) remind you to **`mcp:append`** before compaction and to **`mcp:push`** at session end. Hooks are **not required** for mcp-pusher to work.
 
-Hooks encourage `mcp:append` before compaction and remind you to `mcp:push` at session end.
+### Prerequisites
+
+- Cursor with **Agent Hooks** (Settings → Features → Hooks)
+- `composer require ashwinmram/mcp-pusher:^3.0` in your Laravel project
+- `php` on your PATH (Herd users: hooks may need the full PHP path in scripts — see [Troubleshooting](#troubleshooting))
+- `jq` only if you customize scripts to parse hook JSON
+
+### Install hook stubs
+
+Run from your **Laravel project root** (not inside `vendor/`).
+
+**Installed via Composer:**
+
+```bash
+mkdir -p .cursor/hooks
+cp vendor/ashwinmram/mcp-pusher/stubs/cursor-hooks/hooks.json.example .cursor/hooks.json
+cp vendor/ashwinmram/mcp-pusher/stubs/cursor-hooks/*.sh .cursor/hooks/
+chmod +x .cursor/hooks/*.sh
+```
+
+**Local path repository** (e.g. [mcp-server](https://github.com/ashwinmram/mcp-server) monorepo):
+
+```bash
+mkdir -p .cursor/hooks
+cp packages/laravel-mcp-pusher/stubs/cursor-hooks/hooks.json.example .cursor/hooks.json
+cp packages/laravel-mcp-pusher/stubs/cursor-hooks/*.sh .cursor/hooks/
+chmod +x .cursor/hooks/*.sh
+```
+
+**Included stubs** (`stubs/cursor-hooks/`):
+
+| File | Purpose |
+|------|---------|
+| `hooks.json.example` | Example `.cursor/hooks.json` wiring `preCompact` and `stop` |
+| `pre-compact-checkpoint.sh` | `preCompact` — runs `mcp:append` with a compaction checkpoint entry |
+| `session-end-reminder.sh` | `stop` — returns a `followup_message` to review drafts and `mcp:push` |
+
+Example `.cursor/hooks.json` (after copy):
+
+```json
+{
+  "version": 1,
+  "hooks": {
+    "preCompact": [
+      {
+        "command": ".cursor/hooks/pre-compact-checkpoint.sh"
+      }
+    ],
+    "stop": [
+      {
+        "command": ".cursor/hooks/session-end-reminder.sh"
+      }
+    ]
+  }
+}
+```
+
+Ensure session drafts are gitignored (see [Configuration](#configuration) or `stubs/gitignore-mcp-session.example`):
+
+```gitignore
+/docs/.mcp-session/
+```
+
+### Default hooks
+
+| Hook | Script | Behavior |
+|------|--------|----------|
+| `preCompact` | `pre-compact-checkpoint.sh` | Runs `mcp:append` with a short checkpoint entry (reminder to capture learnings) |
+| `stop` | `session-end-reminder.sh` | Returns a `followup_message` to review drafts, optionally run **`mcp:extract-session`** if thin, then **`mcp:push`** |
+
+Hooks do **not** run `mcp:extract-session` automatically — extract remains a manual fallback.
+
+### Verify hooks loaded
+
+1. Save `.cursor/hooks.json` (Cursor reloads hooks on save; restart Cursor if needed)
+2. Open **Settings → Hooks** (or the **Hooks** output channel)
+3. Confirm `preCompact` and `stop` entries appear
+4. End an agent session or trigger compaction and check hook output
+
+### Optional Cursor rule
+
+Copy `stubs/mcp-session-capture.mdc` to `.cursor/rules/mcp-session-capture.mdc` so agents prefer frequent `mcp:append`.
+
+### Project vs user hooks
+
+| Location | Cwd | Path style |
+|----------|-----|------------|
+| **Project** `.cursor/hooks.json` (recommended) | Project root | `.cursor/hooks/script.sh` |
+| **User** `~/.cursor/hooks.json` | `~/.cursor/` | `./hooks/script.sh` |
+
+### Troubleshooting
+
+- **Hook never runs** — Remove `matcher` from `hooks.json` temporarily; confirm script is executable (`chmod +x`)
+- **php: command not found** — Edit scripts to use full PHP path, e.g. `~/.config/herd-lite/bin/php` or `which php` from your terminal
+- **preCompact never fires** — Compaction hooks depend on Cursor version/mode; still use frequent `mcp:append` manually
+- **Checkpoint append fails silently** — `pre-compact-checkpoint.sh` uses `|| true` so compaction is not blocked; check `php artisan mcp:append` works in your project
+
+### Security
+
+Hooks execute shell commands on your machine. Review scripts before enabling. Draft files may contain code paths or snippets from `mcp:extract-session` — keep `docs/.mcp-session/` gitignored.
 
 ## Recommended AI prompt (end of session)
 

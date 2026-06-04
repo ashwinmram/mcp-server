@@ -2,6 +2,7 @@
 
 namespace App\Http\Requests\Api;
 
+use Illuminate\Contracts\Validation\ValidationRule;
 use Illuminate\Foundation\Http\FormRequest;
 
 class StoreLessonsRequest extends FormRequest
@@ -17,7 +18,7 @@ class StoreLessonsRequest extends FormRequest
     /**
      * Get the validation rules that apply to the request.
      *
-     * @return array<string, \Illuminate\Contracts\Validation\ValidationRule|array<mixed>|string>
+     * @return array<string, ValidationRule|array<mixed>|string>
      */
     public function rules(): array
     {
@@ -27,6 +28,9 @@ class StoreLessonsRequest extends FormRequest
             'lessons.*.type' => ['required', 'string', 'in:cursor,ai_output,manual,markdown'],
             'lessons.*.content' => ['required', 'string'],
             'lessons.*.category' => ['nullable', 'string', 'max:255'],
+            'lessons.*.subcategory' => ['nullable', 'string', 'max:255'],
+            'lessons.*.title' => ['nullable', 'string', 'max:255'],
+            'lessons.*.summary' => ['nullable', 'string'],
             'lessons.*.tags' => ['nullable', 'array'],
             'lessons.*.tags.*' => ['string', 'max:255'],
             'lessons.*.metadata' => ['nullable', 'array'],

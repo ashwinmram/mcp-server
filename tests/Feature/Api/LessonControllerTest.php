@@ -111,6 +111,37 @@ test('rejects lessons with invalid type', function () {
         ->assertJsonValidationErrors(['lessons.0.type']);
 });
 
+test('stores generic lesson title summary and subcategory from API payload', function () {
+    $payload = [
+        'source_project' => 'test-project',
+        'lessons' => [
+            [
+                'type' => 'ai_output',
+                'title' => 'Generic lessons API accepts title and summary',
+                'summary' => 'StoreLessonsRequest must validate title and summary so validated() does not strip them.',
+                'category' => 'mcp-development',
+                'subcategory' => 'api-validation',
+                'content' => 'When pushing via POST /api/lessons, title and summary must persist on the Lesson model.',
+                'tags' => ['mcp', 'api'],
+            ],
+        ],
+    ];
+
+    $response = $this->postJson('/api/lessons', $payload);
+
+    $response->assertCreated()
+        ->assertJsonPath('data.created', 1);
+
+    $this->assertDatabaseHas('lessons', [
+        'source_project' => 'test-project',
+        'is_generic' => true,
+        'title' => 'Generic lessons API accepts title and summary',
+        'summary' => 'StoreLessonsRequest must validate title and summary so validated() does not strip them.',
+        'category' => 'mcp-development',
+        'subcategory' => 'api-validation',
+    ]);
+});
+
 test('can list lessons via API', function () {
     Lesson::factory()->count(5)->create([
         'source_project' => 'test-project',

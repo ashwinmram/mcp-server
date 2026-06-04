@@ -273,6 +273,10 @@ class LessonImportService
      */
     protected function extractSubcategory(array $lessonData, ?string $category): ?string
     {
+        if (! empty($lessonData['subcategory'])) {
+            return $lessonData['subcategory'];
+        }
+
         if (empty($category)) {
             return null;
         }
