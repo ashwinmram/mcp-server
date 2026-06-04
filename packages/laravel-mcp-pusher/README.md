@@ -7,7 +7,7 @@ Laravel package to push lessons learned and project implementation details from 
 
 **Version 3.0** — see [CHANGELOG.md](CHANGELOG.md) for migration from 1.x/2.0.x (`mcp:push-lessons` / `mcp:push-project-details` removed).
 
-**Optional:** [Cursor hooks](#optional-cursor-hooks) — copy stubs from `stubs/cursor-hooks/` to automate `mcp:append` before compaction and remind you to `mcp:push` at session end.
+**Optional:** [Cursor hooks](#optional-cursor-hooks) — `preCompact` shows a capture prompt (`user_message`) before context compaction. Session end (`mcp:push`) is manual.
 
 ## Best practices (read this first)
 
@@ -139,7 +139,7 @@ your-project/
 
 ## Optional: Cursor hooks
 
-Optional [Cursor Agent Hooks](https://docs.cursor.com) remind you to **`mcp:append`** before compaction and to **`mcp:push`** at session end. Hooks are **not required** for mcp-pusher to work.
+Optional [Cursor Agent Hooks](https://docs.cursor.com) can show a **knowledge-capture prompt** when context is about to compact (`preCompact` → `user_message`). Hooks are **not required** for mcp-pusher to work. Session-end publish is **manual** (no `stop` hook — it auto-fired too often).
 
 ### Prerequisites
 
@@ -157,7 +157,8 @@ Run from your **Laravel project root** (not inside `vendor/`).
 ```bash
 mkdir -p .cursor/hooks
 cp vendor/ashwinmram/mcp-pusher/stubs/cursor-hooks/hooks.json.example .cursor/hooks.json
-cp vendor/ashwinmram/mcp-pusher/stubs/cursor-hooks/*.sh .cursor/hooks/
+cp vendor/ashwinmram/mcp-pusher/stubs/cursor-hooks/pre-compact-checkpoint.sh .cursor/hooks/
+cp vendor/ashwinmram/mcp-pusher/stubs/cursor-hooks/pre-compact-prompt.txt .cursor/hooks/
 chmod +x .cursor/hooks/*.sh
 ```
 
@@ -166,7 +167,8 @@ chmod +x .cursor/hooks/*.sh
 ```bash
 mkdir -p .cursor/hooks
 cp packages/laravel-mcp-pusher/stubs/cursor-hooks/hooks.json.example .cursor/hooks.json
-cp packages/laravel-mcp-pusher/stubs/cursor-hooks/*.sh .cursor/hooks/
+cp packages/laravel-mcp-pusher/stubs/cursor-hooks/pre-compact-checkpoint.sh .cursor/hooks/
+cp packages/laravel-mcp-pusher/stubs/cursor-hooks/pre-compact-prompt.txt .cursor/hooks/
 chmod +x .cursor/hooks/*.sh
 ```
 
@@ -174,9 +176,11 @@ chmod +x .cursor/hooks/*.sh
 
 | File | Purpose |
 |------|---------|
-| `hooks.json.example` | Example `.cursor/hooks.json` wiring `preCompact` and `stop` |
-| `pre-compact-checkpoint.sh` | `preCompact` — runs `mcp:append` with a compaction checkpoint entry |
-| `session-end-reminder.sh` | `stop` — returns a `followup_message` to review drafts and `mcp:push` |
+| `hooks.json.example` | Example `.cursor/hooks.json` with **`preCompact` only** |
+| `pre-compact-checkpoint.sh` | `preCompact` — outputs `user_message` with capture prompt |
+| `pre-compact-prompt.txt` | Prompt text (keep beside the script in `.cursor/hooks/`) |
+
+Also see `stubs/mcp-capture-prompts.md` for copy-paste prompts (preCompact, session end manual, generic/project only).
 
 Example `.cursor/hooks.json` (after copy):
 
@@ -187,11 +191,6 @@ Example `.cursor/hooks.json` (after copy):
     "preCompact": [
       {
         "command": ".cursor/hooks/pre-compact-checkpoint.sh"
-      }
-    ],
-    "stop": [
-      {
-        "command": ".cursor/hooks/session-end-reminder.sh"
       }
     ]
   }
@@ -204,21 +203,20 @@ Ensure session drafts are gitignored (see [Configuration](#configuration) or `st
 /docs/.mcp-session/
 ```
 
-### Default hooks
+### Default hook
 
 | Hook | Script | Behavior |
 |------|--------|----------|
-| `preCompact` | `pre-compact-checkpoint.sh` | Runs `mcp:append` with a short checkpoint entry (reminder to capture learnings) |
-| `stop` | `session-end-reminder.sh` | Returns a `followup_message` to review drafts, optionally run **`mcp:extract-session`** if thin, then **`mcp:push`** |
+| `preCompact` | `pre-compact-checkpoint.sh` | Emits **`user_message`** with the capture prompt from `pre-compact-prompt.txt` — submit it to your agent when shown |
 
-Hooks do **not** run `mcp:extract-session` automatically — extract remains a manual fallback.
+`preCompact` does **not** auto-run the agent; it only suggests the prompt. Hooks do **not** run `mcp:extract-session` or `mcp:push` automatically.
 
 ### Verify hooks loaded
 
 1. Save `.cursor/hooks.json` (Cursor reloads hooks on save; restart Cursor if needed)
 2. Open **Settings → Hooks** (or the **Hooks** output channel)
-3. Confirm `preCompact` and `stop` entries appear
-4. End an agent session or trigger compaction and check hook output
+3. Confirm the `preCompact` entry appears
+4. Trigger compaction and check that the capture prompt is shown
 
 ### Optional Cursor rule
 
@@ -234,23 +232,30 @@ Copy `stubs/mcp-session-capture.mdc` to `.cursor/rules/mcp-session-capture.mdc` 
 ### Troubleshooting
 
 - **Hook never runs** — Remove `matcher` from `hooks.json` temporarily; confirm script is executable (`chmod +x`)
-- **php: command not found** — Edit scripts to use full PHP path, e.g. `~/.config/herd-lite/bin/php` or `which php` from your terminal
-- **preCompact never fires** — Compaction hooks depend on Cursor version/mode; still use frequent `mcp:append` manually
-- **Checkpoint append fails silently** — `pre-compact-checkpoint.sh` uses `|| true` so compaction is not blocked; check `php artisan mcp:append` works in your project
+- **No prompt shown** — Ensure `pre-compact-prompt.txt` is in `.cursor/hooks/` next to the script; script falls back to a short message if missing
+- **preCompact never fires** — Compaction hooks depend on Cursor version/mode; use `stubs/mcp-capture-prompts.md` manually
+- **JSON parse errors** — Install `jq` or ensure `python3` is on PATH (script uses one of them to emit valid JSON)
+- **Removed `stop` hook** — Prior versions used `followup_message` on every agent loop end; use [Session end (manual)](#recommended-prompts) in `mcp-capture-prompts.md` when you want to push
 
 ### Security
 
 Hooks execute shell commands on your machine. Review scripts before enabling. Draft files may contain code paths or snippets from `mcp:extract-session` — keep `docs/.mcp-session/` gitignored.
 
-## Recommended AI prompt (end of session)
+## Recommended prompts
+
+Copy-paste prompts live in [`stubs/mcp-capture-prompts.md`](stubs/mcp-capture-prompts.md):
+
+| When | Section |
+|------|---------|
+| Before compaction (hook `user_message`) | **preCompact** |
+| Manual capture anytime | **Combined** |
+| End of session (no hook) | **Session end (manual only)** |
+| Generic or project only | **Generic only** / **Project only** |
+
+**Session end (manual):**
 
 ```text
-Primary: use mcp:append during the session whenever you learn something reusable.
-
-Before push:
-1. Read docs/.mcp-session/*-draft.jsonl
-2. ONLY IF drafts are missing important learnings: run mcp:extract-session, then review and dedupe
-3. Run once: php artisan mcp:push --source=<project>
+Session ending: review docs/.mcp-session/lessons-draft.jsonl and docs/.mcp-session/project-details-draft.jsonl. If drafts are thin, run: php artisan mcp:extract-session --since-git=main (fallback only). Then publish once: php artisan mcp:push --source=<project>
 ```
 
 ## How it works

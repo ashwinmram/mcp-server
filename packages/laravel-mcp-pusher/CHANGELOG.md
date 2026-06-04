@@ -1,5 +1,17 @@
 # Changelog
 
+## 3.0.2 - 2026-06-05
+
+### Changed
+
+- **`preCompact` hook** now emits `user_message` with full capture prompt (from `pre-compact-prompt.txt`) instead of silent `mcp:append` checkpoint
+- **Removed `stop` hook** and `session-end-reminder.sh` — `followup_message` fired too often on agent loop end; use manual session-end prompt in `mcp-capture-prompts.md`
+
+### Added
+
+- **`stubs/pre-compact-prompt.txt`** — single source for hook `user_message` text
+- **`mcp-capture-prompts.md`** — preCompact, combined, and session-end (manual) sections with legacy four-file update step
+
 ## 3.0.1 - 2026-06-05
 
 Documentation and capture prompts for Cursor hooks (no command or API changes).

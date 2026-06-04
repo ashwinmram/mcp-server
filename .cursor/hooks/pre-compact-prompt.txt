@@ -1,0 +1,22 @@
+Context is about to compact — capture session knowledge NOW before it is lost.
+
+For EACH distinct learning, run php artisan mcp:append with a complete JSON object. Execute the commands; do not only describe entries.
+
+Field rules (every entry):
+- title: REQUIRED. 5–12 words, specific, AI-searchable. Never empty.
+- summary: REQUIRED. Problem + approach + when a future AI should use this (1–2 sentences).
+- category / subcategory: REQUIRED strings (e.g. mcp-development, cursor-hooks, workflow).
+- type: "ai_output" (generic) or "project_detail" (project).
+- tags: JSON array, 2–5 keywords.
+- content: Full explanation.
+- knowledge_scope: "generic" OR "project".
+
+Step A — Generic: one mcp:append per cross-project reusable lesson.
+Step B — Project: one mcp:append per fact specific to this repository (paths, env, MCP URLs, conventions).
+
+Also update legacy docs (merged at mcp:push):
+- docs/lessons-learned.md and docs/lessons_learned.json (generic)
+- docs/project-details.md and docs/project_details.json (project)
+JSON objects: field order title, summary, category, subcategory, type, tags, content, metadata.
+
+When finished, report: generic count, project count, every title appended, and confirm legacy files were updated.

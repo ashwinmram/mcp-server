@@ -191,25 +191,24 @@ Ask in Cursor:
 
 ## Pushing Lessons (Using ashwinmram/mcp-pusher)
 
-**Workflow:** At the end of each coding session, generate and populate the lessons learned and project details files before pushing. You need content in at least one source file per command. **Source files are truncated (emptied) after each successful push** to avoid duplicates — regenerate them at the end of the next session and push again.
+**Workflow (mcp-pusher 3.0):**
+
+| When | What to do |
+|------|------------|
+| **During session** | `php artisan mcp:append` for each learning (primary — survives compaction) |
+| **Before compaction** | Optional Cursor `preCompact` hook shows capture prompt — submit to agent (see [package hooks](packages/laravel-mcp-pusher/README.md#optional-cursor-hooks)) |
+| **Capture prompt text** | [`packages/laravel-mcp-pusher/stubs/mcp-capture-prompts.md`](packages/laravel-mcp-pusher/stubs/mcp-capture-prompts.md) |
+| **End of session** | Review `docs/.mcp-session/*-draft.jsonl` → optional `mcp:extract-session` if thin → once `mcp:push --source=<project>` |
+
+Legacy `docs/lessons-learned.md`, `lessons_learned.json`, `project-details.md`, and `project_details.json` are optional; update them during capture (prompt in stubs) and they merge at push. **Sources are truncated after a successful push** unless `--no-truncate`.
 
 ### Recommended AI prompts
 
-#### Generic lessons
+Use [`packages/laravel-mcp-pusher/stubs/mcp-capture-prompts.md`](packages/laravel-mcp-pusher/stubs/mcp-capture-prompts.md):
 
-Use this prompt to generate generic lessons:
-
-```text
-Let's update lessons-learned.md and lessons_learned.json files and with any lessons learned during this session and save it to the docs folder.    Please ensure the json title and summary are AI friendly so that an AI Agent will easily be able to discern whether or not to use the skill.
-```
-
-#### Project-specific lessons
-
-Use this prompt to generate project-specific implementation details:
-
-```text
-Let's update two files in the docs folder: project-details.md and project_details.json with any project specific lessons learned during this session.  Please ensure the json title and summary are AI friendly so that an AI Agent will easily be able to discern whether or not to use the skill.
-```
+- **preCompact** — append + update legacy four files before context is lost
+- **Session end (manual)** — review drafts, extract fallback, `mcp:push --source=mcp-server`
+- **Combined / generic / project** — same append rules with required `title` and `summary`
 
 ### File Layout for mcp-pusher
 
@@ -295,18 +294,19 @@ See [ashwinmram/mcp-pusher](https://github.com/ashwinmram/mcp-pusher) for full d
 
 ### Optional: Cursor hooks
 
-Optional Cursor hooks nudge **`mcp:append`** before context compaction and remind you to **`mcp:push`** when a session ends. They are not required. Full setup, troubleshooting, and security notes: [packages/laravel-mcp-pusher/README.md#optional-cursor-hooks](packages/laravel-mcp-pusher/README.md#optional-cursor-hooks).
+Optional **`preCompact`** hook shows a capture prompt (`user_message`) before context compaction. Session-end **`mcp:push`** is manual (no `stop` hook). Full setup: [packages/laravel-mcp-pusher/README.md#optional-cursor-hooks](packages/laravel-mcp-pusher/README.md#optional-cursor-hooks).
 
-When developing **this monorepo**, copy stubs from the local package path:
+When developing **this monorepo**:
 
 ```bash
 mkdir -p .cursor/hooks
 cp packages/laravel-mcp-pusher/stubs/cursor-hooks/hooks.json.example .cursor/hooks.json
-cp packages/laravel-mcp-pusher/stubs/cursor-hooks/*.sh .cursor/hooks/
-chmod +x .cursor/hooks/*.sh
+cp packages/laravel-mcp-pusher/stubs/cursor-hooks/pre-compact-checkpoint.sh .cursor/hooks/
+cp packages/laravel-mcp-pusher/stubs/cursor-hooks/pre-compact-prompt.txt .cursor/hooks/
+chmod +x .cursor/hooks/pre-compact-checkpoint.sh
 ```
 
-Consumer Laravel projects should use `vendor/ashwinmram/mcp-pusher/stubs/cursor-hooks/` instead (documented in the package README).
+Consumer projects: `vendor/ashwinmram/mcp-pusher/stubs/cursor-hooks/` (see package README).
 
 ## Project Details MCP Server
 

@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.2.2] - 2026-06-05
+
+### Changed
+
+- Cursor hooks: **`preCompact` only** — shows capture prompt via `user_message`; removed `stop` session-end hook
+- README: 3.0 append-first workflow and links to `mcp-capture-prompts.md` (replaces legacy md/json-only prompts)
+
+### Added
+
+- Embedded **mcp-pusher 3.0.2** stubs: `pre-compact-prompt.txt`, updated hook script
+
 ## [1.2.1] - 2026-06-05
 
 ### Fixed
