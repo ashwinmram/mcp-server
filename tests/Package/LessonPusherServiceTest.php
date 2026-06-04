@@ -1,12 +1,9 @@
 <?php
 
-use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Config;
 use Illuminate\Support\Facades\Http;
 use LaravelMcpPusher\Services\LessonPusherService;
-
-uses(RefreshDatabase::class);
 
 beforeEach(function () {
     Config::set('services.mcp.server_url', 'https://mcp-server.test');
@@ -59,7 +56,7 @@ test('throws exception when server url is missing', function () {
     $service = new LessonPusherService;
 
     expect(fn () => $service->pushLessons([], 'test-project'))
-        ->toThrow(\RuntimeException::class, 'MCP server URL and API token must be configured');
+        ->toThrow(RuntimeException::class, 'MCP server URL and API token must be configured');
 });
 
 test('throws exception when api token is missing', function () {
@@ -71,7 +68,7 @@ test('throws exception when api token is missing', function () {
     $service = new LessonPusherService;
 
     expect(fn () => $service->pushLessons([], 'test-project'))
-        ->toThrow(\RuntimeException::class, 'MCP server URL and API token must be configured');
+        ->toThrow(RuntimeException::class, 'MCP server URL and API token must be configured');
 });
 
 test('handles server url with trailing slash', function () {
@@ -211,5 +208,5 @@ test('pushProjectDetails throws when url or token missing', function () {
     $service = new LessonPusherService;
 
     expect(fn () => $service->pushProjectDetails([], 'test-project'))
-        ->toThrow(\RuntimeException::class, 'MCP server URL and API token must be configured');
+        ->toThrow(RuntimeException::class, 'MCP server URL and API token must be configured');
 });

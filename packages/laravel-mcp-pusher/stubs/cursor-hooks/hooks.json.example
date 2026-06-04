@@ -1,0 +1,15 @@
+{
+  "version": 1,
+  "hooks": {
+    "preCompact": [
+      {
+        "command": ".cursor/hooks/pre-compact-checkpoint.sh"
+      }
+    ],
+    "stop": [
+      {
+        "command": ".cursor/hooks/session-end-reminder.sh"
+      }
+    ]
+  }
+}

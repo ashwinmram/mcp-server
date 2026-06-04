@@ -202,7 +202,7 @@ The `docs/lessons_learned.json` file must be a **JSON array** with objects follo
 
 After updating these files, they can be pushed to the MCP server using:
 ```bash
-php artisan mcp:push-lessons --source=mcp-server
+php artisan mcp:push --source=mcp-server
 ```
 
 This command will:

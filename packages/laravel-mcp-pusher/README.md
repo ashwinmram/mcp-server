@@ -5,7 +5,36 @@ Laravel package to push lessons learned and project implementation details from 
 - [GitHub](https://github.com/ashwinmram/mcp-pusher)
 - [Packagist](https://packagist.org/packages/ashwinmram/mcp-pusher)
 
-**Important**: This package pushes to a **remote MCP server** via HTTP API. It does **not** interact with your local database or include Lesson model classes.
+**Version 2.0** — see [CHANGELOG.md](CHANGELOG.md) for migration from 1.x (`mcp:push-lessons` / `mcp:push-project-details` removed).
+
+## Best practices (read this first)
+
+| Command | Role | How often |
+|---------|------|-----------|
+| **`mcp:append`** | **Primary capture** — intentional notes on disk while context is fresh | **Frequently** after non-trivial work |
+| **`mcp:push`** | **Publish** generic lessons + project details to the MCP server | **Once** per session |
+| **`mcp:extract-session`** | **Fallback only** — salvage from transcript/git when append was skipped or drafts are thin | **Rarely** |
+
+### Recommended workflow
+
+```text
+During session (often):
+  php artisan mcp:append '<json entry>'
+
+End of session (once):
+  review docs/.mcp-session/*-draft.jsonl
+  [only if drafts incomplete] php artisan mcp:extract-session
+  php artisan mcp:push --source=your-project
+```
+
+### What `mcp:extract-session` is NOT
+
+- Not a substitute for frequent `mcp:append`
+- Not run automatically when Cursor compacts (unless you configure hooks yourself)
+- Not guaranteed accurate — review before push
+- Not required if drafts already capture the session
+
+Use **`mcp:extract-session`** only when the session was long, compaction likely happened, few `mcp:append` calls were made, and you still want to capture learnings before push.
 
 ## Requirements
 
@@ -16,12 +45,12 @@ Laravel package to push lessons learned and project implementation details from 
 ## Installation
 
 ```bash
-composer require ashwinmram/mcp-pusher
+composer require ashwinmram/mcp-pusher:^2.0
 ```
 
 ## Configuration
 
-Add MCP configuration to your project's `config/services.php`:
+Add to `config/services.php`:
 
 ```php
 'mcp' => [
@@ -30,94 +59,100 @@ Add MCP configuration to your project's `config/services.php`:
 ],
 ```
 
-Add environment variables to your `.env`:
+`.env`:
 
 ```
 MCP_SERVER_URL=https://your-mcp-server.com
 MCP_API_TOKEN=your-api-token-here
 ```
 
-## Usage
+Add session drafts to `.gitignore` (see `stubs/gitignore-mcp-session.example`):
 
-**Workflow:** At the end of each coding session, populate the lessons learned and project details files (`docs/lessons-learned.md`, `docs/lessons_learned.json`, `docs/project-details.md`, `docs/project_details.json`) as required. You need content in at least one source file per command before you can push. **Source files are truncated (emptied) after each successful push** — this prevents duplicate pushes. Regenerate the files at the end of the next session and push again.
-
-### Recommended AI prompts
-
-#### Generic lessons
-
-Use this prompt to generate session-agnostic lessons:
-
-```text
-Let's update lessons-learned.md and lessons_learned.json files and with any lessons learned during this session and save it to the docs folder.    Please ensure the json title and summary are AI friendly so that an AI Agent will easily be able to discern whether or not to use the skill.
+```gitignore
+/docs/.mcp-session/
 ```
 
-#### Project-specific lessons
+## Commands
 
-Use this prompt to capture repository/project implementation details:
-
-```text
-Let's update two files in the docs folder: project-details.md and project_details.json with any project specific lessons learned during this session.  Please ensure the json title and summary are AI friendly so that an AI Agent will easily be able to discern whether or not to use the skill.
-```
-
-### Push lessons
+### `mcp:append` (primary)
 
 ```bash
-php artisan mcp:push-lessons --source=your-project
+php artisan mcp:append '{"knowledge_scope":"generic","title":"...","summary":"...","category":"...","subcategory":"...","type":"ai_output","tags":[],"content":"..."}'
+# or
+php artisan mcp:append --file=entry.json
 ```
 
-| Option | Description |
-|--------|-------------|
-| `--source=` | Source project name (default: directory name). Must match the `project` query param when connecting to Project Details MCP. |
-| `--lessons-learned=` | Path to `lessons-learned.md` (default: `docs/lessons-learned.md`) |
-| `--lessons-json=` | Path to `lessons_learned.json` (default: `docs/lessons_learned.json`) |
+Routing:
 
-### Push project details
+- `knowledge_scope`: `"generic"` → `docs/.mcp-session/lessons-draft.jsonl`
+- `knowledge_scope`: `"project"` → `docs/.mcp-session/project-details-draft.jsonl`
+- Omitted: `type: "project_detail"` → project; otherwise generic
+
+### `mcp:push` (publish once)
 
 ```bash
-php artisan mcp:push-project-details --source=your-project
+php artisan mcp:push --source=your-project [--no-truncate]
 ```
 
-| Option | Description |
-|--------|-------------|
-| `--source=` | Source project name (must match `?project=` in Project Details MCP URL) |
-| `--project-details-file=` | Path to markdown file (default: `docs/project-details.md`) |
-| `--project-details-json-dir=` | Directory for `project_details.json` or `project_details_*.json` (default: `docs`) |
-| `--no-truncate` | Do not empty source files after a successful push |
+Merges **all** sources (drafts + legacy files), pushes to `/api/lessons` and `/api/project-details` when each bucket has content, truncates on success unless `--no-truncate`.
 
-## File Layout
+`--source` must match the `?project=` query param for Project Details MCP.
 
-By default, the package reads from these locations:
+### `mcp:extract-session` (fallback)
+
+```bash
+php artisan mcp:extract-session [--transcript=/path/to.jsonl] [--since-git=main]
+```
+
+Appends heuristic candidates to draft JSONL. **Review** drafts, then `mcp:push`.
+
+## Migration from 1.x
+
+```bash
+# Before
+php artisan mcp:push-lessons --source=my-app
+php artisan mcp:push-project-details --source=my-app
+
+# After 2.0
+php artisan mcp:push --source=my-app
+```
+
+## File layout
 
 ```
 your-project/
 └── docs/
-    ├── lessons-learned.md      ← Markdown lessons (optional)
-    ├── lessons_learned.json    ← JSON array of lessons (optional)
-    ├── project-details.md      ← Markdown project details (optional)
-    └── project_details.json    ← JSON array of project details (optional)
+    ├── lessons-learned.md              ← legacy (optional)
+    ├── lessons_learned.json            ← legacy (optional)
+    ├── project-details.md              ← legacy (optional)
+    ├── project_details.json            ← legacy (optional)
+    └── .mcp-session/
+        ├── lessons-draft.jsonl         ← append during session (generic)
+        └── project-details-draft.jsonl ← append during session (project)
 ```
 
-**Lessons** are pushed to `/api/lessons`; **project details** to `/api/project-details`. You need at least one source file with content for each command.
+## Optional: Cursor hooks
 
-## How It Works
+First-time setup: **[docs/CURSOR-HOOKS.md](docs/CURSOR-HOOKS.md)** — copy `stubs/cursor-hooks/` into `.cursor/hooks`, `chmod +x`, verify in Settings → Hooks.
 
-### Lessons
+Hooks encourage `mcp:append` before compaction and remind you to `mcp:push` at session end.
 
-- **`lessons-learned.md`**: Categorized as `guidelines` with tags: `laravel`, `lessons-learned`, `guidelines`, `best-practices`, `markdown`
-- **`lessons_learned.json`**: JSON array; each object can have `title`, `summary`, `category`, `subcategory`, `type`, `tags`, `content`, `metadata`. Category and tags from the object are used; content keywords add more tags (e.g. "Pest" → `pest`).
+## Recommended AI prompt (end of session)
 
-### Project details
+```text
+Primary: use mcp:append during the session whenever you learn something reusable.
 
-- **`project-details.md`**: Same H2/H3/H4 structure as lessons-learned.md
-- **`project_details.json`** or **`project_details_*.json`**: JSON array with same field order as lessons (`title`, `summary`, `category`, `subcategory`, `type`, `tags`, `content`, `metadata`). Use `type` `"project_detail"` or `"ai_output"`.
+Before push:
+1. Read docs/.mcp-session/*-draft.jsonl
+2. ONLY IF drafts are missing important learnings: run mcp:extract-session, then review and dedupe
+3. Run once: php artisan mcp:push --source=<project>
+```
 
-### API
+## How it works
 
-Normalized data is POSTed to the remote MCP server. The server handles storage, deduplication (by content hash), and validation.
-
-## MCP Server
-
-This package pushes to an MCP server that exposes `/api/lessons` and `/api/project-details`. For a ready-made server, see the [Lessons Learned MCP Server](https://github.com/ashwinmram/mcp-server).
+- **Generic** lessons → `POST /api/lessons`
+- **Project** details → `POST /api/project-details`
+- Server deduplicates by content hash
 
 ## License
 

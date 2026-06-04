@@ -30,3 +30,4 @@ yarn-error.log
 # Lesson source files (automatically emptied after push)
 docs/lessons-learned.md
 docs/lessons_learned.json
+docs/.mcp-session/

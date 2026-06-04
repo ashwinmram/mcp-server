@@ -4,20 +4,20 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "e04b9ed0015903ec600fa938fbe3ef1f",
+    "content-hash": "3867e8377cf3ac6a50e531397f05c74e",
     "packages": [
         {
             "name": "ashwinmram/mcp-pusher",
-            "version": "dev-main",
+            "version": "2.0.0",
             "dist": {
                 "type": "path",
                 "url": "./packages/laravel-mcp-pusher",
                 "reference": "575079a7804bb4ff26fdc24ffb4de4ccd6f065ef"
             },
             "require": {
-                "illuminate/console": "^12.0",
-                "illuminate/http": "^12.0",
-                "illuminate/support": "^12.0",
+                "illuminate/console": "^12.0|^13.0",
+                "illuminate/http": "^12.0|^13.0",
+                "illuminate/support": "^12.0|^13.0",
                 "php": "^8.2"
             },
             "type": "library",
@@ -10071,9 +10071,7 @@
     ],
     "aliases": [],
     "minimum-stability": "dev",
-    "stability-flags": {
-        "ashwinmram/mcp-pusher": 20
-    },
+    "stability-flags": {},
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {

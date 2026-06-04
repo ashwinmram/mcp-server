@@ -1,0 +1,29 @@
+---
+description: Capture session knowledge with mcp-pusher (append often, push once)
+globs:
+alwaysApply: false
+---
+
+# MCP session knowledge capture
+
+## Best practice (primary)
+
+After each meaningful learning (bug fix, pattern, project convention), run:
+
+```bash
+php artisan mcp:append '{"knowledge_scope":"generic|project","title":"...","summary":"...","category":"...","subcategory":"...","type":"ai_output","tags":[],"content":"..."}'
+```
+
+Use `knowledge_scope: "project"` or `"type":"project_detail"` for repo-specific details.
+
+## End of session (once)
+
+1. Review `docs/.mcp-session/*-draft.jsonl`
+2. **Only if drafts are incomplete:** `php artisan mcp:extract-session` (fallback — review output)
+3. `php artisan mcp:push --source=<project>`
+
+## Do not
+
+- Rely on chat memory after compaction
+- Run `mcp:extract-session` every session (append is primary)
+- Use removed commands `mcp:push-lessons` or `mcp:push-project-details`

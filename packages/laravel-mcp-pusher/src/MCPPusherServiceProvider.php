@@ -3,8 +3,9 @@
 namespace LaravelMcpPusher;
 
 use Illuminate\Support\ServiceProvider;
-use LaravelMcpPusher\Commands\PushLessons;
-use LaravelMcpPusher\Commands\PushProjectDetails;
+use LaravelMcpPusher\Commands\AppendKnowledge;
+use LaravelMcpPusher\Commands\ExtractSession;
+use LaravelMcpPusher\Commands\PushKnowledge;
 
 class MCPPusherServiceProvider extends ServiceProvider
 {
@@ -26,8 +27,9 @@ class MCPPusherServiceProvider extends ServiceProvider
     {
         if ($this->app->runningInConsole()) {
             $this->commands([
-                PushLessons::class,
-                PushProjectDetails::class,
+                AppendKnowledge::class,
+                PushKnowledge::class,
+                ExtractSession::class,
             ]);
 
             $this->publishes([

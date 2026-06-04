@@ -5,9 +5,6 @@ return [
     |--------------------------------------------------------------------------
     | MCP Server URL
     |--------------------------------------------------------------------------
-    |
-    | The URL of your MCP server where lessons will be pushed.
-    |
     */
     'server_url' => env('MCP_SERVER_URL'),
 
@@ -15,21 +12,31 @@ return [
     |--------------------------------------------------------------------------
     | API Token
     |--------------------------------------------------------------------------
-    |
-    | The API token for authenticating with the MCP server.
-    | This will fallback to services.mcp.api_token in the service if not set.
-    |
     */
     'api_token' => env('MCP_API_TOKEN'),
 
     /*
     |--------------------------------------------------------------------------
-    | File Paths
+    | Legacy file paths (generic lessons)
     |--------------------------------------------------------------------------
-    |
-    | Paths to the files that will be read for lessons.
-    |
     */
     'lessons_learned_path' => base_path('docs/lessons-learned.md'),
     'lessons_learned_json_path' => base_path('docs/lessons_learned.json'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Legacy file paths (project details)
+    |--------------------------------------------------------------------------
+    */
+    'project_details_path' => base_path('docs/project-details.md'),
+    'project_details_json_dir' => base_path('docs'),
+
+    /*
+    |--------------------------------------------------------------------------
+    | Session draft paths (append-only JSONL, survive compaction)
+    |--------------------------------------------------------------------------
+    */
+    'session_dir' => base_path('docs/.mcp-session'),
+    'generic_draft_jsonl' => base_path('docs/.mcp-session/lessons-draft.jsonl'),
+    'project_draft_jsonl' => base_path('docs/.mcp-session/project-details-draft.jsonl'),
 ];

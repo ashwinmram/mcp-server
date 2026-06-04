@@ -6,11 +6,11 @@ Central MCP server for storing and querying lessons learned and project-specific
 
 **This server works in conjunction with the [ashwinmram/mcp-pusher](https://github.com/ashwinmram/mcp-pusher) package** to push lessons learned and project implementation details from your Laravel projects to this server via HTTP API.
 
-- **Install:** `composer require ashwinmram/mcp-pusher`
+- **Install:** `composer require ashwinmram/mcp-pusher:^2.0`
 - **Links:** [GitHub](https://github.com/ashwinmram/mcp-pusher) | [Packagist](https://packagist.org/packages/ashwinmram/mcp-pusher)
-- **Commands:** `php artisan mcp:push-lessons`, `php artisan mcp:push-project-details`
+- **Commands (2.0):** `mcp:append` (frequent, during session), `mcp:push` (once at end), `mcp:extract-session` (fallback only)
 
-The mcp-pusher package reads specific files from your project and POSTs them to this server's API (`/api/lessons` and `/api/project-details`). AI agents can then query that data via the MCP endpoints. See [File layout for mcp-pusher](#file-layout-for-mcp-pusher) below for exact paths and formats.
+The mcp-pusher package merges session drafts and legacy `docs/` files, then POSTs to `/api/lessons` (generic) and `/api/project-details` (project-specific) in **one** `mcp:push`. See [File layout for mcp-pusher](#file-layout-for-mcp-pusher) and [packages/laravel-mcp-pusher/README.md](packages/laravel-mcp-pusher/README.md).
 
 ## Key Features
 
@@ -127,7 +127,7 @@ Create `mcp.json` in your project root:
 }
 ```
 
-Add one **project-details** entry per project; replace `my-app` with the same value you use for `--source` when running `php artisan mcp:push-project-details`. See [mcp.json.example](mcp.json.example) for a minimal example.
+Add one **project-details** entry per project; replace `my-app` with the same value you use for `--source` when running `php artisan mcp:push`. See [mcp.json.example](mcp.json.example) for a minimal example.
 
 ### Global vs. Project-Level Configuration
 
@@ -221,14 +221,9 @@ The mcp-pusher package reads files from your project and pushes them to this ser
 | `lessons-learned.md` | `docs/` | Markdown file with H2/H3/H4 headings, bullets, code blocks. Categorized as `guidelines`. |
 | `lessons_learned.json` | `docs/` | JSON array of lesson objects. Each object can have: `title`, `summary`, `category`, `subcategory`, `type` (e.g. `"ai_output"`), `tags`, `content`, optional `metadata`. |
 
-**Command:** `php artisan mcp:push-lessons --source=your-project`
-
-**Options:**
-
-- `--lessons-learned=` — Override path (default: `docs/lessons-learned.md`)
-- `--lessons-json=` — Override path for `lessons_learned.json` (default: `docs/lessons_learned.json`)
-
 **Lessons JSON format** — The `lessons_learned.json` file must be a JSON array. Each object should have: `title`, `summary`, `category`, `subcategory`, `type` (e.g. `"ai_output"`), `tags`, `content`, optional `metadata`.
+
+**During session:** `php artisan mcp:append` with `knowledge_scope: "generic"` (writes to `docs/.mcp-session/lessons-draft.jsonl`).
 
 #### Project Details (Project Details MCP)
 
@@ -237,23 +232,30 @@ The mcp-pusher package reads files from your project and pushes them to this ser
 | `project-details.md` | `docs/` | Markdown with H2/H3/H4, bullets, code blocks. Same structure as lessons-learned.md. Categorized as `project-implementation`. |
 | `project_details.json` or `project_details_*.json` | `docs/` | JSON array of objects. Same field order as lessons: `title`, `summary`, `category`, `subcategory`, `type` (`"project_detail"` or `"ai_output"`), `tags`, `content`, `metadata`. |
 
-**Command:** `php artisan mcp:push-project-details --source=your-project`
+**During session:** `php artisan mcp:append` with `knowledge_scope: "project"` or `type: "project_detail"`.
 
-**Options:**
+#### Push (once per session)
 
-- `--project-details-file=` — Override path (default: `docs/project-details.md`)
-- `--project-details-json-dir=` — Override directory (default: `docs`)
-- `--no-truncate` — Do not empty source files after a successful push
+```bash
+php artisan mcp:push --source=your-project
+```
+
+Merges drafts + legacy files; pushes both APIs when content exists. `--no-truncate` keeps sources after push.
+
+**Fallback:** `php artisan mcp:extract-session` only if drafts are thin after compaction — review before push.
 
 **Summary of defaults:**
 
 ```
 your-project/
 └── docs/
-    ├── lessons-learned.md      ← Lessons
-    ├── lessons_learned.json    ← Lessons
-    ├── project-details.md      ← Project details
-    └── project_details.json    ← Project details (or project_details_*.json)
+    ├── lessons-learned.md
+    ├── lessons_learned.json
+    ├── project-details.md
+    ├── project_details.json
+    └── .mcp-session/
+        ├── lessons-draft.jsonl
+        └── project-details-draft.jsonl
 ```
 
 ### From This Server
@@ -261,12 +263,12 @@ your-project/
 This project can push its own lessons:
 
 ```bash
-php artisan mcp:push-lessons --source=mcp-server
+php artisan mcp:push --source=mcp-server
 ```
 
 ### From Other Laravel Projects
 
-1. Install the package: `composer require ashwinmram/mcp-pusher`
+1. Install the package: `composer require ashwinmram/mcp-pusher:^2.0`
 2. Add to `config/services.php`:
 
 ```php
@@ -281,8 +283,11 @@ php artisan mcp:push-lessons --source=mcp-server
 5. Run:
 
 ```bash
-php artisan mcp:push-lessons --source=your-project
-php artisan mcp:push-project-details --source=your-project
+# During session (after learnings):
+php artisan mcp:append '{"knowledge_scope":"generic", ...}'
+
+# End of session:
+php artisan mcp:push --source=your-project
 ```
 
 See [ashwinmram/mcp-pusher](https://github.com/ashwinmram/mcp-pusher) for full documentation.
@@ -300,7 +305,7 @@ Use the same Bearer token. Add a **separate** MCP server entry per project (each
 
 ### Pushing Project Details
 
-From a project that wants to expose implementation details, use `php artisan mcp:push-project-details --source=my-app`. File layout: `docs/project-details.md` and/or `docs/project_details.json` (or `project_details_*.json`). See [File layout for mcp-pusher](#file-layout-for-mcp-pusher) for paths, names, and formats.
+From a project that wants to expose implementation details, use `php artisan mcp:push --source=my-app` (includes project details when present). See [File layout for mcp-pusher](#file-layout-for-mcp-pusher).
 
 ## Managing Tokens
 
