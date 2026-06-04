@@ -15,11 +15,12 @@ The agent runs `php artisan mcp:append` per lesson into `docs/.mcp-session/lesso
 ## End of session (manual)
 
 1. Review `docs/.mcp-session/*-draft.jsonl`
-2. **Only if drafts are incomplete:** `php artisan mcp:extract-session --since-git=main`
+2. **Only if drafts are incomplete and work is committed:** `php artisan mcp:extract-session` (default: latest commit; see mcp-pusher README for `HEAD~N` / seeding)
 3. `php artisan mcp:push --source=<project>` once
 
 ## Do not
 
 - Rely on chat memory after compaction
 - Run `mcp:extract-session` every session
+- Expect extract to read staged or unstaged files — commit first
 - Use removed commands `mcp:push-lessons` or `mcp:push-project-details`

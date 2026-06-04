@@ -54,7 +54,7 @@ When finished, report counts and every title appended.
 Not wired to any hook. Run when you are ready to publish (all IDEs).
 
 ```text
-Session ending: review docs/.mcp-session/lessons-draft.jsonl and docs/.mcp-session/project-details-draft.jsonl. If drafts are thin, run: php artisan mcp:extract-session --since-git=main (fallback only). Then publish once: php artisan mcp:push --source=<your-project>
+Session ending: review docs/.mcp-session/lessons-draft.jsonl and docs/.mcp-session/project-details-draft.jsonl. If drafts are thin and you have committed session work, run: php artisan mcp:extract-session (fallback only; see mcp-pusher README for --since-git=HEAD~N or main). Then publish once: php artisan mcp:push --source=<your-project>
 ```
 
 ---

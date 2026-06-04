@@ -1,5 +1,17 @@
 # Changelog
 
+## 3.0.7 - 2026-06-05
+
+### Changed
+
+- **`mcp:extract-session` is git-only** — removed `--transcript` and automatic Cursor transcript discovery
+- Default **`--since-git=HEAD~1`** (latest commit); use `HEAD~N` or `main` for deeper history (see README)
+- Command **fails** when not a git repo, invalid ref, or empty commit range (uncommitted/staged work is not read)
+
+### Removed
+
+- `--transcript` option and transcript heuristic extraction
+
 ## 3.0.6 - 2026-06-05
 
 ### Added

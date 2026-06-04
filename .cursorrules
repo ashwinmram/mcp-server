@@ -221,7 +221,7 @@ After updating files (or drafts), push once:
 php artisan mcp:push --source=mcp-server
 ```
 
-Use `mcp:extract-session` only as a fallback when drafts are thin after compaction (review before push).
+Use `mcp:extract-session` only as a fallback when drafts are thin after compaction and session work is committed (git-only; default `HEAD~1` = latest commit). Review drafts before push. For deeper history or seeding a mature repo, see mcp-pusher README (`HEAD~N`, `main`).
 
 This command will:
 1. Read `docs/lessons-learned.md` and convert it to lesson format

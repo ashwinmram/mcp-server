@@ -260,7 +260,7 @@ Consumer projects use [ashwinmram/mcp-pusher](https://github.com/ashwinmram/mcp-
 2. Agent runs `mcp:append` → `docs/.mcp-session/lessons-draft.jsonl` and/or `project-details-draft.jsonl`.
 3. End of session: [end-of-session prompt](packages/laravel-mcp-pusher/README.md#end-of-session), then `php artisan mcp:push --source=<project>`.
 
-Draft files are cleared after a successful push unless `--no-truncate`. Use `mcp:extract-session` only if drafts are thin after compaction.
+Draft files are cleared after a successful push unless `--no-truncate`. Use `mcp:extract-session` only if drafts are thin after compaction and you have committed work (git-only; see [mcp-pusher README](packages/laravel-mcp-pusher/README.md#mcp-extract-session-git--drafts)).
 
 ### File layout (3.0)
 

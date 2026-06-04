@@ -19,7 +19,7 @@ Version 3.0 is a **capture-and-push workflow** built around session drafts on di
 
 - **`mcp:append`** — one structured entry → `lessons-draft.jsonl` or `project-details-draft.jsonl`
 - **`mcp:push`** — publish drafts to the MCP server once per session
-- **`mcp:extract-session`** — fallback only if drafts are thin after compaction
+- **`mcp:extract-session`** — git-only fallback or historical seeding from commit history
 
 **Optional automation:** Cursor `preCompact` hook can show the [knowledge capture prompt](#knowledge-capture-prompt) before compaction. Claude Code and Antigravity have no equivalent hook — paste the prompt manually.
 
@@ -47,7 +47,8 @@ composer require ashwinmram/mcp-pusher:^3.0
 |------|-------------|-------------------|
 | **Capture** | Submit the capture prompt to your agent | Agent executes `mcp:append` → draft JSONL |
 | **Publish** | `php artisan mcp:push --source=your-project` | HTTP push to MCP server |
-| **Fallback** | `mcp:extract-session` only if drafts are thin | Heuristic lines appended to drafts |
+| **Fallback** | `mcp:extract-session` after you **commit** (default: latest commit) | Git log + diff stat → draft JSONL |
+| **Seeding** | `mcp:extract-session --since-git=HEAD~N` on a mature repo | Deeper history; review drafts before push |
 
 ## Connect your AI client to the MCP server
 
@@ -100,7 +101,7 @@ Report: generic count, project count, every title appended.
 When you are ready to publish:
 
 ```text
-Session ending: review docs/.mcp-session/lessons-draft.jsonl and docs/.mcp-session/project-details-draft.jsonl. If drafts are thin, run: php artisan mcp:extract-session --since-git=main (fallback only). Then publish once: php artisan mcp:push --source=<your-project>
+Session ending: review docs/.mcp-session/lessons-draft.jsonl and docs/.mcp-session/project-details-draft.jsonl. If drafts are thin and you have committed session work, run: php artisan mcp:extract-session (fallback only). Then publish once: php artisan mcp:push --source=<your-project>
 ```
 
 Replace `<your-project>` with your `--source` value (must match Project Details MCP `?project=`).
@@ -164,13 +165,69 @@ php artisan mcp:push --source=your-project [--no-truncate]
 
 Reads draft JSONL files, pushes to `/api/lessons` and `/api/project-details` when each bucket has content. Clears draft files on success unless `--no-truncate`.
 
-### `mcp:extract-session` (fallback)
+### `mcp:extract-session` (git → drafts)
+
+Git-only salvage into the same draft JSONL files as `mcp:append`. Does **not** read uncommitted files — **commit first** (staging alone is not enough).
 
 ```bash
-php artisan mcp:extract-session [--transcript=/path/to.jsonl] [--since-git=main]
+php artisan mcp:extract-session [--since-git=HEAD~1]
 ```
 
-Appends heuristic candidates to draft JSONL. Review output, then `mcp:push`.
+#### How `--since-git` controls depth
+
+The option sets where the commit range **starts**. Everything from that ref up to `HEAD` is summarized into draft lines (`git log` one-liners + `git diff --stat` for the range).
+
+| Command | Commits included (approx.) | Typical use |
+|---------|---------------------------|-------------|
+| `mcp:extract-session` | Latest commit only (`HEAD~1..HEAD`) | End-of-session salvage |
+| `mcp:extract-session --since-git=HEAD~7` | Last 7 commits | Recent sprint / week of work |
+| `mcp:extract-session --since-git=HEAD~30` | Last 30 commits | Broader backfill |
+| `mcp:extract-session --since-git=main` | Commits on `HEAD` not already on `main` | Feature branch ahead of `main` |
+| `mcp:extract-session --since-git=v1.0.0` | Since a tag or SHA | Release-to-HEAD snapshot |
+
+- **Default `HEAD~1`** — only the **tip** commit (one commit).
+- **`HEAD~N`** — increase `N` to go deeper into history (useful when installing mcp-pusher on a long-running repo).
+- **`main`** — same as `git log main..HEAD` (see caveat below).
+
+#### `--since-git=main` (commits only)
+
+This does **not** read the staging area or working tree.
+
+| Situation | Result |
+|-----------|--------|
+| Feature branch with commits ahead of `main` | Extracts those branch commits + diff stat |
+| On `main`, only uncommitted/staged changes | **Empty range** — command fails; commit first or use `HEAD~N` |
+| `main` and `HEAD` point at the same commit | **Empty range** — use `HEAD~N` or a tag/SHA instead |
+
+For seeding history **on** `main`, use `HEAD~N` (e.g. `HEAD~50`), not `main..HEAD`.
+
+#### Use case A: session fallback
+
+When `mcp:append` was skipped but you committed session work:
+
+```bash
+php artisan mcp:extract-session
+# review docs/.mcp-session/*-draft.jsonl
+php artisan mcp:push --source=your-project
+```
+
+#### Use case B: seeding an existing project
+
+Installing mcp-pusher on a mature repo — bootstrap drafts from git, then publish:
+
+```bash
+php artisan mcp:extract-session --since-git=HEAD~50   # tune depth to your history
+# edit drafts: replace heuristic lines with real lessons (or re-capture via agent + mcp:append)
+php artisan mcp:push --source=your-project
+```
+
+Use `--since-git=main` only when you have a **feature branch with commits not merged to `main`**. Prefer editing drafts before push; extracted rows are **candidates**, not finished lessons.
+
+#### Limits
+
+- Output is heuristic (commit subjects + diff stats), not AI-summarized knowledge.
+- Large ranges produce many draft lines — review before `mcp:push`.
+- First commit in repo: `HEAD~1` may be invalid; use `HEAD~N` or an explicit SHA/tag.
 
 ## File layout
 

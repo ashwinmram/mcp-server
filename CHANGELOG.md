@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.2.6] - 2026-06-05
+
+### Changed
+
+- Embedded mcp-pusher **3.0.7**: `mcp:extract-session` is git-only (default `HEAD~1`); transcript extraction removed
+
 ## [1.2.5] - 2026-06-05
 
 ### Added
