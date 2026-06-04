@@ -1,95 +1,72 @@
 # MCP capture prompts (copy into Cursor)
 
-Use these when Cursor shows a **preCompact** reminder, or copy manually at session end. **Every entry must include a non-empty `title`** (5–12 words, specific, searchable) and a **`summary`** (1–2 sentences: problem + approach + when to use).
+Use **mcp:append** frequently during the session (primary). Drafts live in `docs/.mcp-session/lessons-draft.jsonl` and `project-details-draft.jsonl`. **Do not** update `lessons-learned.md`, `lessons_learned.json`, `project-details.md`, or `project_details.json` during capture — those legacy files are optional and merging them with drafts at `mcp:push` can duplicate lessons on the server.
 
-Required fields on each `mcp:append` payload: `title`, `summary`, `category`, `subcategory`, `type`, `tags` (array), `content`.
+**Every entry must include** non-empty `title` (5–12 words) and `summary` (1–2 sentences), plus **`knowledge_scope`**: `"generic"` or `"project"`.
 
-Full prompt file for hooks: `stubs/pre-compact-prompt.txt` (Composer: `vendor/ashwinmram/mcp-pusher/stubs/pre-compact-prompt.txt`; monorepo: `packages/laravel-mcp-pusher/stubs/pre-compact-prompt.txt`).
+Hook prompt file: `stubs/pre-compact-prompt.txt` (Composer: `vendor/ashwinmram/mcp-pusher/stubs/pre-compact-prompt.txt`).
 
 ---
 
 ## preCompact (before context loss)
 
-Used by the optional `preCompact` Cursor hook (`user_message`). Submit this to your agent when Cursor shows it at compaction.
+Shown by the optional `preCompact` Cursor hook (`user_message`). Submit to your agent when Cursor displays it.
 
 ```text
 Context is about to compact — capture session knowledge NOW before it is lost.
 
-For EACH distinct learning, run php artisan mcp:append with a complete JSON object. Execute the commands; do not only describe entries.
+Use php artisan mcp:append only (docs/.mcp-session/*-draft.jsonl). Do NOT edit docs/lessons-learned.md, lessons_learned.json, project-details.md, or project_details.json during capture.
 
-Field rules (every entry):
-- title: REQUIRED. 5–12 words, specific, AI-searchable. Never empty.
-- summary: REQUIRED. Problem + approach + when a future AI should use this (1–2 sentences).
-- category / subcategory: REQUIRED strings (e.g. mcp-development, cursor-hooks, workflow).
-- type: "ai_output" (generic) or "project_detail" (project).
-- tags: JSON array, 2–5 keywords.
-- content: Full explanation.
-- knowledge_scope: "generic" OR "project".
+For EACH distinct learning, run mcp:append with complete JSON. Execute commands; do not only describe entries.
 
-Step A — Generic: one mcp:append per cross-project reusable lesson.
-Step B — Project: one mcp:append per fact specific to this repository (paths, env, MCP URLs, conventions).
+Required on every entry: knowledge_scope ("generic"|"project"), title, summary, category, subcategory, type (ai_output|project_detail), tags (array), content.
 
-Also update legacy docs (merged at mcp:push):
-- docs/lessons-learned.md and docs/lessons_learned.json (generic)
-- docs/project-details.md and docs/project_details.json (project)
-JSON objects: field order title, summary, category, subcategory, type, tags, content, metadata.
+Step A — Generic example:
+php artisan mcp:append '{"knowledge_scope":"generic","title":"...","summary":"...","category":"...","subcategory":"...","type":"ai_output","tags":["..."],"content":"...","metadata":{"source":"agent"}}'
 
-When finished, report: generic count, project count, every title appended, and confirm legacy files were updated.
+Step B — Project example:
+php artisan mcp:append '{"knowledge_scope":"project","title":"...","summary":"...","category":"...","subcategory":"...","type":"project_detail","tags":["..."],"content":"...","metadata":{"source":"agent"}}'
+
+Report: generic count, project count, every title appended.
 ```
 
 ---
 
 ## Combined (generic + project)
 
-Same as preCompact — use when capturing manually without the hook.
+Manual capture anytime (same rules as preCompact).
 
 ```text
-Capture session knowledge NOW before context is lost.
+Capture session knowledge from this session. Use mcp:append only — do NOT update legacy docs/*.md or docs/*.json.
 
-For EACH distinct learning, run php artisan mcp:append with a complete JSON object. Do not only describe entries—execute the commands.
+For EACH lesson, run php artisan mcp:append with knowledge_scope, title, summary, category, subcategory, type, tags, content. One append per distinct learning.
 
-Field rules (every entry):
-- title: REQUIRED. Short, specific, AI-searchable. Never omit or leave empty.
-- summary: REQUIRED. States the problem, the approach, and trigger keywords so a future agent can decide relevance.
-- category / subcategory: REQUIRED strings (use mcp-development, cursor-hooks, workflow, documentation, etc.).
-- type: "ai_output" for generic lessons; "project_detail" for repo-specific facts.
-- tags: JSON array of 2–5 lowercase keywords.
-- content: Detailed explanation; code paths and examples allowed for project scope.
-- knowledge_scope: "generic" OR "project" (or use type project_detail for project).
+Generic: knowledge_scope "generic", type "ai_output"
+Project: knowledge_scope "project", type "project_detail"
 
-Step A — Generic: one mcp:append per cross-project reusable lesson.
-Step B — Project: one mcp:append per fact specific to this repository (paths, env, package layout, MCP URLs).
-
-Also update legacy docs (merged at mcp:push):
-- docs/lessons-learned.md and docs/lessons_learned.json (generic)
-- docs/project-details.md and docs/project_details.json (project)
-JSON objects: field order title, summary, category, subcategory, type, tags, content, metadata.
-
-When finished, report: generic count, project count, every title you appended, and confirm legacy files were updated.
+When finished, report counts and every title appended.
 ```
 
 ---
 
 ## Session end (manual only)
 
-**Not** wired to a Cursor hook (the old `stop` hook was removed — it fired too often). Copy this when you are ready to publish.
+Not wired to a Cursor hook. Run when you are ready to publish.
 
 ```text
 Session ending: review docs/.mcp-session/lessons-draft.jsonl and docs/.mcp-session/project-details-draft.jsonl. If drafts are thin, run: php artisan mcp:extract-session --since-git=main (fallback only). Then publish once: php artisan mcp:push --source=<your-project>
 ```
-
-Replace `<your-project>` with your `--source` value (e.g. `mcp-server`). Legacy `docs/*.md` and `docs/*.json` files are merged into the push automatically when present.
 
 ---
 
 ## Generic only
 
 ```text
-Capture reusable lessons from this session. For EACH lesson, run:
+Capture reusable lessons. For EACH lesson, run:
 
 php artisan mcp:append '{"knowledge_scope":"generic","title":"<REQUIRED: 5-12 word specific title>","summary":"<REQUIRED: problem + when to use>","category":"<category>","subcategory":"<subcategory>","type":"ai_output","tags":["tag1","tag2"],"content":"<detailed lesson>","metadata":{"source":"agent"}}'
 
-Rules: title and summary are mandatory and must stand alone for search. One append per lesson. Skip trivial chatter.
+Do not update lessons-learned.md or lessons_learned.json unless you intentionally maintain a separate human-readable archive.
 ```
 
 ---
@@ -97,9 +74,9 @@ Rules: title and summary are mandatory and must stand alone for search. One appe
 ## Project only
 
 ```text
-Capture project-specific implementation details for this repo. For EACH detail, run:
+Capture project-specific details for this repo. For EACH detail, run:
 
 php artisan mcp:append '{"knowledge_scope":"project","title":"<REQUIRED: 5-12 word specific title>","summary":"<REQUIRED: problem + when to use>","category":"<category>","subcategory":"<subcategory>","type":"project_detail","tags":["tag1","tag2"],"content":"<paths, conventions, commands for THIS repo>","metadata":{"source":"agent"}}'
 
-Rules: title and summary are mandatory. Content must reference this codebase, not generic Laravel advice. One append per detail.
+Do not update project-details.md or project_details.json unless you intentionally maintain a separate human-readable archive.
 ```

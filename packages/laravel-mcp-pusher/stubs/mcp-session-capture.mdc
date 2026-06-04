@@ -18,13 +18,13 @@ Use `knowledge_scope: "project"` or `"type":"project_detail"` for repo-specific 
 
 ## Before compaction (preCompact hook)
 
-When Cursor shows the preCompact capture prompt, submit it to the agent. It runs `mcp:append` per lesson and updates legacy `docs/lessons-learned.md`, `lessons_learned.json`, `project-details.md`, `project_details.json`. See `stubs/mcp-capture-prompts.md` or `stubs/pre-compact-prompt.txt`.
+When Cursor shows the preCompact capture prompt, submit it to the agent. It runs `mcp:append` per lesson into `docs/.mcp-session/*-draft.jsonl` only — do not edit legacy `docs/*.md` or `docs/*.json` during capture. See `stubs/mcp-capture-prompts.md` or `stubs/pre-compact-prompt.txt`.
 
 ## End of session (manual)
 
 1. Review `docs/.mcp-session/*-draft.jsonl`
 2. **Only if drafts are incomplete:** `php artisan mcp:extract-session --since-git=main` (fallback — review output)
-3. `php artisan mcp:push --source=<project>` once (merges drafts + legacy docs)
+3. `php artisan mcp:push --source=<project>` once (publishes drafts; legacy docs are optional and only merged if present)
 
 There is no Cursor `stop` hook — session end is manual to avoid repeated auto-reminders.
 

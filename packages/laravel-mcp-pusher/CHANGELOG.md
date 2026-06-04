@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.0.3 - 2026-06-05
+
+### Changed
+
+- Capture prompts (`pre-compact-prompt.txt`, `mcp-capture-prompts.md`) now require **`mcp:append` to draft JSONL only** — no longer instruct agents to update legacy `docs/*.md` / `docs/*.json` during capture (avoids duplicate lessons at push)
+- Prompts include explicit `knowledge_scope` and full `mcp:append` examples per step
+
 ## 3.0.2 - 2026-06-05
 
 ### Changed

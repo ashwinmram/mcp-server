@@ -42,6 +42,8 @@ See [Optional: Cursor hooks](#optional-cursor-hooks) below for first-time setup 
 
 Use **`mcp:extract-session`** only when the session was long, compaction likely happened, few `mcp:append` calls were made, and you still want to capture learnings before push.
 
+**Do not** update `docs/lessons-learned.md`, `lessons_learned.json`, `project-details.md`, or `project_details.json` during routine capture — `mcp:append` writes to `docs/.mcp-session/` only. Legacy files are optional; updating both drafts and legacy copies of the same lesson can create duplicates when you `mcp:push`.
+
 ## Requirements
 
 - PHP 8.2+

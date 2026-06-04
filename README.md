@@ -200,13 +200,13 @@ Ask in Cursor:
 | **Capture prompt text** | [`packages/laravel-mcp-pusher/stubs/mcp-capture-prompts.md`](packages/laravel-mcp-pusher/stubs/mcp-capture-prompts.md) |
 | **End of session** | Review `docs/.mcp-session/*-draft.jsonl` → optional `mcp:extract-session` if thin → once `mcp:push --source=<project>` |
 
-Legacy `docs/lessons-learned.md`, `lessons_learned.json`, `project-details.md`, and `project_details.json` are optional; update them during capture (prompt in stubs) and they merge at push. **Sources are truncated after a successful push** unless `--no-truncate`.
+**Capture:** use `mcp:append` only (draft JSONL). Legacy `docs/lessons-learned.md`, `lessons_learned.json`, `project-details.md`, and `project_details.json` are optional archives — do not update them during routine capture (avoids duplicate lessons at push). **Sources are truncated after a successful push** unless `--no-truncate`.
 
 ### Recommended AI prompts
 
 Use [`packages/laravel-mcp-pusher/stubs/mcp-capture-prompts.md`](packages/laravel-mcp-pusher/stubs/mcp-capture-prompts.md):
 
-- **preCompact** — append + update legacy four files before context is lost
+- **preCompact** — `mcp:append` to drafts only before context is lost (no legacy md/json)
 - **Session end (manual)** — review drafts, extract fallback, `mcp:push --source=mcp-server`
 - **Combined / generic / project** — same append rules with required `title` and `summary`
 
