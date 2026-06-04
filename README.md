@@ -9,7 +9,7 @@ Central MCP server for storing and querying lessons learned and project-specific
 - **Install:** `composer require ashwinmram/mcp-pusher:^3.0`
 - **Links:** [GitHub](https://github.com/ashwinmram/mcp-pusher) | [Packagist](https://packagist.org/packages/ashwinmram/mcp-pusher)
 - **Commands (3.0):** `mcp:append` (frequent, during session), `mcp:push` (once at end), `mcp:extract-session` (fallback only)
-- **Optional:** [Cursor hooks](packages/laravel-mcp-pusher/README.md#optional-cursor-hooks) — remind you to append before compaction and push at session end
+- **Optional:** [Cursor hooks](packages/laravel-mcp-pusher/README.md#optional-cursor-hooks) — `preCompact` shows capture prompt before compaction; `mcp:push` at session end is manual
 
 The mcp-pusher package merges session drafts and legacy `docs/` files, then POSTs to `/api/lessons` (generic) and `/api/project-details` (project-specific) in **one** `mcp:push`. See [File layout for mcp-pusher](#file-layout-for-mcp-pusher) and [packages/laravel-mcp-pusher/README.md](packages/laravel-mcp-pusher/README.md).
 
