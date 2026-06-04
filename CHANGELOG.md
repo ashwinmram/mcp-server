@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.2.1] - 2026-06-05
+
+### Fixed
+
+- Generic lessons API now persists **`title`**, **`summary`**, and explicit **`subcategory`** from `POST /api/lessons` (`StoreLessonsRequest` validation + `LessonImportService`)
+
+### Added
+
+- Feature test: generic lesson title, summary, and subcategory from API payload
+- Cursor hook stubs under `.cursor/hooks/` for this monorepo
+
 ## [1.2.0] - 2026-06-04
 
 Documentation release aligned with **mcp-pusher 3.0.0**. No API or database changes in this app.

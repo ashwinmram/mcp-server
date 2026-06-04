@@ -16,6 +16,7 @@ Compaction-resilient knowledge capture: append during session, unified push at e
 - Draft paths: `docs/.mcp-session/lessons-draft.jsonl`, `docs/.mcp-session/project-details-draft.jsonl`
 - `--no-truncate` on `mcp:push` for both buckets
 - Cursor hook stubs; setup documented in [README.md](README.md#optional-cursor-hooks)
+- **`stubs/mcp-capture-prompts.md`** — session-end capture prompts with required `title` and `summary` for each `mcp:append`
 
 ### Migration
 
