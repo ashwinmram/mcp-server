@@ -4,13 +4,13 @@ globs:
 alwaysApply: false
 ---
 
-# MCP session knowledge capture
+# MCP session knowledge capture (3.0)
 
 ## Best practice
 
 Do not hand-type `mcp:append` JSON. Use the **knowledge capture prompt** from the mcp-pusher package README (`#knowledge-capture-prompt`) or submit it when Cursor shows it via the `preCompact` hook.
 
-The agent runs `php artisan mcp:append` per lesson into `docs/.mcp-session/*-draft.jsonl`. Do not edit legacy `docs/lessons-learned.md`, `lessons_learned.json`, `project-details.md`, or `project_details.json` during capture.
+The agent runs `php artisan mcp:append` per lesson into `docs/.mcp-session/lessons-draft.jsonl` (generic) or `project-details-draft.jsonl` (project).
 
 ## End of session (manual)
 

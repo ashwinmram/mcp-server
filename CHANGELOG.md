@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.2.4] - 2026-06-05
+
+### Changed
+
+- README: mcp-pusher **3.0-only** workflow and file layout (draft JSONL); removed legacy md/json documentation
+
 ## [1.2.3] - 2026-06-05
 
 ### Changed

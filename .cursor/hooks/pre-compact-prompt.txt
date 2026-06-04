@@ -1,6 +1,6 @@
 Context is about to compact — capture session knowledge NOW before it is lost.
 
-Use php artisan mcp:append only (docs/.mcp-session/*-draft.jsonl). Do NOT edit docs/lessons-learned.md, lessons_learned.json, project-details.md, or project_details.json during capture.
+Use php artisan mcp:append only. Each entry is written to docs/.mcp-session/lessons-draft.jsonl (generic) or docs/.mcp-session/project-details-draft.jsonl (project).
 
 For EACH distinct learning, run mcp:append with complete JSON. Execute commands; do not only describe entries.
 

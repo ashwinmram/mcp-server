@@ -5,26 +5,50 @@ Laravel package to push lessons learned and project implementation details from 
 - [GitHub](https://github.com/ashwinmram/mcp-pusher)
 - [Packagist](https://packagist.org/packages/ashwinmram/mcp-pusher)
 
-**Version 3.0** — see [CHANGELOG.md](CHANGELOG.md) for migration from 1.x/2.0.x (`mcp:push-lessons` / `mcp:push-project-details` removed).
+## What's new in 3.0
+
+Version 3.0 is a **capture-and-push workflow** built around session drafts on disk (survives Cursor context compaction).
+
+| Before (1.x / 2.x) | After (3.0) |
+|--------------------|---------------|
+| Edit `docs/lessons-learned.md` / JSON, then push | **`mcp:append`** during session → draft JSONL |
+| `mcp:push-lessons` + `mcp:push-project-details` | Single **`mcp:push`** (generic + project) |
+| Knowledge lost when chat compacts | Drafts in `docs/.mcp-session/` persist |
+
+**Commands:**
+
+- **`mcp:append`** — one structured entry → `lessons-draft.jsonl` or `project-details-draft.jsonl`
+- **`mcp:push`** — publish drafts to the MCP server once per session
+- **`mcp:extract-session`** — fallback only if drafts are thin after compaction
+
+**Cursor (optional):** `preCompact` hook shows the [knowledge capture prompt](#knowledge-capture-prompt) before compaction. Session-end publish is manual (no `stop` hook).
+
+See [CHANGELOG.md](CHANGELOG.md) for full release notes.
+
+```bash
+composer require ashwinmram/mcp-pusher:^3.0
+
+# Migration from 1.x / 2.x
+# Before: mcp:push-lessons + mcp:push-project-details
+# After:  mcp:push --source=your-project
+```
 
 ## Best practice (read this first)
 
-**Do not** hand-type `php artisan mcp:append` JSON during normal work. The recommended flow is:
+**Do not** hand-type `php artisan mcp:append` JSON during normal work.
 
 1. **Install the [preCompact Cursor hook](#optional-cursor-hooks)** (one-time).
 2. When Cursor is about to compact (or anytime you want to capture learnings), **paste the [Knowledge capture prompt](#knowledge-capture-prompt)** into your agent chat.
 3. Let the agent run `mcp:append` for each lesson — entries land in `docs/.mcp-session/*-draft.jsonl`.
 4. **End of session:** review drafts, then run `mcp:push` once (see [End of session](#end-of-session)).
 
-The hook shows the same prompt automatically as `user_message` before compaction. You can also paste it manually after big tasks or before you close a session.
+The hook shows the same prompt automatically as `user_message` before compaction.
 
 | Step | What you do | What runs on disk |
 |------|-------------|-------------------|
 | **Capture** | Submit the capture prompt to your agent | Agent executes `mcp:append` → draft JSONL |
 | **Publish** | `php artisan mcp:push --source=your-project` | HTTP push to MCP server |
 | **Fallback** | `mcp:extract-session` only if drafts are thin | Heuristic lines appended to drafts |
-
-**Do not** update `docs/lessons-learned.md`, `lessons_learned.json`, `project-details.md`, or `project_details.json` during capture — legacy files are optional archives; duplicating the same lesson in drafts and legacy files can create duplicates at push.
 
 ## Knowledge capture prompt
 
@@ -33,7 +57,7 @@ Copy this entire block into your agent (Cursor, etc.). This is the **only** capt
 ```text
 Context is about to compact — capture session knowledge NOW before it is lost.
 
-Use php artisan mcp:append only (docs/.mcp-session/*-draft.jsonl). Do NOT edit docs/lessons-learned.md, lessons_learned.json, project-details.md, or project_details.json during capture.
+Use php artisan mcp:append only. Each entry is written to docs/.mcp-session/lessons-draft.jsonl (generic) or docs/.mcp-session/project-details-draft.jsonl (project).
 
 For EACH distinct learning, run mcp:append with complete JSON. Execute commands; do not only describe entries.
 
@@ -96,16 +120,18 @@ Add session drafts to `.gitignore` (see `stubs/gitignore-mcp-session.example`):
 /docs/.mcp-session/
 ```
 
-## Commands (reference)
-
-These run **automatically when your agent follows the capture prompt**. You only need them directly for debugging or advanced use.
+## Commands
 
 ### `mcp:append`
 
-Writes one entry to `docs/.mcp-session/lessons-draft.jsonl` (generic) or `project-details-draft.jsonl` (project). Routing uses `knowledge_scope` first, then `type: project_detail` for project.
+Appends one entry to the correct draft file. The [capture prompt](#knowledge-capture-prompt) tells your agent when and how to run this.
+
+- `knowledge_scope: "generic"` → `docs/.mcp-session/lessons-draft.jsonl`
+- `knowledge_scope: "project"` → `docs/.mcp-session/project-details-draft.jsonl`
+
+Advanced (debugging):
 
 ```bash
-# Advanced: single entry by hand or --file=entry.json
 php artisan mcp:append --file=entry.json
 ```
 
@@ -115,7 +141,7 @@ php artisan mcp:append --file=entry.json
 php artisan mcp:push --source=your-project [--no-truncate]
 ```
 
-Merges drafts and any optional legacy `docs/` files, pushes to `/api/lessons` and `/api/project-details`, truncates sources on success unless `--no-truncate`.
+Reads draft JSONL files, pushes to `/api/lessons` and `/api/project-details` when each bucket has content. Clears draft files on success unless `--no-truncate`.
 
 ### `mcp:extract-session` (fallback)
 
@@ -123,36 +149,21 @@ Merges drafts and any optional legacy `docs/` files, pushes to `/api/lessons` an
 php artisan mcp:extract-session [--transcript=/path/to.jsonl] [--since-git=main]
 ```
 
-Use only when drafts are thin after compaction. Review output, then `mcp:push`.
-
-## Migration from 1.x
-
-```bash
-# Before
-php artisan mcp:push-lessons --source=my-app
-php artisan mcp:push-project-details --source=my-app
-
-# After 3.0
-php artisan mcp:push --source=my-app
-```
+Appends heuristic candidates to draft JSONL. Review output, then `mcp:push`.
 
 ## File layout
 
 ```
 your-project/
 └── docs/
-    ├── lessons-learned.md              ← legacy (optional, not used during capture)
-    ├── lessons_learned.json            ← legacy (optional)
-    ├── project-details.md              ← legacy (optional)
-    ├── project_details.json            ← legacy (optional)
     └── .mcp-session/
-        ├── lessons-draft.jsonl         ← capture prompt writes here (generic)
-        └── project-details-draft.jsonl ← capture prompt writes here (project)
+        ├── lessons-draft.jsonl         ← generic lessons (mcp:append)
+        └── project-details-draft.jsonl ← project details (mcp:append)
 ```
 
 ## Optional: Cursor hooks
 
-Install once so Cursor shows the [Knowledge capture prompt](#knowledge-capture-prompt) as `user_message` before context compaction. Session-end `mcp:push` stays **manual** (no `stop` hook).
+Install once so Cursor shows the [Knowledge capture prompt](#knowledge-capture-prompt) as `user_message` before context compaction.
 
 ### Prerequisites
 

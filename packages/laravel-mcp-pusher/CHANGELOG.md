@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.0.5 - 2026-06-05
+
+### Changed
+
+- README is **3.0-only**: session drafts under `docs/.mcp-session/`; removed legacy `lessons-learned.md` / JSON file layout from docs
+- **What's new in 3.0** section at top; capture prompt no longer references legacy files
+
 ## 3.0.4 - 2026-06-05
 
 ### Changed
