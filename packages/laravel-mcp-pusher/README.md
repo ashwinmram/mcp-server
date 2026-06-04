@@ -7,42 +7,58 @@ Laravel package to push lessons learned and project implementation details from 
 
 **Version 3.0** — see [CHANGELOG.md](CHANGELOG.md) for migration from 1.x/2.0.x (`mcp:push-lessons` / `mcp:push-project-details` removed).
 
-**Optional:** [Cursor hooks](#optional-cursor-hooks) — `preCompact` shows a capture prompt (`user_message`) before context compaction. Session end (`mcp:push`) is manual.
+## Best practice (read this first)
 
-## Best practices (read this first)
+**Do not** hand-type `php artisan mcp:append` JSON during normal work. The recommended flow is:
 
-| Command | Role | How often |
-|---------|------|-----------|
-| **`mcp:append`** | **Primary capture** — intentional notes on disk while context is fresh | **Frequently** after non-trivial work |
-| **`mcp:push`** | **Publish** generic lessons + project details to the MCP server | **Once** per session |
-| **`mcp:extract-session`** | **Fallback only** — salvage from transcript/git when append was skipped or drafts are thin | **Rarely** |
+1. **Install the [preCompact Cursor hook](#optional-cursor-hooks)** (one-time).
+2. When Cursor is about to compact (or anytime you want to capture learnings), **paste the [Knowledge capture prompt](#knowledge-capture-prompt)** into your agent chat.
+3. Let the agent run `mcp:append` for each lesson — entries land in `docs/.mcp-session/*-draft.jsonl`.
+4. **End of session:** review drafts, then run `mcp:push` once (see [End of session](#end-of-session)).
 
-### Recommended workflow
+The hook shows the same prompt automatically as `user_message` before compaction. You can also paste it manually after big tasks or before you close a session.
+
+| Step | What you do | What runs on disk |
+|------|-------------|-------------------|
+| **Capture** | Submit the capture prompt to your agent | Agent executes `mcp:append` → draft JSONL |
+| **Publish** | `php artisan mcp:push --source=your-project` | HTTP push to MCP server |
+| **Fallback** | `mcp:extract-session` only if drafts are thin | Heuristic lines appended to drafts |
+
+**Do not** update `docs/lessons-learned.md`, `lessons_learned.json`, `project-details.md`, or `project_details.json` during capture — legacy files are optional archives; duplicating the same lesson in drafts and legacy files can create duplicates at push.
+
+## Knowledge capture prompt
+
+Copy this entire block into your agent (Cursor, etc.). This is the **only** capture prompt you need.
 
 ```text
-During session (often):
-  php artisan mcp:append '<json entry>'
+Context is about to compact — capture session knowledge NOW before it is lost.
 
-End of session (once):
-  review docs/.mcp-session/*-draft.jsonl
-  [only if drafts incomplete] php artisan mcp:extract-session
-  php artisan mcp:push --source=your-project
+Use php artisan mcp:append only (docs/.mcp-session/*-draft.jsonl). Do NOT edit docs/lessons-learned.md, lessons_learned.json, project-details.md, or project_details.json during capture.
+
+For EACH distinct learning, run mcp:append with complete JSON. Execute commands; do not only describe entries.
+
+Required on every entry: knowledge_scope ("generic"|"project"), title, summary, category, subcategory, type (ai_output|project_detail), tags (array), content.
+
+Step A — Generic example:
+php artisan mcp:append '{"knowledge_scope":"generic","title":"...","summary":"...","category":"...","subcategory":"...","type":"ai_output","tags":["..."],"content":"...","metadata":{"source":"agent"}}'
+
+Step B — Project example:
+php artisan mcp:append '{"knowledge_scope":"project","title":"...","summary":"...","category":"...","subcategory":"...","type":"project_detail","tags":["..."],"content":"...","metadata":{"source":"agent"}}'
+
+Report: generic count, project count, every title appended.
 ```
 
-### Optional: automate with Cursor hooks
+With hooks installed, Cursor surfaces this text at compaction — submit it to the agent when shown.
 
-See [Optional: Cursor hooks](#optional-cursor-hooks) below for first-time setup (`stubs/cursor-hooks/` → `.cursor/hooks.json`). Hooks are optional; frequent `mcp:append` remains the primary capture path.
+## End of session
 
-### What `mcp:extract-session` is NOT
+When you are ready to publish (manual — no Cursor hook):
 
-- Not a substitute for frequent `mcp:append`
-- Not run automatically when Cursor compacts (unless you configure [Cursor hooks](#optional-cursor-hooks))
-- Not guaranteed accurate — review before push
-- Not required if drafts already capture the session
+```text
+Session ending: review docs/.mcp-session/lessons-draft.jsonl and docs/.mcp-session/project-details-draft.jsonl. If drafts are thin, run: php artisan mcp:extract-session --since-git=main (fallback only). Then publish once: php artisan mcp:push --source=<your-project>
+```
 
-Use **`mcp:extract-session`** only when the session was long, compaction likely happened, few `mcp:append` calls were made, and you still want to capture learnings before push.
-
-**Do not** update `docs/lessons-learned.md`, `lessons_learned.json`, `project-details.md`, or `project_details.json` during routine capture — `mcp:append` writes to `docs/.mcp-session/` only. Legacy files are optional; updating both drafts and legacy copies of the same lesson can create duplicates when you `mcp:push`.
+Replace `<your-project>` with your `--source` value (must match Project Details MCP `?project=`).
 
 ## Requirements
 
@@ -80,31 +96,26 @@ Add session drafts to `.gitignore` (see `stubs/gitignore-mcp-session.example`):
 /docs/.mcp-session/
 ```
 
-## Commands
+## Commands (reference)
 
-### `mcp:append` (primary)
+These run **automatically when your agent follows the capture prompt**. You only need them directly for debugging or advanced use.
+
+### `mcp:append`
+
+Writes one entry to `docs/.mcp-session/lessons-draft.jsonl` (generic) or `project-details-draft.jsonl` (project). Routing uses `knowledge_scope` first, then `type: project_detail` for project.
 
 ```bash
-php artisan mcp:append '{"knowledge_scope":"generic","title":"...","summary":"...","category":"...","subcategory":"...","type":"ai_output","tags":[],"content":"..."}'
-# or
+# Advanced: single entry by hand or --file=entry.json
 php artisan mcp:append --file=entry.json
 ```
 
-Routing:
-
-- `knowledge_scope`: `"generic"` → `docs/.mcp-session/lessons-draft.jsonl`
-- `knowledge_scope`: `"project"` → `docs/.mcp-session/project-details-draft.jsonl`
-- Omitted: `type: "project_detail"` → project; otherwise generic
-
-### `mcp:push` (publish once)
+### `mcp:push`
 
 ```bash
 php artisan mcp:push --source=your-project [--no-truncate]
 ```
 
-Merges **all** sources (drafts + legacy files), pushes to `/api/lessons` and `/api/project-details` when each bucket has content, truncates on success unless `--no-truncate`.
-
-`--source` must match the `?project=` query param for Project Details MCP.
+Merges drafts and any optional legacy `docs/` files, pushes to `/api/lessons` and `/api/project-details`, truncates sources on success unless `--no-truncate`.
 
 ### `mcp:extract-session` (fallback)
 
@@ -112,7 +123,7 @@ Merges **all** sources (drafts + legacy files), pushes to `/api/lessons` and `/a
 php artisan mcp:extract-session [--transcript=/path/to.jsonl] [--since-git=main]
 ```
 
-Appends heuristic candidates to draft JSONL. **Review** drafts, then `mcp:push`.
+Use only when drafts are thin after compaction. Review output, then `mcp:push`.
 
 ## Migration from 1.x
 
@@ -130,61 +141,56 @@ php artisan mcp:push --source=my-app
 ```
 your-project/
 └── docs/
-    ├── lessons-learned.md              ← legacy (optional)
+    ├── lessons-learned.md              ← legacy (optional, not used during capture)
     ├── lessons_learned.json            ← legacy (optional)
     ├── project-details.md              ← legacy (optional)
     ├── project_details.json            ← legacy (optional)
     └── .mcp-session/
-        ├── lessons-draft.jsonl         ← append during session (generic)
-        └── project-details-draft.jsonl ← append during session (project)
+        ├── lessons-draft.jsonl         ← capture prompt writes here (generic)
+        └── project-details-draft.jsonl ← capture prompt writes here (project)
 ```
 
 ## Optional: Cursor hooks
 
-Optional [Cursor Agent Hooks](https://docs.cursor.com) can show a **knowledge-capture prompt** when context is about to compact (`preCompact` → `user_message`). Hooks are **not required** for mcp-pusher to work. Session-end publish is **manual** (no `stop` hook — it auto-fired too often).
+Install once so Cursor shows the [Knowledge capture prompt](#knowledge-capture-prompt) as `user_message` before context compaction. Session-end `mcp:push` stays **manual** (no `stop` hook).
 
 ### Prerequisites
 
 - Cursor with **Agent Hooks** (Settings → Features → Hooks)
-- `composer require ashwinmram/mcp-pusher:^3.0` in your Laravel project
-- `php` on your PATH (Herd users: hooks may need the full PHP path in scripts — see [Troubleshooting](#troubleshooting))
-- `jq` only if you customize scripts to parse hook JSON
+- `composer require ashwinmram/mcp-pusher:^3.0`
+- `jq` or `python3` on PATH (hook script emits JSON)
 
 ### Install hook stubs
 
-Run from your **Laravel project root** (not inside `vendor/`).
+From your **Laravel project root**:
 
-**Installed via Composer:**
+**Composer install:**
 
 ```bash
 mkdir -p .cursor/hooks
 cp vendor/ashwinmram/mcp-pusher/stubs/cursor-hooks/hooks.json.example .cursor/hooks.json
 cp vendor/ashwinmram/mcp-pusher/stubs/cursor-hooks/pre-compact-checkpoint.sh .cursor/hooks/
 cp vendor/ashwinmram/mcp-pusher/stubs/cursor-hooks/pre-compact-prompt.txt .cursor/hooks/
-chmod +x .cursor/hooks/*.sh
+chmod +x .cursor/hooks/pre-compact-checkpoint.sh
 ```
 
-**Local path repository** (e.g. [mcp-server](https://github.com/ashwinmram/mcp-server) monorepo):
+**Monorepo** (e.g. [mcp-server](https://github.com/ashwinmram/mcp-server)):
 
 ```bash
 mkdir -p .cursor/hooks
 cp packages/laravel-mcp-pusher/stubs/cursor-hooks/hooks.json.example .cursor/hooks.json
 cp packages/laravel-mcp-pusher/stubs/cursor-hooks/pre-compact-checkpoint.sh .cursor/hooks/
 cp packages/laravel-mcp-pusher/stubs/cursor-hooks/pre-compact-prompt.txt .cursor/hooks/
-chmod +x .cursor/hooks/*.sh
+chmod +x .cursor/hooks/pre-compact-checkpoint.sh
 ```
 
-**Included stubs** (`stubs/cursor-hooks/`):
-
-| File | Purpose |
+| Stub | Purpose |
 |------|---------|
-| `hooks.json.example` | Example `.cursor/hooks.json` with **`preCompact` only** |
-| `pre-compact-checkpoint.sh` | `preCompact` — outputs `user_message` with capture prompt |
-| `pre-compact-prompt.txt` | Prompt text (keep beside the script in `.cursor/hooks/`) |
+| `hooks.json.example` | Wires **`preCompact` only** |
+| `pre-compact-checkpoint.sh` | Reads `pre-compact-prompt.txt`, outputs `user_message` |
+| `pre-compact-prompt.txt` | Same text as [Knowledge capture prompt](#knowledge-capture-prompt) above |
 
-Also see `stubs/mcp-capture-prompts.md` for copy-paste prompts (preCompact, session end manual, generic/project only).
-
-Example `.cursor/hooks.json` (after copy):
+Example `.cursor/hooks.json`:
 
 ```json
 {
@@ -199,71 +205,31 @@ Example `.cursor/hooks.json` (after copy):
 }
 ```
 
-Ensure session drafts are gitignored (see [Configuration](#configuration) or `stubs/gitignore-mcp-session.example`):
+### Verify
 
-```gitignore
-/docs/.mcp-session/
-```
-
-### Default hook
-
-| Hook | Script | Behavior |
-|------|--------|----------|
-| `preCompact` | `pre-compact-checkpoint.sh` | Emits **`user_message`** with the capture prompt from `pre-compact-prompt.txt` — submit it to your agent when shown |
-
-`preCompact` does **not** auto-run the agent; it only suggests the prompt. Hooks do **not** run `mcp:extract-session` or `mcp:push` automatically.
-
-### Verify hooks loaded
-
-1. Save `.cursor/hooks.json` (Cursor reloads hooks on save; restart Cursor if needed)
-2. Open **Settings → Hooks** (or the **Hooks** output channel)
-3. Confirm the `preCompact` entry appears
-4. Trigger compaction and check that the capture prompt is shown
+1. Save `.cursor/hooks.json` (restart Cursor if needed)
+2. Settings → **Hooks** — confirm `preCompact` is listed
+3. At compaction, confirm the capture prompt appears and submit it to the agent
 
 ### Optional Cursor rule
 
-Copy `stubs/mcp-session-capture.mdc` to `.cursor/rules/mcp-session-capture.mdc` so agents prefer frequent `mcp:append`.
-
-### Project vs user hooks
-
-| Location | Cwd | Path style |
-|----------|-----|------------|
-| **Project** `.cursor/hooks.json` (recommended) | Project root | `.cursor/hooks/script.sh` |
-| **User** `~/.cursor/hooks.json` | `~/.cursor/` | `./hooks/script.sh` |
+Copy `stubs/mcp-session-capture.mdc` to `.cursor/rules/mcp-session-capture.mdc` so agents follow the capture prompt pattern.
 
 ### Troubleshooting
 
-- **Hook never runs** — Remove `matcher` from `hooks.json` temporarily; confirm script is executable (`chmod +x`)
-- **No prompt shown** — Ensure `pre-compact-prompt.txt` is in `.cursor/hooks/` next to the script; script falls back to a short message if missing
-- **preCompact never fires** — Compaction hooks depend on Cursor version/mode; use `stubs/mcp-capture-prompts.md` manually
-- **JSON parse errors** — Install `jq` or ensure `python3` is on PATH (script uses one of them to emit valid JSON)
-- **Removed `stop` hook** — Prior versions used `followup_message` on every agent loop end; use [Session end (manual)](#recommended-prompts) in `mcp-capture-prompts.md` when you want to push
+- **Hook never runs** — `chmod +x` on the script; remove `matcher` from `hooks.json` temporarily
+- **No prompt shown** — Keep `pre-compact-prompt.txt` next to the script in `.cursor/hooks/`, or paste the prompt from this README
+- **preCompact never fires** — Depends on Cursor version; paste the [capture prompt](#knowledge-capture-prompt) manually
+- **Removed `stop` hook** — Old `followup_message` on every loop was too noisy; use [End of session](#end-of-session) when you publish
 
 ### Security
 
-Hooks execute shell commands on your machine. Review scripts before enabling. Draft files may contain code paths or snippets from `mcp:extract-session` — keep `docs/.mcp-session/` gitignored.
-
-## Recommended prompts
-
-Copy-paste prompts live in [`stubs/mcp-capture-prompts.md`](stubs/mcp-capture-prompts.md):
-
-| When | Section |
-|------|---------|
-| Before compaction (hook `user_message`) | **preCompact** |
-| Manual capture anytime | **Combined** |
-| End of session (no hook) | **Session end (manual only)** |
-| Generic or project only | **Generic only** / **Project only** |
-
-**Session end (manual):**
-
-```text
-Session ending: review docs/.mcp-session/lessons-draft.jsonl and docs/.mcp-session/project-details-draft.jsonl. If drafts are thin, run: php artisan mcp:extract-session --since-git=main (fallback only). Then publish once: php artisan mcp:push --source=<project>
-```
+Hooks run shell on your machine. Review scripts before enabling. Keep `docs/.mcp-session/` gitignored.
 
 ## How it works
 
-- **Generic** lessons → `POST /api/lessons`
-- **Project** details → `POST /api/project-details`
+- Agent runs `mcp:append` → draft JSONL on disk (survives compaction)
+- **`mcp:push`** → `POST /api/lessons` and `/api/project-details`
 - Server deduplicates by content hash
 
 ## License

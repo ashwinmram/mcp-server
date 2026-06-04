@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.3] - 2026-06-05
+
+### Changed
+
+- README: best practice is the inline **knowledge capture prompt** (not hand-typed `mcp:append`); links to `mcp-capture-prompts.md` removed
+- Embedded mcp-pusher **3.0.4**
+
 ## [1.2.2] - 2026-06-05
 
 ### Changed

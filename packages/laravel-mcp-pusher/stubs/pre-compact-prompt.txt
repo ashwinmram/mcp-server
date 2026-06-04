@@ -1,24 +1,15 @@
 Context is about to compact — capture session knowledge NOW before it is lost.
 
-Use php artisan mcp:append only (writes to docs/.mcp-session/*-draft.jsonl). Do NOT edit docs/lessons-learned.md, lessons_learned.json, project-details.md, or project_details.json during capture — that duplicates content at push.
+Use php artisan mcp:append only (docs/.mcp-session/*-draft.jsonl). Do NOT edit docs/lessons-learned.md, lessons_learned.json, project-details.md, or project_details.json during capture.
 
-For EACH distinct learning, run mcp:append with a complete JSON object. Execute the commands; do not only describe entries.
+For EACH distinct learning, run mcp:append with complete JSON. Execute commands; do not only describe entries.
 
-Field rules (every entry):
-- knowledge_scope: REQUIRED. "generic" or "project" (routes to the correct draft file).
-- title: REQUIRED. 5–12 words, specific, AI-searchable. Never empty.
-- summary: REQUIRED. Problem + approach + when a future AI should use this (1–2 sentences).
-- category / subcategory: REQUIRED strings (e.g. mcp-development, cursor-hooks, workflow).
-- type: "ai_output" with knowledge_scope generic; "project_detail" with knowledge_scope project.
-- tags: JSON array, 2–5 keywords.
-- content: Full explanation.
+Required on every entry: knowledge_scope ("generic"|"project"), title, summary, category, subcategory, type (ai_output|project_detail), tags (array), content.
 
-Step A — Generic (cross-project reusable). Example:
+Step A — Generic example:
+php artisan mcp:append '{"knowledge_scope":"generic","title":"...","summary":"...","category":"...","subcategory":"...","type":"ai_output","tags":["..."],"content":"...","metadata":{"source":"agent"}}'
 
-php artisan mcp:append '{"knowledge_scope":"generic","title":"<5-12 word title>","summary":"<problem + when to use>","category":"<category>","subcategory":"<subcategory>","type":"ai_output","tags":["tag1","tag2"],"content":"<lesson>","metadata":{"source":"agent"}}'
+Step B — Project example:
+php artisan mcp:append '{"knowledge_scope":"project","title":"...","summary":"...","category":"...","subcategory":"...","type":"project_detail","tags":["..."],"content":"...","metadata":{"source":"agent"}}'
 
-Step B — Project (this repo only: paths, env, MCP URLs). Example:
-
-php artisan mcp:append '{"knowledge_scope":"project","title":"<5-12 word title>","summary":"<problem + when to use>","category":"<category>","subcategory":"<subcategory>","type":"project_detail","tags":["tag1","tag2"],"content":"<repo-specific detail>","metadata":{"source":"agent"}}'
-
-When finished, report: generic count, project count, and every title you appended.
+Report: generic count, project count, every title appended.

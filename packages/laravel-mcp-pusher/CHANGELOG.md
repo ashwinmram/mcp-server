@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.0.4 - 2026-06-05
+
+### Changed
+
+- README documents a single **Knowledge capture prompt** as best practice (paste to agent or via `preCompact` hook); manual `mcp:append` JSON demoted to advanced/reference
+- Removed README links to `mcp-capture-prompts.md`; `pre-compact-prompt.txt` aligned with the canonical prompt text
+
 ## 3.0.3 - 2026-06-05
 
 ### Changed

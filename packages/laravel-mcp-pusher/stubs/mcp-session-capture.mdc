@@ -1,35 +1,25 @@
 ---
-description: Capture session knowledge with mcp-pusher (append often, push once)
+description: Capture session knowledge with mcp-pusher (capture prompt + push once)
 globs:
 alwaysApply: false
 ---
 
 # MCP session knowledge capture
 
-## Best practice (primary)
+## Best practice
 
-After each meaningful learning (bug fix, pattern, project convention), run:
+Do not hand-type `mcp:append` JSON. Use the **knowledge capture prompt** from the mcp-pusher package README (`#knowledge-capture-prompt`) or submit it when Cursor shows it via the `preCompact` hook.
 
-```bash
-php artisan mcp:append '{"knowledge_scope":"generic|project","title":"...","summary":"...","category":"...","subcategory":"...","type":"ai_output","tags":[],"content":"..."}'
-```
-
-Use `knowledge_scope: "project"` or `"type":"project_detail"` for repo-specific details.
-
-## Before compaction (preCompact hook)
-
-When Cursor shows the preCompact capture prompt, submit it to the agent. It runs `mcp:append` per lesson into `docs/.mcp-session/*-draft.jsonl` only — do not edit legacy `docs/*.md` or `docs/*.json` during capture. See `stubs/mcp-capture-prompts.md` or `stubs/pre-compact-prompt.txt`.
+The agent runs `php artisan mcp:append` per lesson into `docs/.mcp-session/*-draft.jsonl`. Do not edit legacy `docs/lessons-learned.md`, `lessons_learned.json`, `project-details.md`, or `project_details.json` during capture.
 
 ## End of session (manual)
 
 1. Review `docs/.mcp-session/*-draft.jsonl`
-2. **Only if drafts are incomplete:** `php artisan mcp:extract-session --since-git=main` (fallback — review output)
-3. `php artisan mcp:push --source=<project>` once (publishes drafts; legacy docs are optional and only merged if present)
-
-There is no Cursor `stop` hook — session end is manual to avoid repeated auto-reminders.
+2. **Only if drafts are incomplete:** `php artisan mcp:extract-session --since-git=main`
+3. `php artisan mcp:push --source=<project>` once
 
 ## Do not
 
 - Rely on chat memory after compaction
-- Run `mcp:extract-session` every session (append is primary)
+- Run `mcp:extract-session` every session
 - Use removed commands `mcp:push-lessons` or `mcp:push-project-details`

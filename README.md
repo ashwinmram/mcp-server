@@ -8,8 +8,7 @@ Central MCP server for storing and querying lessons learned and project-specific
 
 - **Install:** `composer require ashwinmram/mcp-pusher:^3.0`
 - **Links:** [GitHub](https://github.com/ashwinmram/mcp-pusher) | [Packagist](https://packagist.org/packages/ashwinmram/mcp-pusher)
-- **Commands (3.0):** `mcp:append` (frequent, during session), `mcp:push` (once at end), `mcp:extract-session` (fallback only)
-- **Optional:** [Cursor hooks](packages/laravel-mcp-pusher/README.md#optional-cursor-hooks) — `preCompact` shows capture prompt before compaction; `mcp:push` at session end is manual
+- **Best practice:** Paste the [knowledge capture prompt](packages/laravel-mcp-pusher/README.md#knowledge-capture-prompt) into your agent (or use the [preCompact hook](packages/laravel-mcp-pusher/README.md#optional-cursor-hooks)); agent runs `mcp:append` → drafts. **`mcp:push`** once at session end.
 
 The mcp-pusher package merges session drafts and legacy `docs/` files, then POSTs to `/api/lessons` (generic) and `/api/project-details` (project-specific) in **one** `mcp:push`. See [File layout for mcp-pusher](#file-layout-for-mcp-pusher) and [packages/laravel-mcp-pusher/README.md](packages/laravel-mcp-pusher/README.md).
 
@@ -191,24 +190,18 @@ Ask in Cursor:
 
 ## Pushing Lessons (Using ashwinmram/mcp-pusher)
 
-**Workflow (mcp-pusher 3.0):**
+**Workflow (mcp-pusher 3.0):** Do **not** hand-type `mcp:append` JSON. Submit the **knowledge capture prompt** to your agent (see [package README](packages/laravel-mcp-pusher/README.md#knowledge-capture-prompt)); the agent runs `mcp:append` into draft JSONL. Optional [preCompact hook](packages/laravel-mcp-pusher/README.md#optional-cursor-hooks) shows the same prompt before compaction.
 
-| When | What to do |
-|------|------------|
-| **During session** | `php artisan mcp:append` for each learning (primary — survives compaction) |
-| **Before compaction** | Optional Cursor `preCompact` hook shows capture prompt — submit to agent (see [package hooks](packages/laravel-mcp-pusher/README.md#optional-cursor-hooks)) |
-| **Capture prompt text** | [`packages/laravel-mcp-pusher/stubs/mcp-capture-prompts.md`](packages/laravel-mcp-pusher/stubs/mcp-capture-prompts.md) |
-| **End of session** | Review `docs/.mcp-session/*-draft.jsonl` → optional `mcp:extract-session` if thin → once `mcp:push --source=<project>` |
+| When | What you do |
+|------|-------------|
+| **Capture** | Paste the [knowledge capture prompt](packages/laravel-mcp-pusher/README.md#knowledge-capture-prompt) into your agent (or submit when the hook shows it) |
+| **End of session** | [End-of-session prompt](packages/laravel-mcp-pusher/README.md#end-of-session) → `mcp:push --source=mcp-server` |
 
-**Capture:** use `mcp:append` only (draft JSONL). Legacy `docs/lessons-learned.md`, `lessons_learned.json`, `project-details.md`, and `project_details.json` are optional archives — do not update them during routine capture (avoids duplicate lessons at push). **Sources are truncated after a successful push** unless `--no-truncate`.
+Legacy `docs/lessons-learned.md` and related files are optional — **do not** update them during capture. **Sources are truncated after a successful push** unless `--no-truncate`.
 
-### Recommended AI prompts
+### Knowledge capture prompt
 
-Use [`packages/laravel-mcp-pusher/stubs/mcp-capture-prompts.md`](packages/laravel-mcp-pusher/stubs/mcp-capture-prompts.md):
-
-- **preCompact** — `mcp:append` to drafts only before context is lost (no legacy md/json)
-- **Session end (manual)** — review drafts, extract fallback, `mcp:push --source=mcp-server`
-- **Combined / generic / project** — same append rules with required `title` and `summary`
+Same prompt as [packages/laravel-mcp-pusher/README.md#knowledge-capture-prompt](packages/laravel-mcp-pusher/README.md#knowledge-capture-prompt). For this monorepo, use `--source=mcp-server` in the end-of-session step.
 
 ### File Layout for mcp-pusher
 
@@ -223,7 +216,7 @@ The mcp-pusher package reads files from your project and pushes them to this ser
 
 **Lessons JSON format** — The `lessons_learned.json` file must be a JSON array. Each object should have: `title`, `summary`, `category`, `subcategory`, `type` (e.g. `"ai_output"`), `tags`, `content`, optional `metadata`.
 
-**During session:** `php artisan mcp:append` with `knowledge_scope: "generic"` (writes to `docs/.mcp-session/lessons-draft.jsonl`).
+**During session:** Agent runs `mcp:append` (via capture prompt) → `docs/.mcp-session/lessons-draft.jsonl`.
 
 #### Project Details (Project Details MCP)
 
@@ -232,7 +225,7 @@ The mcp-pusher package reads files from your project and pushes them to this ser
 | `project-details.md` | `docs/` | Markdown with H2/H3/H4, bullets, code blocks. Same structure as lessons-learned.md. Categorized as `project-implementation`. |
 | `project_details.json` or `project_details_*.json` | `docs/` | JSON array of objects. Same field order as lessons: `title`, `summary`, `category`, `subcategory`, `type` (`"project_detail"` or `"ai_output"`), `tags`, `content`, `metadata`. |
 
-**During session:** `php artisan mcp:append` with `knowledge_scope: "project"` or `type: "project_detail"`.
+**During session:** Agent runs `mcp:append` (via capture prompt) → `docs/.mcp-session/project-details-draft.jsonl`.
 
 #### Push (once per session)
 
@@ -283,8 +276,7 @@ php artisan mcp:push --source=mcp-server
 5. Run:
 
 ```bash
-# During session (after learnings):
-php artisan mcp:append '{"knowledge_scope":"generic", ...}'
+# During session: submit knowledge capture prompt to your agent (see package README)
 
 # End of session:
 php artisan mcp:push --source=your-project
@@ -294,7 +286,7 @@ See [ashwinmram/mcp-pusher](https://github.com/ashwinmram/mcp-pusher) for full d
 
 ### Optional: Cursor hooks
 
-Optional **`preCompact`** hook shows a capture prompt (`user_message`) before context compaction. Session-end **`mcp:push`** is manual (no `stop` hook). Full setup: [packages/laravel-mcp-pusher/README.md#optional-cursor-hooks](packages/laravel-mcp-pusher/README.md#optional-cursor-hooks).
+Install the **`preCompact`** hook so Cursor shows the [knowledge capture prompt](packages/laravel-mcp-pusher/README.md#knowledge-capture-prompt) before compaction. Session-end **`mcp:push`** is manual. Setup: [packages/laravel-mcp-pusher/README.md#optional-cursor-hooks](packages/laravel-mcp-pusher/README.md#optional-cursor-hooks).
 
 When developing **this monorepo**:
 

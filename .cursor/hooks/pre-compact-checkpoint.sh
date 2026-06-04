@@ -14,7 +14,7 @@ if [[ ! -f "${PROMPT_FILE}" ]]; then
 fi
 
 if [[ ! -f "${PROMPT_FILE}" ]]; then
-  echo '{"user_message":"Context is about to compact. Run mcp:append for each lesson (see vendor/ashwinmram/mcp-pusher/stubs/mcp-capture-prompts.md)."}'
+  echo '{"user_message":"Context is about to compact. Paste the knowledge capture prompt from the mcp-pusher README (Knowledge capture prompt section)."}'
   exit 0
 fi
 
