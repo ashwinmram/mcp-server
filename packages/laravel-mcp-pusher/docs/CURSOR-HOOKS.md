@@ -5,7 +5,7 @@ Optional hooks remind you to **`mcp:append`** before compaction and to **`mcp:pu
 ## Prerequisites
 
 - Cursor with **Agent Hooks** (Settings → Features → Hooks)
-- `composer require ashwinmram/mcp-pusher:^2.0` in your Laravel project
+- `composer require ashwinmram/mcp-pusher:^3.0` in your Laravel project
 - `php` on your PATH (Herd users: hooks may need the full PHP path in scripts — see troubleshooting)
 - `jq` only if you customize scripts to parse hook JSON
 

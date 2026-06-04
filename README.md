@@ -6,9 +6,9 @@ Central MCP server for storing and querying lessons learned and project-specific
 
 **This server works in conjunction with the [ashwinmram/mcp-pusher](https://github.com/ashwinmram/mcp-pusher) package** to push lessons learned and project implementation details from your Laravel projects to this server via HTTP API.
 
-- **Install:** `composer require ashwinmram/mcp-pusher:^2.0`
+- **Install:** `composer require ashwinmram/mcp-pusher:^3.0`
 - **Links:** [GitHub](https://github.com/ashwinmram/mcp-pusher) | [Packagist](https://packagist.org/packages/ashwinmram/mcp-pusher)
-- **Commands (2.0):** `mcp:append` (frequent, during session), `mcp:push` (once at end), `mcp:extract-session` (fallback only)
+- **Commands (3.0):** `mcp:append` (frequent, during session), `mcp:push` (once at end), `mcp:extract-session` (fallback only)
 
 The mcp-pusher package merges session drafts and legacy `docs/` files, then POSTs to `/api/lessons` (generic) and `/api/project-details` (project-specific) in **one** `mcp:push`. See [File layout for mcp-pusher](#file-layout-for-mcp-pusher) and [packages/laravel-mcp-pusher/README.md](packages/laravel-mcp-pusher/README.md).
 
@@ -268,7 +268,7 @@ php artisan mcp:push --source=mcp-server
 
 ### From Other Laravel Projects
 
-1. Install the package: `composer require ashwinmram/mcp-pusher:^2.0`
+1. Install the package: `composer require ashwinmram/mcp-pusher:^3.0`
 2. Add to `config/services.php`:
 
 ```php

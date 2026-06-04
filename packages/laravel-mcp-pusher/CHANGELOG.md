@@ -1,6 +1,8 @@
 # Changelog
 
-## 2.0.0 - 2026-06-04
+## 3.0.0 - 2026-06-04
+
+Compaction-resilient knowledge capture: append during session, unified push at end, optional extract fallback.
 
 ### Breaking changes
 
@@ -18,13 +20,21 @@
 ### Migration
 
 ```bash
-# Before (1.x)
+# Before (1.x / 2.0.x on Packagist through 2.0.1)
 php artisan mcp:push-lessons --source=my-app
 php artisan mcp:push-project-details --source=my-app
 
-# After (2.0.0)
+# After (3.0.0)
 php artisan mcp:push --source=my-app
 ```
+
+## 2.0.1 - 2026-04-26
+
+- Laravel 13 compatibility (`illuminate/*` ^12.0|^13.0)
+
+## 2.0.0 - 2026-02-07
+
+- Lessons files moved under `docs/`; `lessons_learned.json`; project details truncate after push
 
 ### Best practices
 

@@ -5,7 +5,7 @@ Laravel package to push lessons learned and project implementation details from 
 - [GitHub](https://github.com/ashwinmram/mcp-pusher)
 - [Packagist](https://packagist.org/packages/ashwinmram/mcp-pusher)
 
-**Version 2.0** — see [CHANGELOG.md](CHANGELOG.md) for migration from 1.x (`mcp:push-lessons` / `mcp:push-project-details` removed).
+**Version 3.0** — see [CHANGELOG.md](CHANGELOG.md) for migration from 1.x/2.0.x (`mcp:push-lessons` / `mcp:push-project-details` removed).
 
 ## Best practices (read this first)
 
@@ -45,7 +45,7 @@ Use **`mcp:extract-session`** only when the session was long, compaction likely 
 ## Installation
 
 ```bash
-composer require ashwinmram/mcp-pusher:^2.0
+composer require ashwinmram/mcp-pusher:^3.0
 ```
 
 ## Configuration
@@ -113,7 +113,7 @@ Appends heuristic candidates to draft JSONL. **Review** drafts, then `mcp:push`.
 php artisan mcp:push-lessons --source=my-app
 php artisan mcp:push-project-details --source=my-app
 
-# After 2.0
+# After 3.0
 php artisan mcp:push --source=my-app
 ```
 

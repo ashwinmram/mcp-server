@@ -4,11 +4,11 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "3867e8377cf3ac6a50e531397f05c74e",
+    "content-hash": "d819a565a67a3ae894f96064729f4c8d",
     "packages": [
         {
             "name": "ashwinmram/mcp-pusher",
-            "version": "2.0.0",
+            "version": "3.0.0",
             "dist": {
                 "type": "path",
                 "url": "./packages/laravel-mcp-pusher",
