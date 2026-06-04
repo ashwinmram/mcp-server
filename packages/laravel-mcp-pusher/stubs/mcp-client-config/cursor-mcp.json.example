@@ -1,0 +1,18 @@
+{
+    "mcpServers": {
+        "lessons-learned-local": {
+            "transport": "sse",
+            "url": "https://mcp-server.test/mcp/lessons",
+            "headers": {
+                "Authorization": "Bearer YOUR_SANCTUM_TOKEN_HERE"
+            }
+        },
+        "project-details-my-app": {
+            "transport": "sse",
+            "url": "https://mcp-server.test/mcp/project-details?project=my-app",
+            "headers": {
+                "Authorization": "Bearer YOUR_SANCTUM_TOKEN_HERE"
+            }
+        }
+    }
+}

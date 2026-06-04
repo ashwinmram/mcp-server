@@ -8,7 +8,7 @@ alwaysApply: false
 
 ## Best practice
 
-Do not hand-type `mcp:append` JSON. Use the **knowledge capture prompt** from the mcp-pusher package README (`#knowledge-capture-prompt`) or submit it when Cursor shows it via the `preCompact` hook.
+Do not hand-type `mcp:append` JSON. Use the **knowledge capture prompt** from the mcp-pusher package README (`#knowledge-capture-prompt`) or submit it when your IDE shows it (Cursor: optional `preCompact` hook). The same workflow applies in Claude Code and Antigravity — paste the prompt manually.
 
 The agent runs `php artisan mcp:append` per lesson into `docs/.mcp-session/lessons-draft.jsonl` (generic) or `project-details-draft.jsonl` (project).
 

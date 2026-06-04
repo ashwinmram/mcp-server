@@ -1,13 +1,13 @@
 # Laravel MCP Pusher
 
-Laravel package to push lessons learned and project implementation details from your projects to a central MCP server via HTTP API. Works with the [Lessons Learned MCP Server](https://github.com/ashwinmram/mcp-server) so AI agents (e.g. Cursor) can query your knowledge base.
+Laravel package to push lessons learned and project implementation details from your projects to a central MCP server via HTTP API. Works with the [Lessons Learned MCP Server](https://github.com/ashwinmram/mcp-server) so AI agents in **Cursor**, **Claude Code**, **Google Antigravity**, and other MCP clients can query your knowledge base.
 
 - [GitHub](https://github.com/ashwinmram/mcp-pusher)
 - [Packagist](https://packagist.org/packages/ashwinmram/mcp-pusher)
 
 ## What's new in 3.0
 
-Version 3.0 is a **capture-and-push workflow** built around session drafts on disk (survives Cursor context compaction).
+Version 3.0 is a **capture-and-push workflow** built around session drafts on disk (survives context compaction in any AI client).
 
 | Before (1.x / 2.x) | After (3.0) |
 |--------------------|---------------|
@@ -21,7 +21,7 @@ Version 3.0 is a **capture-and-push workflow** built around session drafts on di
 - **`mcp:push`** — publish drafts to the MCP server once per session
 - **`mcp:extract-session`** — fallback only if drafts are thin after compaction
 
-**Cursor (optional):** `preCompact` hook shows the [knowledge capture prompt](#knowledge-capture-prompt) before compaction. Session-end publish is manual (no `stop` hook).
+**Optional automation:** Cursor `preCompact` hook can show the [knowledge capture prompt](#knowledge-capture-prompt) before compaction. Claude Code and Antigravity have no equivalent hook — paste the prompt manually.
 
 See [CHANGELOG.md](CHANGELOG.md) for full release notes.
 
@@ -37,12 +37,11 @@ composer require ashwinmram/mcp-pusher:^3.0
 
 **Do not** hand-type `php artisan mcp:append` JSON during normal work.
 
-1. **Install the [preCompact Cursor hook](#optional-cursor-hooks)** (one-time).
-2. When Cursor is about to compact (or anytime you want to capture learnings), **paste the [Knowledge capture prompt](#knowledge-capture-prompt)** into your agent chat.
-3. Let the agent run `mcp:append` for each lesson — entries land in `docs/.mcp-session/*-draft.jsonl`.
-4. **End of session:** review drafts, then run `mcp:push` once (see [End of session](#end-of-session)).
+1. **Paste the [Knowledge capture prompt](#knowledge-capture-prompt)** into your agent before context compaction (or anytime you want to capture learnings).
+2. Let the agent run `mcp:append` for each lesson — entries land in `docs/.mcp-session/*-draft.jsonl`.
+3. **End of session:** review drafts, then run `mcp:push` once (see [End of session](#end-of-session)).
 
-The hook shows the same prompt automatically as `user_message` before compaction.
+**Cursor only (optional):** Install the [preCompact hook](#cursor-precompact-hook) so Cursor surfaces the same prompt automatically.
 
 | Step | What you do | What runs on disk |
 |------|-------------|-------------------|
@@ -50,9 +49,31 @@ The hook shows the same prompt automatically as `user_message` before compaction
 | **Publish** | `php artisan mcp:push --source=your-project` | HTTP push to MCP server |
 | **Fallback** | `mcp:extract-session` only if drafts are thin | Heuristic lines appended to drafts |
 
+## Connect your AI client to the MCP server
+
+Configure your client to reach the Lessons Learned server (and optional Project Details server). Example configs:
+
+| Client | Example stub |
+|--------|----------------|
+| **Cursor** | `stubs/mcp-client-config/cursor-mcp.json.example` |
+| **Claude Code** | `stubs/mcp-client-config/claude-mcp.json.example` |
+| **Google Antigravity** | `stubs/mcp-client-config/antigravity-mcp_config.json.example` |
+
+Full setup: [mcp-server README](https://github.com/ashwinmram/mcp-server#configuring-your-ai-client).
+
+## Agent startup instructions
+
+Copy `stubs/agent-instructions/mcp-session-startup.md` so agents query lessons at session start:
+
+| IDE | Where to place |
+|-----|----------------|
+| **Cursor** | `.cursor/rules/mcp-session-capture.mdc` (from `stubs/mcp-session-capture.mdc`) plus optional project rules |
+| **Claude Code** | `CLAUDE.md` in project root |
+| **Google Antigravity** | Skill under `~/.gemini/skills/` |
+
 ## Knowledge capture prompt
 
-Copy this entire block into your agent (Cursor, etc.). This is the **only** capture prompt you need.
+Copy this entire block into your agent. This is the **only** capture prompt you need.
 
 ```text
 Context is about to compact — capture session knowledge NOW before it is lost.
@@ -72,11 +93,11 @@ php artisan mcp:append '{"knowledge_scope":"project","title":"...","summary":"..
 Report: generic count, project count, every title appended.
 ```
 
-With hooks installed, Cursor surfaces this text at compaction — submit it to the agent when shown.
+**Cursor:** With the [preCompact hook](#cursor-precompact-hook) installed, submit this text when Cursor shows it as `user_message`.
 
 ## End of session
 
-When you are ready to publish (manual — no Cursor hook):
+When you are ready to publish:
 
 ```text
 Session ending: review docs/.mcp-session/lessons-draft.jsonl and docs/.mcp-session/project-details-draft.jsonl. If drafts are thin, run: php artisan mcp:extract-session --since-git=main (fallback only). Then publish once: php artisan mcp:push --source=<your-project>
@@ -161,19 +182,13 @@ your-project/
         └── project-details-draft.jsonl ← project details (mcp:append)
 ```
 
-## Optional: Cursor hooks
+## Optional automation
+
+### Cursor (preCompact hook)
 
 Install once so Cursor shows the [Knowledge capture prompt](#knowledge-capture-prompt) as `user_message` before context compaction.
 
-### Prerequisites
-
-- Cursor with **Agent Hooks** (Settings → Features → Hooks)
-- `composer require ashwinmram/mcp-pusher:^3.0`
-- `jq` or `python3` on PATH (hook script emits JSON)
-
-### Install hook stubs
-
-From your **Laravel project root**:
+**Prerequisites:** Cursor with **Agent Hooks**; `jq` or `python3` on PATH.
 
 **Composer install:**
 
@@ -185,53 +200,21 @@ cp vendor/ashwinmram/mcp-pusher/stubs/cursor-hooks/pre-compact-prompt.txt .curso
 chmod +x .cursor/hooks/pre-compact-checkpoint.sh
 ```
 
-**Monorepo** (e.g. [mcp-server](https://github.com/ashwinmram/mcp-server)):
-
-```bash
-mkdir -p .cursor/hooks
-cp packages/laravel-mcp-pusher/stubs/cursor-hooks/hooks.json.example .cursor/hooks.json
-cp packages/laravel-mcp-pusher/stubs/cursor-hooks/pre-compact-checkpoint.sh .cursor/hooks/
-cp packages/laravel-mcp-pusher/stubs/cursor-hooks/pre-compact-prompt.txt .cursor/hooks/
-chmod +x .cursor/hooks/pre-compact-checkpoint.sh
-```
+**Monorepo** (e.g. [mcp-server](https://github.com/ashwinmram/mcp-server)): use `packages/laravel-mcp-pusher/stubs/cursor-hooks/` paths instead of `vendor/…`.
 
 | Stub | Purpose |
 |------|---------|
 | `hooks.json.example` | Wires **`preCompact` only** |
 | `pre-compact-checkpoint.sh` | Reads `pre-compact-prompt.txt`, outputs `user_message` |
-| `pre-compact-prompt.txt` | Same text as [Knowledge capture prompt](#knowledge-capture-prompt) above |
+| `pre-compact-prompt.txt` | Same text as [Knowledge capture prompt](#knowledge-capture-prompt) |
 
-Example `.cursor/hooks.json`:
+**Optional Cursor rule:** `stubs/mcp-session-capture.mdc` → `.cursor/rules/mcp-session-capture.mdc`
 
-```json
-{
-  "version": 1,
-  "hooks": {
-    "preCompact": [
-      {
-        "command": ".cursor/hooks/pre-compact-checkpoint.sh"
-      }
-    ]
-  }
-}
-```
+**Troubleshooting:** `chmod +x` the script; paste the capture prompt manually if `preCompact` never fires.
 
-### Verify
+### Claude Code and Google Antigravity
 
-1. Save `.cursor/hooks.json` (restart Cursor if needed)
-2. Settings → **Hooks** — confirm `preCompact` is listed
-3. At compaction, confirm the capture prompt appears and submit it to the agent
-
-### Optional Cursor rule
-
-Copy `stubs/mcp-session-capture.mdc` to `.cursor/rules/mcp-session-capture.mdc` so agents follow the capture prompt pattern.
-
-### Troubleshooting
-
-- **Hook never runs** — `chmod +x` on the script; remove `matcher` from `hooks.json` temporarily
-- **No prompt shown** — Keep `pre-compact-prompt.txt` next to the script in `.cursor/hooks/`, or paste the prompt from this README
-- **preCompact never fires** — Depends on Cursor version; paste the [capture prompt](#knowledge-capture-prompt) manually
-- **Removed `stop` hook** — Old `followup_message` on every loop was too noisy; use [End of session](#end-of-session) when you publish
+No built-in pre-compaction hook. **Paste the [capture prompt](#knowledge-capture-prompt)** manually, or add a personal skill/reminder that includes the text from `stubs/pre-compact-prompt.txt`.
 
 ### Security
 

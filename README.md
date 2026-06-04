@@ -1,21 +1,21 @@
 # Lessons Learned MCP Server
 
-Central MCP server for storing and querying lessons learned and project-specific implementation details. A Laravel-based application that exposes two MCP endpoints for [Cursor IDE](https://cursor.com) and other MCP clients.
+Central MCP server for storing and querying lessons learned and project-specific implementation details. A Laravel application that exposes two MCP endpoints for any MCP-capable AI client — [Cursor](https://cursor.com), [Claude Code](https://code.claude.com/docs/en/mcp), [Google Antigravity](https://antigravity.google/), and others.
 
 ## Use with ashwinmram/mcp-pusher
 
-**This server works in conjunction with the [ashwinmram/mcp-pusher](https://github.com/ashwinmram/mcp-pusher) package** to push lessons learned and project implementation details from your Laravel projects to this server via HTTP API.
+**This server works with the [ashwinmram/mcp-pusher](https://github.com/ashwinmram/mcp-pusher) package** to push lessons and project details from your Laravel projects via HTTP API.
 
 - **Install:** `composer require ashwinmram/mcp-pusher:^3.0`
 - **Links:** [GitHub](https://github.com/ashwinmram/mcp-pusher) | [Packagist](https://packagist.org/packages/ashwinmram/mcp-pusher)
-- **Best practice:** Paste the [knowledge capture prompt](packages/laravel-mcp-pusher/README.md#knowledge-capture-prompt) into your agent (or use the [preCompact hook](packages/laravel-mcp-pusher/README.md#optional-cursor-hooks)); agent runs `mcp:append` → drafts. **`mcp:push`** once at session end.
+- **Best practice:** Paste the [knowledge capture prompt](packages/laravel-mcp-pusher/README.md#knowledge-capture-prompt) into your agent; agent runs `mcp:append` → drafts. **`mcp:push`** once at session end. Optional [Cursor preCompact hook](packages/laravel-mcp-pusher/README.md#cursor-precompact-hook) automates the capture reminder.
 
 The mcp-pusher package pushes session drafts from `docs/.mcp-session/*.jsonl` to `/api/lessons` (generic) and `/api/project-details` (project-specific) in **one** `mcp:push`. See [Pushing knowledge (mcp-pusher 3.0)](#pushing-knowledge-mcp-pusher-30) and [packages/laravel-mcp-pusher/README.md](packages/laravel-mcp-pusher/README.md).
 
 ## Key Features
 
 - **Lessons Learned MCP** (`/mcp/lessons`) — Search, browse, and retrieve lessons with relevance scoring
-- **Project Details MCP** (`/mcp/project-details?project=…`) — Expose project-specific implementation details (file locations, env vars, conventions)
+- **Project Details MCP** (`/mcp/project-details?project=…`) — Project-specific implementation details (paths, env, conventions)
 - **Tools:** SearchLessons, GetLessonByCategory, GetLessonTags, FindRelatedLessons, MarkLessonHelpful, SuggestSearchQueries, GetTopLessons, GetCategoryStatistics
 - **Resources:** `lessons://overview`, `lessons://search-guide`
 - **Prompts:** LessonsLearnedOverview, LessonsByCategory
@@ -25,7 +25,7 @@ The mcp-pusher package pushes session drafts from `docs/.mcp-session/*.jsonl` to
 - PHP 8.2+, Laravel 12
 - MySQL or SQLite
 - [Laravel Herd](https://herd.laravel.com) (recommended) or equivalent local dev setup
-- Cursor IDE (v0.46 or later) or another MCP client
+- An MCP-capable AI client (Cursor, Claude Code, Google Antigravity, or other)
 
 ## Initial Setup
 
@@ -43,13 +43,13 @@ php artisan migrate
 Add the following to your `.env` file:
 
 ```env
-# MCP Server Configuration (for Cursor)
+# MCP server (HTTP base URL for MCP clients and API pushes)
 APP_URL=https://mcp-server.test
 MCP_SERVER_NAME="Lessons Learned MCP Server"
 
-# MCP Client Configuration (for pushing lessons from this project)
+# MCP client (for pushing from this project via mcp-pusher)
 MCP_SERVER_URL=https://mcp-server.test
-MCP_API_TOKEN=  # Will be generated in step 3
+MCP_API_TOKEN=  # Generated in step 3
 ```
 
 ### 3. Generate API Token
@@ -57,7 +57,7 @@ MCP_API_TOKEN=  # Will be generated in step 3
 Generate a Sanctum API token for MCP authentication:
 
 ```bash
-php artisan mcp:generate-token --name="cursor-mcp-token"
+php artisan mcp:generate-token --name="mcp-client-token"
 ```
 
 This command creates a user if none exists, generates a Sanctum token, and displays it. **Copy the token** (shown only once) and add it to `.env`:
@@ -65,6 +65,8 @@ This command creates a user if none exists, generates a Sanctum token, and displ
 ```env
 MCP_API_TOKEN=your-token-here
 ```
+
+Use the same token in your MCP client `Authorization: Bearer …` header.
 
 ### 4. Verify Setup
 
@@ -87,24 +89,30 @@ curl -H "Authorization: Bearer YOUR_TOKEN_HERE" \
      https://mcp-server.test/mcp/lessons
 ```
 
-## Configuring Cursor
+## Configuring your AI client
 
-### Option A: Cursor Settings UI
+All clients need:
+
+- **Lessons URL:** `https://mcp-server.test/mcp/lessons`
+- **Project details URL (optional):** `https://mcp-server.test/mcp/project-details?project=<source>` — `project` must match `php artisan mcp:push --source=…`
+- **Header:** `Authorization: Bearer YOUR_SANCTUM_TOKEN`
+
+Example config files (copy and edit): [cursor](packages/laravel-mcp-pusher/stubs/mcp-client-config/cursor-mcp.json.example), [claude](packages/laravel-mcp-pusher/stubs/mcp-client-config/claude-mcp.json.example), [antigravity](packages/laravel-mcp-pusher/stubs/mcp-client-config/antigravity-mcp_config.json.example). Root [mcp.json.example](mcp.json.example) is a minimal Cursor-oriented sample.
+
+### Cursor
+
+**Settings UI**
 
 1. Open Cursor Settings: `⇧+⌘+J` (Mac) or `Ctrl+Shift+J` (Windows/Linux)
-2. Navigate to **Features** → **MCP**
-3. Click **Add MCP Server** or **+**
-4. Configure:
+2. **Features** → **MCP** → **Add MCP Server**
+3. Configure:
    - **Name:** `lessons-learned-local` (or any name)
-   - **Transport:** `SSE` (Server-Sent Events)
+   - **Transport:** `SSE`
    - **URL:** `https://mcp-server.test/mcp/lessons`
    - **Headers:** `{"Authorization": "Bearer YOUR_SANCTUM_TOKEN_HERE"}`
-5. Click **Save**
-6. **Restart Cursor** to establish the connection
+4. Save and **restart Cursor**
 
-### Option B: mcp.json Configuration File
-
-Create `mcp.json` in your project root:
+**Project `mcp.json`**
 
 ```json
 {
@@ -115,46 +123,104 @@ Create `mcp.json` in your project root:
             "headers": {
                 "Authorization": "Bearer YOUR_SANCTUM_TOKEN_HERE"
             }
-        },
-        "project-details-my-app": {
-            "transport": "sse",
-            "url": "https://mcp-server.test/mcp/project-details?project=my-app",
+        }
+    }
+}
+```
+
+- **Global:** `~/.cursor/mcp.json` or Settings UI — all projects
+- **Project:** `mcp.json` in project root — this project only (gitignore tokens)
+
+**Verify:** Settings → MCP → server **Connected**. Ask: "What lessons do we have about testing Laravel packages?"
+
+### Claude Code
+
+Prefer **HTTP** transport (Laravel `Mcp::web` uses HTTP). Use **SSE** only if HTTP fails.
+
+**CLI**
+
+```bash
+claude mcp add --transport http lessons-learned \
+  https://mcp-server.test/mcp/lessons \
+  --header "Authorization: Bearer YOUR_TOKEN"
+
+claude mcp add --transport http project-details-my-app \
+  "https://mcp-server.test/mcp/project-details?project=my-app" \
+  --header "Authorization: Bearer YOUR_TOKEN"
+```
+
+**Project `.mcp.json`**
+
+```json
+{
+    "mcpServers": {
+        "lessons-learned": {
+            "type": "http",
+            "url": "https://mcp-server.test/mcp/lessons",
             "headers": {
-                "Authorization": "Bearer YOUR_SANCTUM_TOKEN_HERE"
+                "Authorization": "Bearer YOUR_TOKEN"
             }
         }
     }
 }
 ```
 
-Add one **project-details** entry per project; replace `my-app` with the same value you use for `--source` when running `php artisan mcp:push`. See [mcp.json.example](mcp.json.example) for a minimal example.
+Scopes: `local` (default, `~/.claude.json`), `project` (`.mcp.json` in repo), or `user`. See [Claude Code MCP docs](https://code.claude.com/docs/en/mcp).
 
-### Global vs. Project-Level Configuration
+**Verify:** `claude mcp list` — servers show connected; start a session and query lessons.
 
-- **Global** (`~/.cursor/mcp.json` or Cursor Settings UI) — Applies to all projects
-- **Project-Level** (`mcp.json` in project root) — Applies only to this project. Token should be excluded via `.gitignore`.
+### Google Antigravity
 
-### Verify Configuration
+Shared config: `~/.gemini/config/mcp_config.json` (Antigravity IDE and CLI share this path per [Google codelabs](https://codelabs.developers.google.com/google-workspace-mcp-antigravity)).
 
-1. Open Cursor Settings → **Features** → **MCP** and verify the server shows as **Connected**
-2. Start a new chat and ask: "What lessons do we have about testing Laravel packages?"
+```json
+{
+    "mcpServers": {
+        "lessons-learned": {
+            "serverUrl": "https://mcp-server.test/mcp/lessons",
+            "headers": {
+                "Authorization": "Bearer YOUR_TOKEN"
+            }
+        },
+        "project-details-my-app": {
+            "serverUrl": "https://mcp-server.test/mcp/project-details?project=my-app",
+            "headers": {
+                "Authorization": "Bearer YOUR_TOKEN"
+            }
+        }
+    }
+}
+```
 
-## How Automatic Loading Works
+**UI:** Agent panel → `...` → **MCP Servers** → refresh; add or verify servers.
 
-When you start a new AI agent session in Cursor:
+**Verify:** MCP server shows connected; ask the agent about available lessons.
 
-1. Cursor connects to the MCP server using the configured URL and token
-2. The MCP server advertises the `lessons://overview` resource
-3. The AI agent reads `.cursorrules` (if configured) with instructions to query lessons at session start
-4. The AI agent reads `lessons://overview` for an overview
-5. The AI agent queries relevant lessons using SearchLessons or GetLessonByCategory
-6. Lessons guide coding decisions throughout the session
+## Agent startup instructions
 
-**.cursorrules** instructions tell the agent to:
+So agents query lessons at session start, copy [stubs/agent-instructions/mcp-session-startup.md](packages/laravel-mcp-pusher/stubs/agent-instructions/mcp-session-startup.md) into your client:
 
-- Read the `lessons://overview` resource at session start
-- Use the LessonsLearnedOverview prompt
-- Query relevant lessons and apply them to coding decisions
+| IDE | Where to place startup instructions |
+|-----|-------------------------------------|
+| **Cursor** | `.cursor/rules/` (e.g. `mcp-session-capture.mdc`) and/or `.cursorrules` |
+| **Claude Code** | Project `CLAUDE.md` or user-level instructions |
+| **Google Antigravity** | Shared skill under `~/.gemini/skills/` |
+
+This monorepo uses `.cursorrules` for Cursor-specific tool names; consumer projects should use the neutral stub above.
+
+## How sessions use the MCP server
+
+1. Your AI client connects with the configured URL and Bearer token
+2. The server exposes `lessons://overview` and MCP tools/prompts
+3. With startup instructions configured, the agent reads the overview and queries relevant lessons
+4. Lessons inform coding decisions during the session
+
+### Example prompts (any client)
+
+- "What lessons do we have about Laravel validation?"
+- "Show me lessons tagged with 'php' and 'best-practices'"
+- "Give me an overview of available lessons"
+- "What do we know about testing Laravel packages?"
 
 ## Available MCP Components
 
@@ -179,27 +245,18 @@ When you start a new AI agent session in Cursor:
 - **LessonsLearnedOverview** — Overview of available lessons
 - **LessonsByCategory** — Summary of lessons in a specific category
 
-### Example Usage
-
-Ask in Cursor:
-
-- "What lessons do we have about Laravel validation?"
-- "Show me lessons tagged with 'php' and 'best-practices'"
-- "Give me an overview of available lessons"
-- "What do we know about testing Laravel packages?"
-
 ## Pushing knowledge (mcp-pusher 3.0)
 
-Consumer projects use [ashwinmram/mcp-pusher](https://github.com/ashwinmram/mcp-pusher). See [What's new in 3.0](packages/laravel-mcp-pusher/README.md#whats-new-in-30) in the package README for migration from 1.x/2.x.
+Consumer projects use [ashwinmram/mcp-pusher](https://github.com/ashwinmram/mcp-pusher). See [What's new in 3.0](packages/laravel-mcp-pusher/README.md#whats-new-in-30).
 
 | Before (1.x / 2.x) | After (3.0) |
 |--------------------|---------------|
 | Edit markdown/JSON in `docs/`, then push | **`mcp:append`** → draft JSONL during session |
 | `mcp:push-lessons` + `mcp:push-project-details` | **`mcp:push`** once (both APIs) |
 
-### Workflow
+### Workflow (all IDEs)
 
-1. Paste the [knowledge capture prompt](packages/laravel-mcp-pusher/README.md#knowledge-capture-prompt) into your agent (or submit when the [preCompact hook](packages/laravel-mcp-pusher/README.md#optional-cursor-hooks) shows it).
+1. Paste the [knowledge capture prompt](packages/laravel-mcp-pusher/README.md#knowledge-capture-prompt) into your agent (or use the optional [Cursor preCompact hook](packages/laravel-mcp-pusher/README.md#cursor-precompact-hook)).
 2. Agent runs `mcp:append` → `docs/.mcp-session/lessons-draft.jsonl` and/or `project-details-draft.jsonl`.
 3. End of session: [end-of-session prompt](packages/laravel-mcp-pusher/README.md#end-of-session), then `php artisan mcp:push --source=<project>`.
 
@@ -215,15 +272,11 @@ your-project/
         └── project-details-draft.jsonl ← project-specific details
 ```
 
-Each `mcp:append` entry needs `knowledge_scope`, `title`, `summary`, `category`, `subcategory`, `type`, `tags`, and `content` (see package [capture prompt](packages/laravel-mcp-pusher/README.md#knowledge-capture-prompt)).
-
 ### This server (monorepo)
 
 ```bash
 php artisan mcp:push --source=mcp-server
 ```
-
-Configure `MCP_SERVER_URL` and `MCP_API_TOKEN` in `.env` (see [Initial Setup](#initial-setup)).
 
 ### Other Laravel projects
 
@@ -231,9 +284,9 @@ Configure `MCP_SERVER_URL` and `MCP_API_TOKEN` in `.env` (see [Initial Setup](#i
 composer require ashwinmram/mcp-pusher:^3.0
 ```
 
-Add `mcp` to `config/services.php`, set `.env`, gitignore `docs/.mcp-session/`, install [Cursor hooks](packages/laravel-mcp-pusher/README.md#optional-cursor-hooks) (optional). Full guide: [package README](packages/laravel-mcp-pusher/README.md).
+Configure `MCP_SERVER_URL`, `MCP_API_TOKEN`, gitignore `docs/.mcp-session/`. Full guide: [package README](packages/laravel-mcp-pusher/README.md).
 
-### Cursor hooks (this monorepo)
+### Optional: Cursor hooks (this monorepo)
 
 ```bash
 mkdir -p .cursor/hooks
@@ -245,133 +298,86 @@ chmod +x .cursor/hooks/pre-compact-checkpoint.sh
 
 ## Project Details MCP Server
 
-A second MCP server exposes **project-specific** implementation details. Use it when working in a codebase that has pushed project details.
+**URL:** `https://mcp-server.test/mcp/project-details?project=<source_project>`
 
-### Connection URL
-
-- **URL:** `https://mcp-server.test/mcp/project-details?project=<source_project>`
-- **Example:** `https://mcp-server.test/mcp/project-details?project=my-app`
-
-Use the same Bearer token. Add a **separate** MCP server entry per project (each with its own `?project=...`).
-
-### Pushing Project Details
-
-From a project that wants to expose implementation details, use `php artisan mcp:push --source=my-app` (project entries in `project-details-draft.jsonl`). See [Pushing knowledge (mcp-pusher 3.0)](#pushing-knowledge-mcp-pusher-30).
+Use the same Bearer token. Add one MCP server entry per project (`?project=…` must match `--source` on push).
 
 ## Managing Tokens
 
 ```bash
-# List all tokens
 php artisan mcp:list-tokens
-
-# Revoke a token
 php artisan mcp:list-tokens --revoke=<TOKEN_ID>
-
-# Revoke all tokens
 php artisan mcp:list-tokens --revoke-all
-
-# Regenerate a token
-php artisan mcp:generate-token --name="cursor-mcp-token" --force
+php artisan mcp:generate-token --name="mcp-client-token" --force
 ```
 
 ## Production Setup
 
-1. Update `.env`:
-
-```env
-APP_URL=https://your-production-domain.com
-MCP_SERVER_URL=https://your-production-domain.com
-MCP_API_TOKEN=your-production-token
-```
-
-2. Generate a production token:
-
-```bash
-php artisan mcp:generate-token --name="cursor-mcp-production" --email="admin@yourdomain.com"
-```
-
-3. Update Cursor: use `https://your-production-domain.com/mcp/lessons` and the production token
-
-4. Update Sanctum stateful domains (e.g. in `.env`):
-
-```env
-SANCTUM_STATEFUL_DOMAINS=your-production-domain.com,mcp-server.test,localhost
-```
+1. Update `.env` with production `APP_URL` and `MCP_SERVER_URL`
+2. `php artisan mcp:generate-token --name="mcp-production" --email="admin@yourdomain.com"`
+3. Update **each MCP client** with production URLs and token
+4. Set `SANCTUM_STATEFUL_DOMAINS` for your production domain
 
 ## Troubleshooting
 
-### Token Not Working
+### Token not working
 
-- Verify: `php artisan mcp:list-tokens`
-- Regenerate: `php artisan mcp:generate-token --force`
+- `php artisan mcp:list-tokens`
+- `php artisan mcp:generate-token --force`
 
-### Cursor Cannot Connect
+### Client cannot connect
 
-- Verify URL: `https://mcp-server.test/mcp/lessons` is accessible
-- Ensure Herd is running and the site is linked
-- Check Authorization header: `Bearer YOUR_TOKEN`
+- Confirm URL is reachable: `curl -H "Authorization: Bearer TOKEN" https://mcp-server.test/mcp/lessons`
+- Check `Authorization: Bearer YOUR_TOKEN` (include `Bearer`)
+- **Cursor:** restart app; verify Settings → MCP → Connected; SSE transport in config
+- **Claude Code:** `claude mcp list`; try `--transport http` then `--transport sse` if needed
+- **Antigravity:** refresh MCP Servers in Agent panel; verify `~/.gemini/config/mcp_config.json` uses `serverUrl` and headers
+- **Herd:** site linked and running (`herd link mcp-server`)
 
-### MCP Server Not Connecting / Lessons Not Loading
+### Lessons not loading in agent
 
-- Restart Cursor — MCP connections are established on startup
-- Manually invoke: "Use the LessonsLearnedOverview prompt to show me available lessons"
-- Check Laravel logs: `tail -f storage/logs/laravel.log`
+- Restart the AI client (MCP often connects at startup)
+- Ask: "Use the LessonsLearnedOverview prompt"
+- `tail -f storage/logs/laravel.log`
 
-### Authentication Errors (401)
+### Authentication errors (401)
 
-- Verify token: `php artisan mcp:list-tokens`
-- Ensure header format: `Bearer YOUR_TOKEN` (include "Bearer" prefix)
-- Test: `curl -H "Authorization: Bearer TOKEN" https://mcp-server.test/mcp/lessons`
+- Regenerate token; verify Bearer header in client config
 
-### SSL/Certificate Issues
+### SSL / certificate issues
 
-Herd uses self-signed certificates for `.test` domains. If Cursor rejects the certificate:
+Herd `.test` domains use local certificates. If the client rejects HTTPS:
 
-- Configure Cursor to accept the self-signed certificate, or
-- Use a trusted certificate (e.g. via [mkcert](https://github.com/FiloSottile/mkcert))
+- Trust the certificate in the client, or use [mkcert](https://github.com/FiloSottile/mkcert)
 
-### Database Connection Issues
+### Database / CORS
 
-- Check: `php artisan migrate:status`
-- Verify `.env` database configuration
-- Run: `php artisan migrate`
-
-### CORS Issues
-
-- Sanctum handles CORS for stateful domains
-- Ensure your domain is in `config/sanctum.php` stateful domains
+- `php artisan migrate:status` / `php artisan migrate`
+- Ensure domain is in `config/sanctum.php` stateful domains
 
 ## Security Considerations
 
-1. **Token Storage** — Never commit tokens. Use `.env` files.
-2. **Token Rotation** — Rotate tokens regularly, especially if compromised.
-3. **HTTPS** — Always use HTTPS in production.
-4. **Token Scope** — Consider restricting abilities for production.
-5. **Rate Limiting** — Consider rate limiting MCP endpoints.
+1. **Token storage** — Never commit tokens; use `.env`
+2. **Token rotation** — Rotate if compromised
+3. **HTTPS** — Required in production
+4. **Rate limiting** — Consider for MCP endpoints
 
 ## Project Structure
 
 - `routes/ai.php` — MCP route registration
-- `app/Mcp/` — MCP server classes (LessonsServer, ProjectDetailsServer)
-- `docs/.mcp-session/` — session drafts for mcp-pusher (`lessons-draft.jsonl`, `project-details-draft.jsonl`; see [pushing knowledge](#pushing-knowledge-mcp-pusher-30))
-- `packages/laravel-mcp-pusher` — Local development copy (published as [ashwinmram/mcp-pusher](https://packagist.org/packages/ashwinmram/mcp-pusher))
+- `app/Mcp/` — LessonsServer, ProjectDetailsServer
+- `docs/.mcp-session/` — session drafts for mcp-pusher
+- `packages/laravel-mcp-pusher` — [ashwinmram/mcp-pusher](https://packagist.org/packages/ashwinmram/mcp-pusher) (local copy)
 
 ## Additional Resources
 
 - [Laravel Sanctum](https://laravel.com/docs/sanctum)
 - [Model Context Protocol](https://modelcontextprotocol.io)
-- [Cursor MCP Documentation](https://docs.cursor.com/context/model-context-protocol)
-- [Laravel MCP Package](https://laravel.com/docs/mcp)
+- [Laravel MCP](https://laravel.com/docs/mcp)
+- [Cursor MCP](https://docs.cursor.com/context/model-context-protocol)
+- [Claude Code MCP](https://code.claude.com/docs/en/mcp)
+- [Google Antigravity MCP codelab](https://codelabs.developers.google.com/google-workspace-mcp-antigravity)
 - [Laravel Herd](https://herd.laravel.com/docs)
-
-## Support
-
-If you encounter issues:
-
-1. Check the troubleshooting section above
-2. Review Laravel logs: `storage/logs/laravel.log`
-3. Test endpoints manually with curl
-4. Verify all environment variables are set correctly
 
 ## License
 

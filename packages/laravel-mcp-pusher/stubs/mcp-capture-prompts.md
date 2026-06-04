@@ -1,4 +1,4 @@
-# MCP capture prompts (copy into Cursor)
+# MCP capture prompts (copy into your agent)
 
 Use **mcp:append** frequently during the session (primary). Drafts live in `docs/.mcp-session/lessons-draft.jsonl` and `project-details-draft.jsonl`. **Do not** update `lessons-learned.md`, `lessons_learned.json`, `project-details.md`, or `project_details.json` during capture — those legacy files are optional and merging them with drafts at `mcp:push` can duplicate lessons on the server.
 
@@ -10,7 +10,7 @@ Hook prompt file: `stubs/pre-compact-prompt.txt` (Composer: `vendor/ashwinmram/m
 
 ## preCompact (before context loss)
 
-Shown by the optional `preCompact` Cursor hook (`user_message`). Submit to your agent when Cursor displays it.
+Shown by the optional Cursor `preCompact` hook (`user_message`). Submit to your agent when your IDE displays it, or paste manually in Claude Code / Antigravity.
 
 ```text
 Context is about to compact — capture session knowledge NOW before it is lost.
@@ -51,7 +51,7 @@ When finished, report counts and every title appended.
 
 ## Session end (manual only)
 
-Not wired to a Cursor hook. Run when you are ready to publish.
+Not wired to any hook. Run when you are ready to publish (all IDEs).
 
 ```text
 Session ending: review docs/.mcp-session/lessons-draft.jsonl and docs/.mcp-session/project-details-draft.jsonl. If drafts are thin, run: php artisan mcp:extract-session --since-git=main (fallback only). Then publish once: php artisan mcp:push --source=<your-project>

@@ -14,7 +14,7 @@ class GenerateMcpToken extends Command
      * @var string
      */
     protected $signature = 'mcp:generate-token
-                            {--name=cursor-mcp-token : The name for the token}
+                            {--name=mcp-client-token : The name for the token}
                             {--email= : Email for the user (creates user if not exists)}
                             {--force : Regenerate token if it already exists}';
 
@@ -61,6 +61,7 @@ class GenerateMcpToken extends Command
             $this->warn("Token '{$tokenName}' already exists for user {$user->email}.");
             if (! $this->confirm('Do you want to regenerate it? This will invalidate the existing token.', false)) {
                 $this->info('Existing token: '.$existingToken->token);
+
                 return Command::SUCCESS;
             }
 
@@ -93,7 +94,7 @@ class GenerateMcpToken extends Command
         $this->line('MCP_API_TOKEN='.$token->plainTextToken);
         $this->newLine();
 
-        $this->info('Use this token in Cursor MCP configuration:');
+        $this->info('Use this token in your MCP client Authorization header:');
         $this->line('Authorization: Bearer '.$token->plainTextToken);
         $this->newLine();
 

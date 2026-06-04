@@ -1,7 +1,7 @@
 {
     "name": "ashwinmram/mcp-pusher",
     "description": "Laravel package to push lessons learned to MCP server",
-    "version": "3.0.5",
+    "version": "3.0.6",
     "type": "library",
     "license": "MIT",
     "keywords": [

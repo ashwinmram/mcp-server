@@ -1,5 +1,18 @@
 # Changelog
 
+## 3.0.6 - 2026-06-05
+
+### Added
+
+- **Multi-IDE docs:** Cursor, Claude Code, and Google Antigravity MCP setup in README
+- **`stubs/mcp-client-config/`** — example configs per client (`cursor-mcp.json`, `claude-mcp.json`, `antigravity-mcp_config.json`)
+- **`stubs/agent-instructions/mcp-session-startup.md`** — IDE-neutral agent startup instructions (copy into CLAUDE.md, Antigravity skills, etc.)
+
+### Changed
+
+- Capture workflow documented for all IDEs; Cursor `preCompact` hook moved under **Optional automation**
+- Stubs `mcp-capture-prompts.md` and `mcp-session-capture.mdc` — wording applies to any agent, not Cursor only
+
 ## 3.0.5 - 2026-06-05
 
 ### Changed

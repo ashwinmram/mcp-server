@@ -54,16 +54,14 @@ class ListMcpTokens extends Command
             ->get()
             ->filter(function ($token) {
                 // Filter tokens that look like MCP tokens (optional: check name pattern)
-                return $token->name && (
-                    str_contains(strtolower($token->name), 'mcp') ||
-                    str_contains(strtolower($token->name), 'cursor')
-                );
+                return $token->name && str_contains(strtolower($token->name), 'mcp');
             });
 
         if ($tokens->isEmpty()) {
             $this->info('No MCP tokens found.');
             $this->newLine();
             $this->comment('Generate a new token with: php artisan mcp:generate-token');
+
             return Command::SUCCESS;
         }
 
@@ -102,16 +100,19 @@ class ListMcpTokens extends Command
 
         if (! $token) {
             $this->error("Token with ID {$id} not found.");
+
             return Command::FAILURE;
         }
 
         if ($this->confirm("Are you sure you want to revoke token '{$token->name}' (ID: {$id})?", true)) {
             $token->delete();
             $this->info("✓ Token '{$token->name}' has been revoked.");
+
             return Command::SUCCESS;
         }
 
         $this->info('Token revocation cancelled.');
+
         return Command::SUCCESS;
     }
 
@@ -124,14 +125,12 @@ class ListMcpTokens extends Command
             ->whereIn('tokenable_type', [User::class])
             ->get()
             ->filter(function ($token) {
-                return $token->name && (
-                    str_contains(strtolower($token->name), 'mcp') ||
-                    str_contains(strtolower($token->name), 'cursor')
-                );
+                return $token->name && str_contains(strtolower($token->name), 'mcp');
             });
 
         if ($tokens->isEmpty()) {
             $this->info('No MCP tokens found to revoke.');
+
             return Command::SUCCESS;
         }
 
@@ -143,10 +142,12 @@ class ListMcpTokens extends Command
                 $token->delete();
             }
             $this->info("✓ Revoked {$count} MCP token(s).");
+
             return Command::SUCCESS;
         }
 
         $this->info('Token revocation cancelled.');
+
         return Command::SUCCESS;
     }
 }

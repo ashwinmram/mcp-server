@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.2.5] - 2026-06-05
+
+### Added
+
+- README: **Configuring your AI client** for Cursor, Claude Code, and Google Antigravity
+- Package stubs for per-client MCP config and IDE-neutral agent startup instructions
+
+### Changed
+
+- `mcp:generate-token` default name is `mcp-client-token`; CLI output is client-agnostic
+- `mcp:list-tokens` filters tokens by `mcp` in the name (includes legacy `cursor-mcp-*` names)
+- Embedded mcp-pusher **3.0.6**
+
 ## [1.2.4] - 2026-06-05
 
 ### Changed
