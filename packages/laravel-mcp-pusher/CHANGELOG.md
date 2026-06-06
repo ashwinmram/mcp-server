@@ -1,5 +1,17 @@
 # Changelog
 
+## 3.0.8 - 2026-06-06
+
+### Changed
+
+- **Single capture stub:** `stubs/knowledge-capture-prompt.txt` — git-informed Step 0 + synthesis quality rules
+- README links to the stub instead of inlining prompt text
+- preCompact hook reads `../knowledge-capture-prompt.txt`
+
+### Removed
+
+- `stubs/mcp-capture-prompts.md`, `stubs/pre-compact-prompt.txt`, `stubs/cursor-hooks/pre-compact-prompt.txt` (duplicate stubs)
+
 ## 3.0.7 - 2026-06-05
 
 ### Changed

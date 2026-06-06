@@ -7,14 +7,10 @@ set -euo pipefail
 cat >/dev/null
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROMPT_FILE="${SCRIPT_DIR}/pre-compact-prompt.txt"
+PROMPT_FILE="${SCRIPT_DIR}/../knowledge-capture-prompt.txt"
 
 if [[ ! -f "${PROMPT_FILE}" ]]; then
-  PROMPT_FILE="${SCRIPT_DIR}/../pre-compact-prompt.txt"
-fi
-
-if [[ ! -f "${PROMPT_FILE}" ]]; then
-  echo '{"user_message":"Context is about to compact. Paste the knowledge capture prompt from the mcp-pusher README (Knowledge capture prompt section)."}'
+  echo '{"user_message":"Context is about to compact. Open vendor/ashwinmram/mcp-pusher/stubs/knowledge-capture-prompt.txt and paste it to your agent."}'
   exit 0
 fi
 

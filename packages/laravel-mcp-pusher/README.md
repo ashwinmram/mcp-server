@@ -38,14 +38,14 @@ composer require ashwinmram/mcp-pusher:^3.0
 **Do not** hand-type `php artisan mcp:append` JSON during normal work.
 
 1. **Paste the [Knowledge capture prompt](#knowledge-capture-prompt)** into your agent before context compaction (or anytime you want to capture learnings).
-2. Let the agent run `mcp:append` for each lesson — entries land in `docs/.mcp-session/*-draft.jsonl`.
+2. The agent gathers recent **git log + diff**, synthesizes learnings from the session and commits, and runs `mcp:append` for each lesson — entries land in `docs/.mcp-session/*-draft.jsonl`.
 3. **End of session:** review drafts, then run `mcp:push` once (see [End of session](#end-of-session)).
 
 **Cursor only (optional):** Install the [preCompact hook](#cursor-precompact-hook) so Cursor surfaces the same prompt automatically.
 
 | Step | What you do | What runs on disk |
 |------|-------------|-------------------|
-| **Capture** | Submit the capture prompt to your agent | Agent executes `mcp:append` → draft JSONL |
+| **Capture** | Submit the capture prompt to your agent | Agent gathers git context, synthesizes lessons, runs `mcp:append` → draft JSONL |
 | **Publish** | `php artisan mcp:push --source=your-project` | HTTP push to MCP server |
 | **Fallback** | `mcp:extract-session` after you **commit** (default: latest commit) | Git log + diff stat → draft JSONL |
 | **Seeding** | `mcp:extract-session --since-git=HEAD~N` on a mature repo | Deeper history; review drafts before push |
@@ -74,34 +74,23 @@ Copy `stubs/agent-instructions/mcp-session-startup.md` so agents query lessons a
 
 ## Knowledge capture prompt
 
-Copy this entire block into your agent. This is the **only** capture prompt you need.
+The agent gathers **git history + session context**, synthesizes reusable lessons, and runs `mcp:append` for each — never raw commit one-liners.
 
-```text
-Context is about to compact — capture session knowledge NOW before it is lost.
+**Single stub (do not duplicate elsewhere):**
 
-Use php artisan mcp:append only. Each entry is written to docs/.mcp-session/lessons-draft.jsonl (generic) or docs/.mcp-session/project-details-draft.jsonl (project).
+- Package path: `stubs/knowledge-capture-prompt.txt`
+- Composer install: `vendor/ashwinmram/mcp-pusher/stubs/knowledge-capture-prompt.txt`
 
-For EACH distinct learning, run mcp:append with complete JSON. Execute commands; do not only describe entries.
+Open that file and paste its full contents into your agent before context compaction (or anytime you want to capture learnings).
 
-Required on every entry: knowledge_scope ("generic"|"project"), title, summary, category, subcategory, type (ai_output|project_detail), tags (array), content.
-
-Step A — Generic example:
-php artisan mcp:append '{"knowledge_scope":"generic","title":"...","summary":"...","category":"...","subcategory":"...","type":"ai_output","tags":["..."],"content":"...","metadata":{"source":"agent"}}'
-
-Step B — Project example:
-php artisan mcp:append '{"knowledge_scope":"project","title":"...","summary":"...","category":"...","subcategory":"...","type":"project_detail","tags":["..."],"content":"...","metadata":{"source":"agent"}}'
-
-Report: generic count, project count, every title appended.
-```
-
-**Cursor:** With the [preCompact hook](#cursor-precompact-hook) installed, submit this text when Cursor shows it as `user_message`.
+**Cursor:** With the [preCompact hook](#cursor-precompact-hook) installed, the hook emits this file as `user_message` automatically.
 
 ## End of session
 
-When you are ready to publish:
+When you are ready to publish, review `docs/.mcp-session/lessons-draft.jsonl` and `project-details-draft.jsonl`. Delete any raw git-salvage lines (titles like `Git commit: …` or `metadata.source: git`) before pushing. If drafts are still thin and you have committed session work, run `php artisan mcp:extract-session` as a last resort (produces candidates only — edit or remove before push). Then publish once:
 
-```text
-Session ending: review docs/.mcp-session/lessons-draft.jsonl and docs/.mcp-session/project-details-draft.jsonl. If drafts are thin and you have committed session work, run: php artisan mcp:extract-session (fallback only). Then publish once: php artisan mcp:push --source=<your-project>
+```bash
+php artisan mcp:push --source=<your-project>
 ```
 
 Replace `<your-project>` with your `--source` value (must match Project Details MCP `?project=`).
@@ -201,9 +190,11 @@ This does **not** read the staging area or working tree.
 
 For seeding history **on** `main`, use `HEAD~N` (e.g. `HEAD~50`), not `main..HEAD`.
 
+The [knowledge capture prompt](#knowledge-capture-prompt) already instructs agents to gather git context during preCompact capture. Use `mcp:extract-session` only when that capture was skipped.
+
 #### Use case A: session fallback
 
-When `mcp:append` was skipped but you committed session work:
+When git-informed capture and `mcp:append` were both skipped but you committed session work:
 
 ```bash
 php artisan mcp:extract-session
@@ -253,7 +244,7 @@ Install once so Cursor shows the [Knowledge capture prompt](#knowledge-capture-p
 mkdir -p .cursor/hooks
 cp vendor/ashwinmram/mcp-pusher/stubs/cursor-hooks/hooks.json.example .cursor/hooks.json
 cp vendor/ashwinmram/mcp-pusher/stubs/cursor-hooks/pre-compact-checkpoint.sh .cursor/hooks/
-cp vendor/ashwinmram/mcp-pusher/stubs/cursor-hooks/pre-compact-prompt.txt .cursor/hooks/
+cp vendor/ashwinmram/mcp-pusher/stubs/knowledge-capture-prompt.txt .cursor/hooks/
 chmod +x .cursor/hooks/pre-compact-checkpoint.sh
 ```
 
@@ -262,8 +253,8 @@ chmod +x .cursor/hooks/pre-compact-checkpoint.sh
 | Stub | Purpose |
 |------|---------|
 | `hooks.json.example` | Wires **`preCompact` only** |
-| `pre-compact-checkpoint.sh` | Reads `pre-compact-prompt.txt`, outputs `user_message` |
-| `pre-compact-prompt.txt` | Same text as [Knowledge capture prompt](#knowledge-capture-prompt) |
+| `pre-compact-checkpoint.sh` | Reads `knowledge-capture-prompt.txt`, outputs `user_message` |
+| `knowledge-capture-prompt.txt` | [Knowledge capture prompt](#knowledge-capture-prompt) — single canonical file |
 
 **Optional Cursor rule:** `stubs/mcp-session-capture.mdc` → `.cursor/rules/mcp-session-capture.mdc`
 
@@ -271,7 +262,7 @@ chmod +x .cursor/hooks/pre-compact-checkpoint.sh
 
 ### Claude Code and Google Antigravity
 
-No built-in pre-compaction hook. **Paste the [capture prompt](#knowledge-capture-prompt)** manually, or add a personal skill/reminder that includes the text from `stubs/pre-compact-prompt.txt`.
+No built-in pre-compaction hook. **Paste the [capture prompt](#knowledge-capture-prompt)** manually from `stubs/knowledge-capture-prompt.txt`, or add a personal skill/reminder that points to that file.
 
 ### Security
 

@@ -211,17 +211,14 @@ The `docs/lessons_learned.json` file must be a **JSON array** with objects follo
 
 ### After Updating
 
-During the session, append learnings frequently:
-```bash
-php artisan mcp:append '{"knowledge_scope":"generic|project", ...}'
-```
+During the session, use the single capture stub `packages/laravel-mcp-pusher/stubs/knowledge-capture-prompt.txt` (agent gathers git context, synthesizes lessons, runs `mcp:append`). Do not append raw commit one-liners.
 
 After updating files (or drafts), push once:
 ```bash
 php artisan mcp:push --source=mcp-server
 ```
 
-Use `mcp:extract-session` only as a fallback when drafts are thin after compaction and session work is committed (git-only; default `HEAD~1` = latest commit). Review drafts before push. For deeper history or seeding a mature repo, see mcp-pusher README (`HEAD~N`, `main`).
+Use `mcp:extract-session` only as a fallback when git-informed capture was skipped and session work is committed (git-only; default `HEAD~1` = latest commit). Review drafts before push; delete raw `Git commit:` lines. For deeper history or seeding a mature repo, see mcp-pusher README (`HEAD~N`, `main`).
 
 This command will:
 1. Read `docs/lessons-learned.md` and convert it to lesson format

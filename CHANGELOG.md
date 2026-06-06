@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.7] - 2026-06-06
+
+### Changed
+
+- Embedded mcp-pusher **3.0.8** with consolidated `knowledge-capture-prompt.txt` stub (git-informed capture)
+- Root README, `.cursor/hooks`, and `.cursorrules` updated for single-stub workflow (link, don't duplicate)
+
 ## [1.2.6] - 2026-06-05
 
 ### Changed

@@ -8,13 +8,13 @@ alwaysApply: false
 
 ## Best practice
 
-Do not hand-type `mcp:append` JSON. Use the **knowledge capture prompt** from the mcp-pusher package README (`#knowledge-capture-prompt`) or submit it when your IDE shows it (Cursor: optional `preCompact` hook). The same workflow applies in Claude Code and Antigravity — paste the prompt manually.
+Do not hand-type `mcp:append` JSON. Open **`stubs/knowledge-capture-prompt.txt`** (Composer: `vendor/ashwinmram/mcp-pusher/stubs/knowledge-capture-prompt.txt`) and paste it into your agent, or submit when Cursor shows it via the optional `preCompact` hook.
 
-The agent runs `php artisan mcp:append` per lesson into `docs/.mcp-session/lessons-draft.jsonl` (generic) or `project-details-draft.jsonl` (project).
+The agent gathers git log + diff, synthesizes learnings from the session and commits, and runs `php artisan mcp:append` per lesson into `docs/.mcp-session/lessons-draft.jsonl` (generic) or `project-details-draft.jsonl` (project). Do not append raw commit one-liners.
 
 ## End of session (manual)
 
-1. Review `docs/.mcp-session/*-draft.jsonl`
+1. Review `docs/.mcp-session/*-draft.jsonl`; delete raw git-salvage lines (titles like `Git commit: …`)
 2. **Only if drafts are incomplete and work is committed:** `php artisan mcp:extract-session` (default: latest commit; see mcp-pusher README for `HEAD~N` / seeding)
 3. `php artisan mcp:push --source=<project>` once
 
