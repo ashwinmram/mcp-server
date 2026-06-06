@@ -52,50 +52,52 @@ composer require ashwinmram/mcp-pusher:^3.0
 
 ## Knowledge capture prompt
 
-**Copy the entire block below** into your agent before context compaction (or anytime you want to capture learnings). The agent gathers **git history + session context**, synthesizes reusable lessons, and runs `mcp:append` for each — never raw commit one-liners.
+**Copy the short block below** for agents or macOS Text Replacement (under 2,000 characters). See [Prompt reference](#prompt-reference) for field details and examples.
 
 **Cursor:** With the [preCompact hook](#cursor-precompact-hook) installed, the hook emits the same text as `user_message` automatically (source: `stubs/knowledge-capture-prompt.txt`).
 
 ```text
-Context is about to compact — capture session knowledge NOW before it is lost.
+Context is about to compact — capture session knowledge NOW.
 
-Step 0 — Gather git context (run these first):
+Step 0 — Run:
 git log HEAD~10..HEAD --oneline --no-decorate
 git diff HEAD~1..HEAD --stat
+Use session + git together. Not a git repo? Session only. Do NOT append raw log, SHAs, or diff stats.
 
-Use conversation history plus git output together. Git fills gaps that compaction would erase. If not a git repo or the range is empty, continue with conversation only.
+Step 1 — For each learning, execute mcp:append (don't just describe):
+php artisan mcp:append '{"knowledge_scope":"generic|project","title":"5-12 words","summary":"problem + when","category":"...","subcategory":"...","type":"ai_output|project_detail","tags":["..."],"content":"paragraph with takeaway","metadata":{"source":"agent"}}'
+Drafts: docs/.mcp-session/lessons-draft.jsonl (generic) or project-details-draft.jsonl (project). Never title "Git commit: …". Nothing worth saving? Report 0 generic, 0 project.
 
-For substantive commits, optionally inspect: git show <sha> --stat
-
-Do NOT append raw log lines, SHAs, or diff stats as lesson content.
-
-Step 1 — Synthesize and append lessons:
-Use php artisan mcp:append only. Each entry is written to docs/.mcp-session/lessons-draft.jsonl (generic) or docs/.mcp-session/project-details-draft.jsonl (project).
-
-For EACH distinct learning, run mcp:append with complete JSON. Execute commands; do not only describe entries.
-
-Required on every entry:
-- knowledge_scope: "generic" or "project"
-- title: 5-12 words, specific and searchable (never "Git commit: …")
-- summary: 1-2 sentences — problem solved and when to apply
-- category, subcategory, type (ai_output or project_detail), tags (array)
-- content: short paragraph with context, approach, and takeaway (not a one-liner)
-- metadata.source: "agent"
-
-If nothing worth saving, report 0 generic and 0 project — do not append placeholders.
-
-Generic example:
-php artisan mcp:append '{"knowledge_scope":"generic","title":"Pest Process fake for git subprocess tests","summary":"When testing Artisan commands that shell out to git, fake Process so tests stay fast and deterministic.","category":"testing-patterns","subcategory":"pest-mocking","type":"ai_output","tags":["pest","process-fake","git"],"content":"Use Process::fake() with a callback keyed on git argv...","metadata":{"source":"agent"}}'
-
-Project example:
-php artisan mcp:append '{"knowledge_scope":"project","title":"MCP session drafts live under docs","summary":"This repo stores capture drafts in docs/.mcp-session before mcp:push.","category":"project-implementation","subcategory":"mcp-workflow","type":"project_detail","tags":["mcp-pusher","drafts"],"content":"Generic lessons: docs/.mcp-session/lessons-draft.jsonl. Project details: project-details-draft.jsonl. Push once with php artisan mcp:push --source=<project>.","metadata":{"source":"agent"}}'
-
-Bad example (do not do this):
-title "Git commit: abc123 Fix tests", content "abc123 Fix tests"
-
-Step 2 — Report:
-generic count, project count, every title appended.
+Step 2 — Report generic count, project count, every title appended.
 ```
+
+### Prompt reference
+
+For agents that need more detail (not for macOS Text Replacement — 2,000 character limit).
+
+**Scope pairs:**
+
+| knowledge_scope | type | Draft file |
+|-----------------|------|------------|
+| `generic` | `ai_output` | `docs/.mcp-session/lessons-draft.jsonl` |
+| `project` | `project_detail` | `docs/.mcp-session/project-details-draft.jsonl` |
+
+**Fields:**
+
+- **title** — 5–12 words, specific and searchable (never `Git commit: …`)
+- **summary** — 1–2 sentences: problem solved and when to apply
+- **content** — short paragraph with context, approach, and takeaway (not a one-liner)
+- **metadata.source** — always `"agent"`
+
+**Minimal generic example:**
+
+```bash
+php artisan mcp:append '{"knowledge_scope":"generic","title":"Pest Process fake for git subprocess tests","summary":"Fake Process when testing Artisan commands that shell out to git.","category":"testing-patterns","subcategory":"pest-mocking","type":"ai_output","tags":["pest","git"],"content":"Use Process::fake() with a callback keyed on git argv...","metadata":{"source":"agent"}}'
+```
+
+**Bad example (do not do this):** title `Git commit: abc123 Fix tests`, content `abc123 Fix tests`
+
+**Text replacement tip:** macOS Keyboard → Text Replacements → use trigger `/mcpcap` (no spaces) and paste the short block above into **With**.
 
 ## Connect your AI client to the MCP server
 

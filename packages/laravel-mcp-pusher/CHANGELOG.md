@@ -1,5 +1,13 @@
 # Changelog
 
+## 3.0.10 - 2026-06-06
+
+### Changed
+
+- **Short knowledge capture prompt** (~840 chars) fits macOS Text Replacement 2,000 character limit
+- README adds **Prompt reference** subsection with field guide and examples (not in stub/hook text)
+- Test asserts prompt length under 2,000 and stub matches README block
+
 ## 3.0.9 - 2026-06-06
 
 ### Changed

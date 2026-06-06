@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.2.8] - 2026-06-06
+
+### Changed
+
+- Embedded mcp-pusher **3.0.10** with short text-replacement-friendly capture prompt
+
 ## [1.2.7] - 2026-06-06
 
 ### Changed

@@ -49,6 +49,6 @@ Do not use a Project Details server scoped to a different project than the codeb
 ## Capturing session knowledge (mcp-pusher 3.0)
 
 - Use **`php artisan mcp:append`** during the session (not hand-typed JSON in chat only — run the command)
-- Copy the **knowledge capture prompt** code block from the mcp-pusher README (`#knowledge-capture-prompt`) before context compaction — agent gathers git context, synthesizes lessons, runs `mcp:append`
+- Copy the **short knowledge capture prompt** from the mcp-pusher README (`#knowledge-capture-prompt`) before context compaction; see `#prompt-reference` for examples — agent gathers git context, synthesizes lessons, runs `mcp:append`
 - End of session: review `docs/.mcp-session/*-draft.jsonl`, then **`php artisan mcp:push --source=<project>`** once
 - Use **`mcp:extract-session`** only if drafts are thin after compaction and session work is **committed** (git-only; default latest commit; deeper history: `--since-git=HEAD~N` in mcp-pusher README)

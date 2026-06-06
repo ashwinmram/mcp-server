@@ -8,11 +8,11 @@
     "packages": [
         {
             "name": "ashwinmram/mcp-pusher",
-            "version": "3.0.9",
+            "version": "3.0.10",
             "dist": {
                 "type": "path",
                 "url": "./packages/laravel-mcp-pusher",
-                "reference": "6865869776dc03b68d630588c5d54b3d9ed2a36f"
+                "reference": "3f58faa42c04074ed6f027800a5357b138065b65"
             },
             "require": {
                 "illuminate/console": "^12.0|^13.0",
