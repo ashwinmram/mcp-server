@@ -1,5 +1,11 @@
 # Changelog
 
+## 3.0.9 - 2026-06-06
+
+### Changed
+
+- README embeds the full **knowledge capture prompt** as a copy-paste block (moved above client setup); stub file unchanged for preCompact hook
+
 ## 3.0.8 - 2026-06-06
 
 ### Changed
