@@ -8,7 +8,7 @@ alwaysApply: false
 
 ## Best practice
 
-Do not hand-type `mcp:append` JSON. Open **`stubs/knowledge-capture-prompt.txt`** (Composer: `vendor/ashwinmram/mcp-pusher/stubs/knowledge-capture-prompt.txt`) and paste it into your agent, or submit when Cursor shows it via the optional `preCompact` hook.
+Do not hand-type `mcp:append` JSON. Copy the **knowledge capture prompt** code block from the mcp-pusher README (`#knowledge-capture-prompt`) into your agent, or submit when Cursor shows it via the optional `preCompact` hook.
 
 The agent gathers git log + diff, synthesizes learnings from the session and commits, and runs `php artisan mcp:append` per lesson into `docs/.mcp-session/lessons-draft.jsonl` (generic) or `project-details-draft.jsonl` (project). Do not append raw commit one-liners.
 

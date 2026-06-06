@@ -8,7 +8,7 @@ Central MCP server for storing and querying lessons learned and project-specific
 
 - **Install:** `composer require ashwinmram/mcp-pusher:^3.0`
 - **Links:** [GitHub](https://github.com/ashwinmram/mcp-pusher) | [Packagist](https://packagist.org/packages/ashwinmram/mcp-pusher)
-- **Best practice:** Paste [knowledge-capture-prompt.txt](packages/laravel-mcp-pusher/stubs/knowledge-capture-prompt.txt) into your agent; agent gathers git context, synthesizes lessons, runs `mcp:append` → drafts. **`mcp:push`** once at session end. Optional [Cursor preCompact hook](packages/laravel-mcp-pusher/README.md#cursor-precompact-hook) emits the stub automatically.
+- **Best practice:** Copy the [knowledge capture prompt](packages/laravel-mcp-pusher/README.md#knowledge-capture-prompt) into your agent; agent gathers git context, synthesizes lessons, runs `mcp:append` → drafts. **`mcp:push`** once at session end. Optional [Cursor preCompact hook](packages/laravel-mcp-pusher/README.md#cursor-precompact-hook) surfaces the same prompt automatically.
 
 The mcp-pusher package pushes session drafts from `docs/.mcp-session/*.jsonl` to `/api/lessons` (generic) and `/api/project-details` (project-specific) in **one** `mcp:push`. See [Pushing knowledge (mcp-pusher 3.0)](#pushing-knowledge-mcp-pusher-30) and [packages/laravel-mcp-pusher/README.md](packages/laravel-mcp-pusher/README.md).
 
@@ -256,7 +256,7 @@ Consumer projects use [ashwinmram/mcp-pusher](https://github.com/ashwinmram/mcp-
 
 ### Workflow (all IDEs)
 
-1. Paste [knowledge-capture-prompt.txt](packages/laravel-mcp-pusher/stubs/knowledge-capture-prompt.txt) into your agent (or use the optional [Cursor preCompact hook](packages/laravel-mcp-pusher/README.md#cursor-precompact-hook)).
+1. **Copy the [knowledge capture prompt](packages/laravel-mcp-pusher/README.md#knowledge-capture-prompt)** block from the package README into your agent (or use the optional [Cursor preCompact hook](packages/laravel-mcp-pusher/README.md#cursor-precompact-hook)).
 2. Agent gathers git context, synthesizes lessons, runs `mcp:append` → `docs/.mcp-session/lessons-draft.jsonl` and/or `project-details-draft.jsonl`.
 3. End of session: review drafts (see [package README](packages/laravel-mcp-pusher/README.md#end-of-session)), then `php artisan mcp:push --source=<project>`.
 

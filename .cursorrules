@@ -211,7 +211,7 @@ The `docs/lessons_learned.json` file must be a **JSON array** with objects follo
 
 ### After Updating
 
-During the session, use the single capture stub `packages/laravel-mcp-pusher/stubs/knowledge-capture-prompt.txt` (agent gathers git context, synthesizes lessons, runs `mcp:append`). Do not append raw commit one-liners.
+During the session, copy the knowledge capture prompt from `packages/laravel-mcp-pusher/README.md#knowledge-capture-prompt` (agent gathers git context, synthesizes lessons, runs `mcp:append`). Do not append raw commit one-liners.
 
 After updating files (or drafts), push once:
 ```bash

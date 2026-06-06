@@ -50,6 +50,53 @@ composer require ashwinmram/mcp-pusher:^3.0
 | **Fallback** | `mcp:extract-session` after you **commit** (default: latest commit) | Git log + diff stat → draft JSONL |
 | **Seeding** | `mcp:extract-session --since-git=HEAD~N` on a mature repo | Deeper history; review drafts before push |
 
+## Knowledge capture prompt
+
+**Copy the entire block below** into your agent before context compaction (or anytime you want to capture learnings). The agent gathers **git history + session context**, synthesizes reusable lessons, and runs `mcp:append` for each — never raw commit one-liners.
+
+**Cursor:** With the [preCompact hook](#cursor-precompact-hook) installed, the hook emits the same text as `user_message` automatically (source: `stubs/knowledge-capture-prompt.txt`).
+
+```text
+Context is about to compact — capture session knowledge NOW before it is lost.
+
+Step 0 — Gather git context (run these first):
+git log HEAD~10..HEAD --oneline --no-decorate
+git diff HEAD~1..HEAD --stat
+
+Use conversation history plus git output together. Git fills gaps that compaction would erase. If not a git repo or the range is empty, continue with conversation only.
+
+For substantive commits, optionally inspect: git show <sha> --stat
+
+Do NOT append raw log lines, SHAs, or diff stats as lesson content.
+
+Step 1 — Synthesize and append lessons:
+Use php artisan mcp:append only. Each entry is written to docs/.mcp-session/lessons-draft.jsonl (generic) or docs/.mcp-session/project-details-draft.jsonl (project).
+
+For EACH distinct learning, run mcp:append with complete JSON. Execute commands; do not only describe entries.
+
+Required on every entry:
+- knowledge_scope: "generic" or "project"
+- title: 5-12 words, specific and searchable (never "Git commit: …")
+- summary: 1-2 sentences — problem solved and when to apply
+- category, subcategory, type (ai_output or project_detail), tags (array)
+- content: short paragraph with context, approach, and takeaway (not a one-liner)
+- metadata.source: "agent"
+
+If nothing worth saving, report 0 generic and 0 project — do not append placeholders.
+
+Generic example:
+php artisan mcp:append '{"knowledge_scope":"generic","title":"Pest Process fake for git subprocess tests","summary":"When testing Artisan commands that shell out to git, fake Process so tests stay fast and deterministic.","category":"testing-patterns","subcategory":"pest-mocking","type":"ai_output","tags":["pest","process-fake","git"],"content":"Use Process::fake() with a callback keyed on git argv...","metadata":{"source":"agent"}}'
+
+Project example:
+php artisan mcp:append '{"knowledge_scope":"project","title":"MCP session drafts live under docs","summary":"This repo stores capture drafts in docs/.mcp-session before mcp:push.","category":"project-implementation","subcategory":"mcp-workflow","type":"project_detail","tags":["mcp-pusher","drafts"],"content":"Generic lessons: docs/.mcp-session/lessons-draft.jsonl. Project details: project-details-draft.jsonl. Push once with php artisan mcp:push --source=<project>.","metadata":{"source":"agent"}}'
+
+Bad example (do not do this):
+title "Git commit: abc123 Fix tests", content "abc123 Fix tests"
+
+Step 2 — Report:
+generic count, project count, every title appended.
+```
+
 ## Connect your AI client to the MCP server
 
 Configure your client to reach the Lessons Learned server (and optional Project Details server). Example configs:
@@ -71,19 +118,6 @@ Copy `stubs/agent-instructions/mcp-session-startup.md` so agents query lessons a
 | **Cursor** | `.cursor/rules/mcp-session-capture.mdc` (from `stubs/mcp-session-capture.mdc`) plus optional project rules |
 | **Claude Code** | `CLAUDE.md` in project root |
 | **Google Antigravity** | Skill under `~/.gemini/skills/` |
-
-## Knowledge capture prompt
-
-The agent gathers **git history + session context**, synthesizes reusable lessons, and runs `mcp:append` for each — never raw commit one-liners.
-
-**Single stub (do not duplicate elsewhere):**
-
-- Package path: `stubs/knowledge-capture-prompt.txt`
-- Composer install: `vendor/ashwinmram/mcp-pusher/stubs/knowledge-capture-prompt.txt`
-
-Open that file and paste its full contents into your agent before context compaction (or anytime you want to capture learnings).
-
-**Cursor:** With the [preCompact hook](#cursor-precompact-hook) installed, the hook emits this file as `user_message` automatically.
 
 ## End of session
 
@@ -254,7 +288,7 @@ chmod +x .cursor/hooks/pre-compact-checkpoint.sh
 |------|---------|
 | `hooks.json.example` | Wires **`preCompact` only** |
 | `pre-compact-checkpoint.sh` | Reads `knowledge-capture-prompt.txt`, outputs `user_message` |
-| `knowledge-capture-prompt.txt` | [Knowledge capture prompt](#knowledge-capture-prompt) — single canonical file |
+| `knowledge-capture-prompt.txt` | Same text as [Knowledge capture prompt](#knowledge-capture-prompt) (hook reads this file) |
 
 **Optional Cursor rule:** `stubs/mcp-session-capture.mdc` → `.cursor/rules/mcp-session-capture.mdc`
 
@@ -262,7 +296,7 @@ chmod +x .cursor/hooks/pre-compact-checkpoint.sh
 
 ### Claude Code and Google Antigravity
 
-No built-in pre-compaction hook. **Paste the [capture prompt](#knowledge-capture-prompt)** manually from `stubs/knowledge-capture-prompt.txt`, or add a personal skill/reminder that points to that file.
+No built-in pre-compaction hook. **Copy the [capture prompt](#knowledge-capture-prompt)** block from this README into your agent.
 
 ### Security
 
