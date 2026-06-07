@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.7.1] - 2026-06-07
+
+### Changed
+
+- Replace Laravel logo in dashboard sidebar with MCP Server favicon (`AppLogo.vue`)
+
 ## [1.7.0] - 2026-06-07
 
 ### Added
