@@ -1,10 +1,12 @@
 <?php
 
+use App\Mcp\Tools\GetCategoryStatistics;
 use App\Models\Lesson;
 use App\Models\LessonUsage;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Mcp\Request;
+use Laravel\Mcp\Response;
 use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
@@ -31,13 +33,13 @@ test('returns statistics for all categories', function () {
         'is_generic' => true,
     ]);
 
-    $tool = new \App\Mcp\Tools\GetCategoryStatistics;
+    $tool = new GetCategoryStatistics;
     $request = new Request([]);
 
     $response = $tool->handle($request);
     $data = getResponseData($response);
 
-    expect($response)->toBeInstanceOf(\Laravel\Mcp\Response::class)
+    expect($response)->toBeInstanceOf(Response::class)
         ->and($data)->toHaveKey('categories')
         ->and($data)->toHaveKey('total_categories')
         ->and($data['total_categories'])->toBe(2)
@@ -64,7 +66,7 @@ test('returns statistics for a specific category', function () {
         'is_generic' => true,
     ]);
 
-    $tool = new \App\Mcp\Tools\GetCategoryStatistics;
+    $tool = new GetCategoryStatistics;
     $request = new Request(['category' => 'testing']);
 
     $response = $tool->handle($request);
@@ -93,7 +95,7 @@ test('includes top lessons when requested', function () {
         'is_generic' => true,
     ]);
 
-    $tool = new \App\Mcp\Tools\GetCategoryStatistics;
+    $tool = new GetCategoryStatistics;
     $request = new Request([
         'category' => 'testing',
         'include_top_lessons' => true,
@@ -117,7 +119,7 @@ test('excludes top lessons when not requested', function () {
         'is_generic' => true,
     ]);
 
-    $tool = new \App\Mcp\Tools\GetCategoryStatistics;
+    $tool = new GetCategoryStatistics;
     $request = new Request([
         'category' => 'testing',
         'include_top_lessons' => false,
@@ -146,7 +148,7 @@ test('includes usage statistics when available', function () {
         'was_helpful' => false,
     ]);
 
-    $tool = new \App\Mcp\Tools\GetCategoryStatistics;
+    $tool = new GetCategoryStatistics;
     $request = new Request(['category' => 'testing']);
 
     $response = $tool->handle($request);
@@ -160,7 +162,7 @@ test('includes usage statistics when available', function () {
 });
 
 test('returns error for non-existent category', function () {
-    $tool = new \App\Mcp\Tools\GetCategoryStatistics;
+    $tool = new GetCategoryStatistics;
     $request = new Request(['category' => 'nonexistent']);
 
     $response = $tool->handle($request);
@@ -182,7 +184,7 @@ test('orders categories by average relevance score', function () {
         'is_generic' => true,
     ]);
 
-    $tool = new \App\Mcp\Tools\GetCategoryStatistics;
+    $tool = new GetCategoryStatistics;
     $request = new Request([]);
 
     $response = $tool->handle($request);

@@ -1,8 +1,10 @@
 <?php
 
+use App\Mcp\Resources\LessonsSearchGuide;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Mcp\Request;
+use Laravel\Mcp\Response;
 use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
@@ -13,13 +15,13 @@ beforeEach(function () {
 });
 
 test('returns search guide content', function () {
-    $resource = new \App\Mcp\Resources\LessonsSearchGuide;
+    $resource = new LessonsSearchGuide;
     $request = new Request([]);
 
     $response = $resource->handle($request);
     $content = getResponseText($response);
 
-    expect($response)->toBeInstanceOf(\Laravel\Mcp\Response::class)
+    expect($response)->toBeInstanceOf(Response::class)
         ->and($content)->toContain('Lessons Learned Search Guide')
         ->and($content)->toContain('Understanding Relevance Scoring')
         ->and($content)->toContain('Search Strategies')
@@ -27,7 +29,7 @@ test('returns search guide content', function () {
 });
 
 test('includes relevance scoring explanation', function () {
-    $resource = new \App\Mcp\Resources\LessonsSearchGuide;
+    $resource = new LessonsSearchGuide;
     $request = new Request([]);
 
     $response = $resource->handle($request);
@@ -39,7 +41,7 @@ test('includes relevance scoring explanation', function () {
 });
 
 test('includes search strategy examples', function () {
-    $resource = new \App\Mcp\Resources\LessonsSearchGuide;
+    $resource = new LessonsSearchGuide;
     $request = new Request([]);
 
     $response = $resource->handle($request);
@@ -52,7 +54,7 @@ test('includes search strategy examples', function () {
 });
 
 test('includes query examples', function () {
-    $resource = new \App\Mcp\Resources\LessonsSearchGuide;
+    $resource = new LessonsSearchGuide;
     $request = new Request([]);
 
     $response = $resource->handle($request);
@@ -64,7 +66,7 @@ test('includes query examples', function () {
 });
 
 test('includes best practices section', function () {
-    $resource = new \App\Mcp\Resources\LessonsSearchGuide;
+    $resource = new LessonsSearchGuide;
     $request = new Request([]);
 
     $response = $resource->handle($request);
@@ -76,7 +78,7 @@ test('includes best practices section', function () {
 });
 
 test('explains automatic usage tracking', function () {
-    $resource = new \App\Mcp\Resources\LessonsSearchGuide;
+    $resource = new LessonsSearchGuide;
     $request = new Request([]);
 
     $response = $resource->handle($request);

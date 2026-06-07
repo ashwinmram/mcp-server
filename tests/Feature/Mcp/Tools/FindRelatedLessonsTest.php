@@ -1,5 +1,6 @@
 <?php
 
+use App\Mcp\Tools\FindRelatedLessons;
 use App\Models\Lesson;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -26,8 +27,8 @@ test('finds related lessons for a lesson', function () {
         'is_generic' => true,
     ]);
 
-    \DB::table('lesson_relationships')->insert([
-        'id' => \Str::uuid(),
+    DB::table('lesson_relationships')->insert([
+        'id' => Str::uuid(),
         'lesson_id' => $lesson1->id,
         'related_lesson_id' => $lesson2->id,
         'relationship_type' => 'related',
@@ -36,7 +37,7 @@ test('finds related lessons for a lesson', function () {
         'updated_at' => now(),
     ]);
 
-    $tool = new \App\Mcp\Tools\FindRelatedLessons();
+    $tool = new FindRelatedLessons;
     $request = new Request(['lesson_id' => $lesson1->id]);
 
     $response = $tool->handle($request);
@@ -53,9 +54,9 @@ test('filters by relationship type', function () {
     $lesson2 = Lesson::factory()->create(['is_generic' => true]);
     $lesson3 = Lesson::factory()->create(['is_generic' => true]);
 
-    \DB::table('lesson_relationships')->insert([
+    DB::table('lesson_relationships')->insert([
         [
-            'id' => \Str::uuid(),
+            'id' => Str::uuid(),
             'lesson_id' => $lesson1->id,
             'related_lesson_id' => $lesson2->id,
             'relationship_type' => 'prerequisite',
@@ -64,7 +65,7 @@ test('filters by relationship type', function () {
             'updated_at' => now(),
         ],
         [
-            'id' => \Str::uuid(),
+            'id' => Str::uuid(),
             'lesson_id' => $lesson1->id,
             'related_lesson_id' => $lesson3->id,
             'relationship_type' => 'related',
@@ -74,7 +75,7 @@ test('filters by relationship type', function () {
         ],
     ]);
 
-    $tool = new \App\Mcp\Tools\FindRelatedLessons();
+    $tool = new FindRelatedLessons;
     $request = new Request([
         'lesson_id' => $lesson1->id,
         'relationship_type' => 'prerequisite',
@@ -95,8 +96,8 @@ test('respects limit parameter', function () {
     $relatedLessons = Lesson::factory()->count(5)->create(['is_generic' => true]);
 
     foreach ($relatedLessons as $related) {
-        \DB::table('lesson_relationships')->insert([
-            'id' => \Str::uuid(),
+        DB::table('lesson_relationships')->insert([
+            'id' => Str::uuid(),
             'lesson_id' => $lesson1->id,
             'related_lesson_id' => $related->id,
             'relationship_type' => 'related',
@@ -106,7 +107,7 @@ test('respects limit parameter', function () {
         ]);
     }
 
-    $tool = new \App\Mcp\Tools\FindRelatedLessons();
+    $tool = new FindRelatedLessons;
     $request = new Request([
         'lesson_id' => $lesson1->id,
         'limit' => 2,
@@ -119,7 +120,7 @@ test('respects limit parameter', function () {
 });
 
 test('returns error when lesson_id is missing', function () {
-    $tool = new \App\Mcp\Tools\FindRelatedLessons();
+    $tool = new FindRelatedLessons;
     $request = new Request([]);
 
     $response = $tool->handle($request);
@@ -129,7 +130,7 @@ test('returns error when lesson_id is missing', function () {
 });
 
 test('returns error when lesson not found', function () {
-    $tool = new \App\Mcp\Tools\FindRelatedLessons();
+    $tool = new FindRelatedLessons;
     $request = new Request(['lesson_id' => '00000000-0000-0000-0000-000000000000']);
 
     $response = $tool->handle($request);
@@ -146,8 +147,8 @@ test('includes title and summary in related lessons', function () {
         'is_generic' => true,
     ]);
 
-    \DB::table('lesson_relationships')->insert([
-        'id' => \Str::uuid(),
+    DB::table('lesson_relationships')->insert([
+        'id' => Str::uuid(),
         'lesson_id' => $lesson1->id,
         'related_lesson_id' => $lesson2->id,
         'relationship_type' => 'related',
@@ -156,7 +157,7 @@ test('includes title and summary in related lessons', function () {
         'updated_at' => now(),
     ]);
 
-    $tool = new \App\Mcp\Tools\FindRelatedLessons();
+    $tool = new FindRelatedLessons;
     $request = new Request(['lesson_id' => $lesson1->id]);
 
     $response = $tool->handle($request);
@@ -171,7 +172,7 @@ test('includes title and summary in related lessons', function () {
 test('returns empty array when no related lessons', function () {
     $lesson = Lesson::factory()->create(['is_generic' => true]);
 
-    $tool = new \App\Mcp\Tools\FindRelatedLessons();
+    $tool = new FindRelatedLessons;
     $request = new Request(['lesson_id' => $lesson->id]);
 
     $response = $tool->handle($request);

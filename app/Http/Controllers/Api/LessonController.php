@@ -7,6 +7,8 @@ use App\Http\Requests\Api\StoreLessonsRequest;
 use App\Http\Requests\Api\StoreProjectDetailsRequest;
 use App\Models\Lesson;
 use App\Services\LessonImportService;
+use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
@@ -93,7 +95,7 @@ class LessonController extends Controller
             $lesson = Lesson::findOrFail($id);
 
             return response()->json($lesson);
-        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
+        } catch (ModelNotFoundException $e) {
             return response()->json([
                 'success' => false,
                 'message' => 'Lesson not found',
@@ -160,7 +162,7 @@ class LessonController extends Controller
         ]);
     }
 
-    protected function buildFilteredQuery(Request $request): \Illuminate\Database\Eloquent\Builder
+    protected function buildFilteredQuery(Request $request): Builder
     {
         $query = Lesson::query();
 

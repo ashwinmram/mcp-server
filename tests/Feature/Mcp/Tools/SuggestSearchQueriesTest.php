@@ -1,9 +1,11 @@
 <?php
 
+use App\Mcp\Tools\SuggestSearchQueries;
 use App\Models\Lesson;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Mcp\Request;
+use Laravel\Mcp\Response;
 use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
@@ -30,13 +32,13 @@ test('suggests related queries for a topic', function () {
         'is_generic' => true,
     ]);
 
-    $tool = new \App\Mcp\Tools\SuggestSearchQueries;
+    $tool = new SuggestSearchQueries;
     $request = new Request(['topic' => 'validation']);
 
     $response = $tool->handle($request);
     $data = getResponseData($response);
 
-    expect($response)->toBeInstanceOf(\Laravel\Mcp\Response::class)
+    expect($response)->toBeInstanceOf(Response::class)
         ->and($data)->toHaveKey('suggested_queries')
         ->and($data)->toHaveKey('related_categories')
         ->and($data)->toHaveKey('related_tags')
@@ -46,7 +48,7 @@ test('suggests related queries for a topic', function () {
 });
 
 test('suggests expanded queries based on topic keywords', function () {
-    $tool = new \App\Mcp\Tools\SuggestSearchQueries;
+    $tool = new SuggestSearchQueries;
     $request = new Request(['topic' => 'validation']);
 
     $response = $tool->handle($request);
@@ -67,7 +69,7 @@ test('includes category-based suggestions when lessons match', function () {
         'is_generic' => true,
     ]);
 
-    $tool = new \App\Mcp\Tools\SuggestSearchQueries;
+    $tool = new SuggestSearchQueries;
     $request = new Request(['topic' => 'validation']);
 
     $response = $tool->handle($request);
@@ -91,7 +93,7 @@ test('includes tag-based suggestions when lessons match', function () {
         'is_generic' => true,
     ]);
 
-    $tool = new \App\Mcp\Tools\SuggestSearchQueries;
+    $tool = new SuggestSearchQueries;
     $request = new Request(['topic' => 'validation']);
 
     $response = $tool->handle($request);
@@ -109,7 +111,7 @@ test('includes tag-based suggestions when lessons match', function () {
 });
 
 test('returns error when topic and query are both missing', function () {
-    $tool = new \App\Mcp\Tools\SuggestSearchQueries;
+    $tool = new SuggestSearchQueries;
     $request = new Request([]);
 
     $response = $tool->handle($request);
@@ -125,7 +127,7 @@ test('works with query parameter instead of topic', function () {
         'is_generic' => true,
     ]);
 
-    $tool = new \App\Mcp\Tools\SuggestSearchQueries;
+    $tool = new SuggestSearchQueries;
     $request = new Request(['query' => 'testing']);
 
     $response = $tool->handle($request);
@@ -142,7 +144,7 @@ test('prioritizes topic over query when both provided', function () {
         'is_generic' => true,
     ]);
 
-    $tool = new \App\Mcp\Tools\SuggestSearchQueries;
+    $tool = new SuggestSearchQueries;
     $request = new Request(['topic' => 'validation', 'query' => 'testing']);
 
     $response = $tool->handle($request);

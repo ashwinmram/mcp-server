@@ -461,7 +461,7 @@ test('detects and creates relationships between similar lessons', function () {
     $lesson1 = Lesson::where('content', 'Testing Vue components')->first();
     $lesson2 = Lesson::where('content', 'Testing Vue dialogs')->first();
 
-    $relationship = \DB::table('lesson_relationships')
+    $relationship = DB::table('lesson_relationships')
         ->where('lesson_id', $lesson2->id)
         ->where('related_lesson_id', $lesson1->id)
         ->first();
@@ -504,7 +504,7 @@ test('does not create relationships when tags do not overlap enough', function (
     // Check that no relationship was created
     $lesson2 = Lesson::where('content', 'Vue components')->first();
 
-    $relationship = \DB::table('lesson_relationships')
+    $relationship = DB::table('lesson_relationships')
         ->where('lesson_id', $lesson2->id)
         ->first();
 

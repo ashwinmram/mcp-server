@@ -1,5 +1,6 @@
 <?php
 
+use App\Mcp\Tools\GetLessonTags;
 use App\Models\Lesson;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -29,7 +30,7 @@ test('gets all unique tags from lessons', function () {
         'is_generic' => true,
     ]);
 
-    $tool = new \App\Mcp\Tools\GetLessonTags();
+    $tool = new GetLessonTags;
     $request = new Request([]);
 
     $response = $tool->handle($request);
@@ -47,7 +48,7 @@ test('returns sorted tags', function () {
         'is_generic' => true,
     ]);
 
-    $tool = new \App\Mcp\Tools\GetLessonTags();
+    $tool = new GetLessonTags;
     $request = new Request([]);
 
     $response = $tool->handle($request);
@@ -67,7 +68,7 @@ test('returns empty array when no lessons have tags', function () {
         'is_generic' => true,
     ]);
 
-    $tool = new \App\Mcp\Tools\GetLessonTags();
+    $tool = new GetLessonTags;
     $request = new Request([]);
 
     $response = $tool->handle($request);
@@ -88,7 +89,7 @@ test('only includes tags from generic lessons', function () {
         'is_generic' => false,
     ]);
 
-    $tool = new \App\Mcp\Tools\GetLessonTags();
+    $tool = new GetLessonTags;
     $request = new Request([]);
 
     $response = $tool->handle($request);
@@ -109,7 +110,7 @@ test('handles lessons with empty tags array', function () {
         'is_generic' => true,
     ]);
 
-    $tool = new \App\Mcp\Tools\GetLessonTags();
+    $tool = new GetLessonTags;
     $request = new Request([]);
 
     $response = $tool->handle($request);

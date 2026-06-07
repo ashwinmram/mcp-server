@@ -3,7 +3,7 @@
 use App\Services\LessonValidationService;
 
 test('validates generic content as valid', function () {
-    $service = new LessonValidationService();
+    $service = new LessonValidationService;
     $content = 'Always use type hints in PHP functions. This improves code readability and IDE support.';
 
     $result = $service->validateIsGeneric($content);
@@ -13,7 +13,7 @@ test('validates generic content as valid', function () {
 });
 
 test('rejects content with project-specific paths', function () {
-    $service = new LessonValidationService();
+    $service = new LessonValidationService;
     $content = 'The file is located at /var/www/myproject/app/Models/User.php';
 
     $result = $service->validateIsGeneric($content);
@@ -23,7 +23,7 @@ test('rejects content with project-specific paths', function () {
 });
 
 test('rejects content with user-specific paths', function () {
-    $service = new LessonValidationService();
+    $service = new LessonValidationService;
     $content = 'Check the file in /home/username/projects/myapp/config/app.php';
 
     $result = $service->validateIsGeneric($content);
@@ -33,7 +33,7 @@ test('rejects content with user-specific paths', function () {
 });
 
 test('warns about development domain references', function () {
-    $service = new LessonValidationService();
+    $service = new LessonValidationService;
     $content = 'Access the API at https://myapp.local/api/endpoint';
 
     $result = $service->validateIsGeneric($content);
@@ -44,7 +44,7 @@ test('warns about development domain references', function () {
 });
 
 test('warns about project-specific name references', function () {
-    $service = new LessonValidationService();
+    $service = new LessonValidationService;
     $content = 'The "my-project" application uses this pattern';
 
     $result = $service->validateIsGeneric($content);
@@ -55,7 +55,7 @@ test('warns about project-specific name references', function () {
 });
 
 test('suggests generic improvements', function () {
-    $service = new LessonValidationService();
+    $service = new LessonValidationService;
     $content = 'The file at /var/www/myproject/app/Models/User.php should be checked';
 
     $suggestions = $service->suggestGenericImprovements($content);

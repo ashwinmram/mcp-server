@@ -19,8 +19,8 @@ return new class extends Migration
         });
 
         // Populate source_projects with existing source_project values
-        \DB::table('lessons')->whereNull('source_projects')->update([
-            'source_projects' => \DB::raw('JSON_ARRAY(source_project)'),
+        DB::table('lessons')->whereNull('source_projects')->update([
+            'source_projects' => DB::raw('JSON_ARRAY(source_project)'),
         ]);
     }
 

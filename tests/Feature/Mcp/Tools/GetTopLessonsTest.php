@@ -1,9 +1,11 @@
 <?php
 
+use App\Mcp\Tools\GetTopLessons;
 use App\Models\Lesson;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Mcp\Request;
+use Laravel\Mcp\Response;
 use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
@@ -39,13 +41,13 @@ test('returns top lessons ordered by relevance score', function () {
         'is_generic' => true,
     ]);
 
-    $tool = new \App\Mcp\Tools\GetTopLessons;
+    $tool = new GetTopLessons;
     $request = new Request(['limit' => 10]);
 
     $response = $tool->handle($request);
     $data = getResponseData($response);
 
-    expect($response)->toBeInstanceOf(\Laravel\Mcp\Response::class)
+    expect($response)->toBeInstanceOf(Response::class)
         ->and($data)->toHaveKey('lessons')
         ->and($data)->toHaveKey('ordered_by')
         ->and($data['ordered_by'])->toBe('relevance_score')
@@ -73,7 +75,7 @@ test('filters top lessons by category', function () {
         'is_generic' => true,
     ]);
 
-    $tool = new \App\Mcp\Tools\GetTopLessons;
+    $tool = new GetTopLessons;
     $request = new Request(['category' => 'testing']);
 
     $response = $tool->handle($request);
@@ -99,7 +101,7 @@ test('excludes deprecated lessons', function () {
         'is_generic' => true,
     ]);
 
-    $tool = new \App\Mcp\Tools\GetTopLessons;
+    $tool = new GetTopLessons;
     $request = new Request(['limit' => 10]);
 
     $response = $tool->handle($request);
@@ -117,7 +119,7 @@ test('includes relevance score in results when available', function () {
         'is_generic' => true,
     ]);
 
-    $tool = new \App\Mcp\Tools\GetTopLessons;
+    $tool = new GetTopLessons;
     $request = new Request(['limit' => 1]);
 
     $response = $tool->handle($request);
@@ -134,7 +136,7 @@ test('respects limit parameter', function () {
         'is_generic' => true,
     ]);
 
-    $tool = new \App\Mcp\Tools\GetTopLessons;
+    $tool = new GetTopLessons;
     $request = new Request(['limit' => 5]);
 
     $response = $tool->handle($request);
@@ -160,7 +162,7 @@ test('orders by date when relevance score not available', function () {
         'is_generic' => true,
     ]);
 
-    $tool = new \App\Mcp\Tools\GetTopLessons;
+    $tool = new GetTopLessons;
     $request = new Request(['category' => 'testing']);
 
     $response = $tool->handle($request);

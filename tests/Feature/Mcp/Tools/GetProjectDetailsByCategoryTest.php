@@ -1,5 +1,6 @@
 <?php
 
+use App\Mcp\Tools\GetProjectDetailsByCategory;
 use App\Models\Lesson;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -26,7 +27,7 @@ test('gets project details by category for bound project', function () {
         'category' => 'routing',
     ]);
 
-    $tool = new \App\Mcp\Tools\GetProjectDetailsByCategory;
+    $tool = new GetProjectDetailsByCategory;
     $response = $tool->handle(new Request(['category' => 'auth']));
     $data = getResponseData($response);
 
@@ -37,7 +38,7 @@ test('gets project details by category for bound project', function () {
 });
 
 test('returns error when category is missing', function () {
-    $tool = new \App\Mcp\Tools\GetProjectDetailsByCategory;
+    $tool = new GetProjectDetailsByCategory;
     $response = $tool->handle(new Request([]));
     $content = getResponseText($response);
 
@@ -56,7 +57,7 @@ test('returns only details for bound project', function () {
         'category' => 'auth',
     ]);
 
-    $tool = new \App\Mcp\Tools\GetProjectDetailsByCategory;
+    $tool = new GetProjectDetailsByCategory;
     $response = $tool->handle(new Request(['category' => 'auth']));
     $data = getResponseData($response);
 

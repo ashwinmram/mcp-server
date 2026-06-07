@@ -3,14 +3,15 @@
 namespace Database\Factories;
 
 use App\Models\Lesson;
+use App\Models\LessonUsage;
 use Illuminate\Database\Eloquent\Factories\Factory;
 
 /**
- * @extends \Illuminate\Database\Eloquent\Factories\Factory<\App\Models\LessonUsage>
+ * @extends Factory<LessonUsage>
  */
 class LessonUsageFactory extends Factory
 {
-    protected $model = \App\Models\LessonUsage::class;
+    protected $model = LessonUsage::class;
 
     /**
      * Define the model's default state.

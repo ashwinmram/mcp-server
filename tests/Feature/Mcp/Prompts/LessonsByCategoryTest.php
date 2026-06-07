@@ -1,5 +1,6 @@
 <?php
 
+use App\Mcp\Prompts\LessonsByCategory;
 use App\Models\Lesson;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -32,7 +33,7 @@ test('provides lessons for specific category', function () {
         'is_generic' => true,
     ]);
 
-    $prompt = new \App\Mcp\Prompts\LessonsByCategory();
+    $prompt = new LessonsByCategory;
     $request = new Request(['category' => 'validation']);
 
     $response = $prompt->handle($request);
@@ -45,7 +46,7 @@ test('provides lessons for specific category', function () {
 });
 
 test('returns message when category is missing', function () {
-    $prompt = new \App\Mcp\Prompts\LessonsByCategory();
+    $prompt = new LessonsByCategory;
     $request = new Request([]);
 
     $response = $prompt->handle($request);
@@ -55,7 +56,7 @@ test('returns message when category is missing', function () {
 });
 
 test('returns message for non-existent category', function () {
-    $prompt = new \App\Mcp\Prompts\LessonsByCategory();
+    $prompt = new LessonsByCategory;
     $request = new Request(['category' => 'nonexistent']);
 
     $response = $prompt->handle($request);
@@ -71,7 +72,7 @@ test('limits results to 10 lessons', function () {
         'is_generic' => true,
     ]);
 
-    $prompt = new \App\Mcp\Prompts\LessonsByCategory();
+    $prompt = new LessonsByCategory;
     $request = new Request(['category' => 'validation']);
 
     $response = $prompt->handle($request);
@@ -91,7 +92,7 @@ test('only includes generic lessons', function () {
         'is_generic' => false,
     ]);
 
-    $prompt = new \App\Mcp\Prompts\LessonsByCategory();
+    $prompt = new LessonsByCategory;
     $request = new Request(['category' => 'validation']);
 
     $response = $prompt->handle($request);

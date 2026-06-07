@@ -1,5 +1,6 @@
 <?php
 
+use App\Mcp\Prompts\ProjectDetailsOverview;
 use App\Models\Lesson;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -26,7 +27,7 @@ test('provides compact overview of project details', function () {
         'category' => 'routing',
     ]);
 
-    $prompt = new \App\Mcp\Prompts\ProjectDetailsOverview;
+    $prompt = new ProjectDetailsOverview;
     $response = $prompt->handle(new Request([]));
     $content = getResponseText($response);
 
@@ -51,7 +52,7 @@ test('excludes generic lessons and other projects', function () {
         'category' => 'other',
     ]);
 
-    $prompt = new \App\Mcp\Prompts\ProjectDetailsOverview;
+    $prompt = new ProjectDetailsOverview;
     $response = $prompt->handle(new Request([]));
     $content = getResponseText($response);
 
@@ -68,7 +69,7 @@ test('includes recent entries', function () {
         'category' => 'routing',
     ]);
 
-    $prompt = new \App\Mcp\Prompts\ProjectDetailsOverview;
+    $prompt = new ProjectDetailsOverview;
     $response = $prompt->handle(new Request([]));
     $content = getResponseText($response);
 
@@ -78,7 +79,7 @@ test('includes recent entries', function () {
 });
 
 test('handles empty project details', function () {
-    $prompt = new \App\Mcp\Prompts\ProjectDetailsOverview;
+    $prompt = new ProjectDetailsOverview;
     $response = $prompt->handle(new Request([]));
     $content = getResponseText($response);
 

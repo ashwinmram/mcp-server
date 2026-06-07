@@ -1,10 +1,12 @@
 <?php
 
+use App\Mcp\Tools\MarkLessonHelpful;
 use App\Models\Lesson;
 use App\Models\LessonUsage;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Mcp\Request;
+use Laravel\Mcp\Response;
 use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
@@ -24,7 +26,7 @@ test('marks a lesson as helpful', function () {
         'is_generic' => true,
     ]);
 
-    $tool = new \App\Mcp\Tools\MarkLessonHelpful;
+    $tool = new MarkLessonHelpful;
     $request = new Request([
         'lesson_id' => $lesson->id,
         'was_helpful' => true,
@@ -33,7 +35,7 @@ test('marks a lesson as helpful', function () {
     $response = $tool->handle($request);
     $data = getResponseData($response);
 
-    expect($response)->toBeInstanceOf(\Laravel\Mcp\Response::class)
+    expect($response)->toBeInstanceOf(Response::class)
         ->and($data['success'])->toBeTrue()
         ->and($data['message'])->toContain('helpful')
         ->and($data['lesson_id'])->toBe($lesson->id);
@@ -50,7 +52,7 @@ test('marks a lesson as not helpful', function () {
         'is_generic' => true,
     ]);
 
-    $tool = new \App\Mcp\Tools\MarkLessonHelpful;
+    $tool = new MarkLessonHelpful;
     $request = new Request([
         'lesson_id' => $lesson->id,
         'was_helpful' => false,
@@ -81,7 +83,7 @@ test('updates existing usage when marking lesson', function () {
         'session_id' => 'test-session',
     ]);
 
-    $tool = new \App\Mcp\Tools\MarkLessonHelpful;
+    $tool = new MarkLessonHelpful;
     $request = new Request([
         'lesson_id' => $lesson->id,
         'was_helpful' => true,
@@ -96,7 +98,7 @@ test('updates existing usage when marking lesson', function () {
 });
 
 test('returns error when lesson ID is missing', function () {
-    $tool = new \App\Mcp\Tools\MarkLessonHelpful;
+    $tool = new MarkLessonHelpful;
     $request = new Request(['was_helpful' => true]);
 
     $response = $tool->handle($request);
@@ -106,7 +108,7 @@ test('returns error when lesson ID is missing', function () {
 });
 
 test('returns error when lesson not found', function () {
-    $tool = new \App\Mcp\Tools\MarkLessonHelpful;
+    $tool = new MarkLessonHelpful;
     $request = new Request([
         'lesson_id' => 'non-existent-id',
         'was_helpful' => true,
@@ -124,7 +126,7 @@ test('defaults was_helpful to true when not provided', function () {
         'is_generic' => true,
     ]);
 
-    $tool = new \App\Mcp\Tools\MarkLessonHelpful;
+    $tool = new MarkLessonHelpful;
     $request = new Request(['lesson_id' => $lesson->id]);
 
     $response = $tool->handle($request);

@@ -1,5 +1,6 @@
 <?php
 
+use App\Mcp\Resources\ProjectDetailsOverviewResource;
 use App\Models\Lesson;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -26,7 +27,7 @@ test('returns overview with project id, totals, and categories', function () {
         'category' => 'routing',
     ]);
 
-    $resource = new \App\Mcp\Resources\ProjectDetailsOverviewResource;
+    $resource = new ProjectDetailsOverviewResource;
     $response = $resource->handle(new Request([]));
     $content = getResponseText($response);
 
@@ -57,7 +58,7 @@ test('excludes generic lessons and other projects', function () {
         'category' => 'auth',
     ]);
 
-    $resource = new \App\Mcp\Resources\ProjectDetailsOverviewResource;
+    $resource = new ProjectDetailsOverviewResource;
     $response = $resource->handle(new Request([]));
     $content = getResponseText($response);
 
@@ -77,7 +78,7 @@ test('includes recent project details and tags', function () {
         'content' => 'Use Sanctum for API tokens.',
     ]);
 
-    $resource = new \App\Mcp\Resources\ProjectDetailsOverviewResource;
+    $resource = new ProjectDetailsOverviewResource;
     $response = $resource->handle(new Request([]));
     $content = getResponseText($response);
 
@@ -89,7 +90,7 @@ test('includes recent project details and tags', function () {
 });
 
 test('handles empty project details gracefully', function () {
-    $resource = new \App\Mcp\Resources\ProjectDetailsOverviewResource;
+    $resource = new ProjectDetailsOverviewResource;
     $response = $resource->handle(new Request([]));
     $content = getResponseText($response);
 

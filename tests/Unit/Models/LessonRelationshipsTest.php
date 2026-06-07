@@ -9,8 +9,8 @@ test('lesson can have related lessons', function () {
     $lesson1 = Lesson::factory()->create(['is_generic' => true]);
     $lesson2 = Lesson::factory()->create(['is_generic' => true]);
 
-    \DB::table('lesson_relationships')->insert([
-        'id' => \Str::uuid(),
+    DB::table('lesson_relationships')->insert([
+        'id' => Str::uuid(),
         'lesson_id' => $lesson1->id,
         'related_lesson_id' => $lesson2->id,
         'relationship_type' => 'related',
@@ -30,9 +30,9 @@ test('lesson can filter related lessons by type', function () {
     $lesson2 = Lesson::factory()->create(['is_generic' => true]);
     $lesson3 = Lesson::factory()->create(['is_generic' => true]);
 
-    \DB::table('lesson_relationships')->insert([
+    DB::table('lesson_relationships')->insert([
         [
-            'id' => \Str::uuid(),
+            'id' => Str::uuid(),
             'lesson_id' => $lesson1->id,
             'related_lesson_id' => $lesson2->id,
             'relationship_type' => 'prerequisite',
@@ -41,7 +41,7 @@ test('lesson can filter related lessons by type', function () {
             'updated_at' => now(),
         ],
         [
-            'id' => \Str::uuid(),
+            'id' => Str::uuid(),
             'lesson_id' => $lesson1->id,
             'related_lesson_id' => $lesson3->id,
             'relationship_type' => 'related',
@@ -86,8 +86,8 @@ test('related lessons include relationship metadata', function () {
     $lesson1 = Lesson::factory()->create(['is_generic' => true]);
     $lesson2 = Lesson::factory()->create(['is_generic' => true]);
 
-    \DB::table('lesson_relationships')->insert([
-        'id' => \Str::uuid(),
+    DB::table('lesson_relationships')->insert([
+        'id' => Str::uuid(),
         'lesson_id' => $lesson1->id,
         'related_lesson_id' => $lesson2->id,
         'relationship_type' => 'prerequisite',

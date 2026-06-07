@@ -1,9 +1,11 @@
 <?php
 
+use App\Mcp\Tools\GetLessonByCategory;
 use App\Models\Lesson;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Mcp\Request;
+use Laravel\Mcp\Response;
 use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
@@ -24,7 +26,7 @@ test('gets lessons by category', function () {
         'is_generic' => true,
     ]);
 
-    $tool = new \App\Mcp\Tools\GetLessonByCategory();
+    $tool = new GetLessonByCategory;
     $request = new Request(['category' => 'validation']);
 
     $response = $tool->handle($request);
@@ -36,13 +38,13 @@ test('gets lessons by category', function () {
 });
 
 test('returns error when category is missing', function () {
-    $tool = new \App\Mcp\Tools\GetLessonByCategory();
+    $tool = new GetLessonByCategory;
     $request = new Request([]);
 
     $response = $tool->handle($request);
     $content = getResponseText($response);
 
-    expect($response)->toBeInstanceOf(\Laravel\Mcp\Response::class)
+    expect($response)->toBeInstanceOf(Response::class)
         ->and($content)->toContain('Category is required');
 });
 
@@ -52,7 +54,7 @@ test('respects limit parameter', function () {
         'is_generic' => true,
     ]);
 
-    $tool = new \App\Mcp\Tools\GetLessonByCategory();
+    $tool = new GetLessonByCategory;
     $request = new Request(['category' => 'validation', 'limit' => 2]);
 
     $response = $tool->handle($request);
@@ -62,7 +64,7 @@ test('respects limit parameter', function () {
 });
 
 test('returns empty results for non-existent category', function () {
-    $tool = new \App\Mcp\Tools\GetLessonByCategory();
+    $tool = new GetLessonByCategory;
     $request = new Request(['category' => 'nonexistent-category']);
 
     $response = $tool->handle($request);
@@ -83,7 +85,7 @@ test('only returns generic lessons', function () {
         'is_generic' => false,
     ]);
 
-    $tool = new \App\Mcp\Tools\GetLessonByCategory();
+    $tool = new GetLessonByCategory;
     $request = new Request(['category' => 'validation']);
 
     $response = $tool->handle($request);
@@ -100,7 +102,7 @@ test('includes title and summary in results', function () {
         'is_generic' => true,
     ]);
 
-    $tool = new \App\Mcp\Tools\GetLessonByCategory();
+    $tool = new GetLessonByCategory;
     $request = new Request(['category' => 'validation']);
 
     $response = $tool->handle($request);

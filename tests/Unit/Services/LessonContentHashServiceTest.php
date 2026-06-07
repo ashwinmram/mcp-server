@@ -3,7 +3,7 @@
 use App\Services\LessonContentHashService;
 
 test('generates hash for content', function () {
-    $service = new LessonContentHashService();
+    $service = new LessonContentHashService;
     $content = 'Test lesson content';
 
     $hash = $service->generateHash($content);
@@ -14,7 +14,7 @@ test('generates hash for content', function () {
 });
 
 test('generates consistent hash for same content', function () {
-    $service = new LessonContentHashService();
+    $service = new LessonContentHashService;
     $content = 'Test lesson content';
 
     $hash1 = $service->generateHash($content);
@@ -24,7 +24,7 @@ test('generates consistent hash for same content', function () {
 });
 
 test('generates different hash for different content', function () {
-    $service = new LessonContentHashService();
+    $service = new LessonContentHashService;
 
     $hash1 = $service->generateHash('Content one');
     $hash2 = $service->generateHash('Content two');
@@ -33,14 +33,14 @@ test('generates different hash for different content', function () {
 });
 
 test('compares hashes correctly', function () {
-    $service = new LessonContentHashService();
+    $service = new LessonContentHashService;
     $hash = $service->generateHash('Test content');
 
     expect($service->compare($hash, $hash))->toBeTrue();
 });
 
 test('compares different hashes correctly', function () {
-    $service = new LessonContentHashService();
+    $service = new LessonContentHashService;
     $hash1 = $service->generateHash('Content one');
     $hash2 = $service->generateHash('Content two');
 

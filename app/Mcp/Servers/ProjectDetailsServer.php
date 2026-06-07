@@ -10,6 +10,8 @@ use App\Mcp\Tools\GetProjectDetailsByCategory;
 use App\Mcp\Tools\GetProjectDetailsOverview;
 use App\Mcp\Tools\SearchProjectDetails;
 use Laravel\Mcp\Server;
+use Laravel\Mcp\Server\Prompt;
+use Laravel\Mcp\Server\Tool;
 
 class ProjectDetailsServer extends Server
 {
@@ -55,7 +57,7 @@ class ProjectDetailsServer extends Server
     /**
      * The tools registered with this MCP server.
      *
-     * @var array<int, class-string<\Laravel\Mcp\Server\Tool>>
+     * @var array<int, class-string<Tool>>
      */
     protected array $tools = [
         SearchProjectDetails::class,
@@ -66,7 +68,7 @@ class ProjectDetailsServer extends Server
     /**
      * The resources registered with this MCP server.
      *
-     * @var array<int, class-string<\Laravel\Mcp\Server\Resource>>
+     * @var array<int, class-string<Server\Resource>>
      */
     protected array $resources = [
         ProjectDetailsOverviewResource::class,
@@ -75,7 +77,7 @@ class ProjectDetailsServer extends Server
     /**
      * The prompts registered with this MCP server.
      *
-     * @var array<int, class-string<\Laravel\Mcp\Server\Prompt>>
+     * @var array<int, class-string<Prompt>>
      */
     protected array $prompts = [
         ProjectDetailsOverview::class,

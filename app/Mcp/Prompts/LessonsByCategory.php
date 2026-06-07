@@ -49,7 +49,7 @@ class LessonsByCategory extends Prompt
                 $content .= " - Tags: {$tags}";
             }
             $content .= "\n";
-            $content .= "   ".mb_substr($lesson->content, 0, 200);
+            $content .= '   '.mb_substr($lesson->content, 0, 200);
             if (mb_strlen($lesson->content) > 200) {
                 $content .= '...';
             }
@@ -66,7 +66,7 @@ class LessonsByCategory extends Prompt
     /**
      * Get the prompt's arguments.
      *
-     * @return array<int, \Laravel\Mcp\Server\Prompts\Argument>
+     * @return array<int, Argument>
      */
     public function arguments(): array
     {

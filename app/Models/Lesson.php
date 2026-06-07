@@ -3,9 +3,13 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Collection;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Lesson extends Model
 {
@@ -148,7 +152,7 @@ class Lesson extends Model
     /**
      * Find all lessons with the same content hash (duplicates).
      */
-    public static function findDuplicatesByContentHash(string $contentHash): \Illuminate\Database\Eloquent\Collection
+    public static function findDuplicatesByContentHash(string $contentHash): Collection
     {
         return static::where('content_hash', $contentHash)
             ->orderBy('created_at', 'asc')
@@ -231,7 +235,7 @@ class Lesson extends Model
     /**
      * Get all related lessons for this lesson.
      */
-    public function relatedLessons(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    public function relatedLessons(): BelongsToMany
     {
         return $this->belongsToMany(
             Lesson::class,
@@ -246,7 +250,7 @@ class Lesson extends Model
     /**
      * Get lessons that are related to this lesson (reverse relationship).
      */
-    public function relatedFromLessons(): \Illuminate\Database\Eloquent\Relations\BelongsToMany
+    public function relatedFromLessons(): BelongsToMany
     {
         return $this->belongsToMany(
             Lesson::class,
@@ -261,7 +265,7 @@ class Lesson extends Model
     /**
      * Get related lessons filtered by relationship type.
      */
-    public function getRelatedLessonsByType(string $relationshipType, int $limit = 10): \Illuminate\Database\Eloquent\Collection
+    public function getRelatedLessonsByType(string $relationshipType, int $limit = 10): Collection
     {
         return $this->relatedLessons()
             ->wherePivot('relationship_type', $relationshipType)
@@ -273,7 +277,7 @@ class Lesson extends Model
     /**
      * Get all related lessons (all types combined).
      */
-    public function getAllRelatedLessons(int $limit = 10): \Illuminate\Database\Eloquent\Collection
+    public function getAllRelatedLessons(int $limit = 10): Collection
     {
         return $this->relatedLessons()
             ->orderByPivot('relevance_score', 'desc')
@@ -284,7 +288,7 @@ class Lesson extends Model
     /**
      * Find related lessons based on category and tag similarity.
      */
-    public function findSimilarLessons(int $limit = 10): \Illuminate\Database\Eloquent\Collection
+    public function findSimilarLessons(int $limit = 10): Collection
     {
         $query = static::query()
             ->generic()
@@ -306,7 +310,7 @@ class Lesson extends Model
     /**
      * Get all usages for this lesson.
      */
-    public function usages(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function usages(): HasMany
     {
         return $this->hasMany(LessonUsage::class);
     }
@@ -314,7 +318,7 @@ class Lesson extends Model
     /**
      * Get the lesson that supersedes this lesson.
      */
-    public function supersededBy(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    public function supersededBy(): BelongsTo
     {
         return $this->belongsTo(Lesson::class, 'superseded_by_lesson_id');
     }
@@ -322,7 +326,7 @@ class Lesson extends Model
     /**
      * Get lessons that are superseded by this lesson.
      */
-    public function supersedes(): \Illuminate\Database\Eloquent\Relations\HasMany
+    public function supersedes(): HasMany
     {
         return $this->hasMany(Lesson::class, 'superseded_by_lesson_id');
     }

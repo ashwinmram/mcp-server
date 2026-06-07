@@ -1,9 +1,12 @@
 <?php
 
+use App\Mcp\Tools\SearchLessons;
 use App\Models\Lesson;
+use App\Models\LessonUsage;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Laravel\Mcp\Request;
+use Laravel\Mcp\Response;
 use Laravel\Sanctum\Sanctum;
 
 uses(RefreshDatabase::class);
@@ -35,13 +38,13 @@ beforeEach(function () {
 });
 
 test('searches lessons by keyword using FULLTEXT search', function () {
-    $tool = new \App\Mcp\Tools\SearchLessons;
+    $tool = new SearchLessons;
     $request = new Request(['query' => 'type hints']);
 
     $response = $tool->handle($request);
     $data = getResponseData($response);
 
-    expect($response)->toBeInstanceOf(\Laravel\Mcp\Response::class)
+    expect($response)->toBeInstanceOf(Response::class)
         ->and($data['count'])->toBeGreaterThan(0)
         ->and($data['results'][0]['content'])->toContain('type hints');
 });
@@ -55,7 +58,7 @@ test('includes title and summary in search results', function () {
         'is_generic' => true,
     ]);
 
-    $tool = new \App\Mcp\Tools\SearchLessons;
+    $tool = new SearchLessons;
     // Search for a word that definitely exists in the content
     $request = new Request(['query' => 'functions']);
 
@@ -73,7 +76,7 @@ test('includes title and summary in search results', function () {
 });
 
 test('filters lessons by category', function () {
-    $tool = new \App\Mcp\Tools\SearchLessons;
+    $tool = new SearchLessons;
     $request = new Request(['category' => 'validation']);
 
     $response = $tool->handle($request);
@@ -84,7 +87,7 @@ test('filters lessons by category', function () {
 });
 
 test('filters lessons by tags', function () {
-    $tool = new \App\Mcp\Tools\SearchLessons;
+    $tool = new SearchLessons;
     $request = new Request(['tags' => ['php']]);
 
     $response = $tool->handle($request);
@@ -97,7 +100,7 @@ test('filters lessons by tags', function () {
 test('respects limit parameter', function () {
     Lesson::factory()->count(5)->create(['is_generic' => true]);
 
-    $tool = new \App\Mcp\Tools\SearchLessons;
+    $tool = new SearchLessons;
     $request = new Request(['limit' => 2]);
 
     $response = $tool->handle($request);
@@ -107,7 +110,7 @@ test('respects limit parameter', function () {
 });
 
 test('only returns generic lessons', function () {
-    $tool = new \App\Mcp\Tools\SearchLessons;
+    $tool = new SearchLessons;
     $request = new Request([]);
 
     $response = $tool->handle($request);
@@ -118,7 +121,7 @@ test('only returns generic lessons', function () {
 });
 
 test('returns empty results when no matches', function () {
-    $tool = new \App\Mcp\Tools\SearchLessons;
+    $tool = new SearchLessons;
     $request = new Request(['query' => 'nonexistentkeyword12345']);
 
     $response = $tool->handle($request);
@@ -144,8 +147,8 @@ test('includes related lessons when include_related is true', function () {
     ]);
 
     // Create relationship
-    \DB::table('lesson_relationships')->insert([
-        'id' => \Str::uuid(),
+    DB::table('lesson_relationships')->insert([
+        'id' => Str::uuid(),
         'lesson_id' => $lesson1->id,
         'related_lesson_id' => $lesson2->id,
         'relationship_type' => 'related',
@@ -154,7 +157,7 @@ test('includes related lessons when include_related is true', function () {
         'updated_at' => now(),
     ]);
 
-    $tool = new \App\Mcp\Tools\SearchLessons;
+    $tool = new SearchLessons;
     $request = new Request(['query' => 'Main lesson', 'include_related' => true]);
 
     $response = $tool->handle($request);
@@ -175,12 +178,12 @@ test('tracks usage when lessons are retrieved', function () {
         'is_generic' => true,
     ]);
 
-    $tool = new \App\Mcp\Tools\SearchLessons;
+    $tool = new SearchLessons;
     $request = new Request(['query' => 'Trackable']);
 
     $response = $tool->handle($request);
 
-    $usage = \App\Models\LessonUsage::where('lesson_id', $lesson->id)->first();
+    $usage = LessonUsage::where('lesson_id', $lesson->id)->first();
     expect($usage)->not->toBeNull()
         ->and($usage->query_context)->toContain('query: Trackable');
 });
@@ -203,7 +206,7 @@ test('filters out deprecated lessons by default', function () {
         'deprecated_at' => now(),
     ]);
 
-    $tool = new \App\Mcp\Tools\SearchLessons;
+    $tool = new SearchLessons;
     $request = new Request(['category' => 'testing']);
 
     $response = $tool->handle($request);
@@ -232,7 +235,7 @@ test('includes deprecated lessons when include_deprecated is true', function () 
         'deprecated_at' => now(),
     ]);
 
-    $tool = new \App\Mcp\Tools\SearchLessons;
+    $tool = new SearchLessons;
     $request = new Request([
         'category' => 'testing',
         'include_deprecated' => true,

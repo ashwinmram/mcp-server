@@ -72,7 +72,7 @@ class ProjectDetailsByCategory extends Prompt
     /**
      * Get the prompt's arguments.
      *
-     * @return array<int, \Laravel\Mcp\Server\Prompts\Argument>
+     * @return array<int, Argument>
      */
     public function arguments(): array
     {

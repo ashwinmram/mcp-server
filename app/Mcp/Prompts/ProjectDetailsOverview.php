@@ -6,6 +6,7 @@ use App\Models\Lesson;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Prompt;
+use Laravel\Mcp\Server\Prompts\Argument;
 
 class ProjectDetailsOverview extends Prompt
 {
@@ -75,7 +76,7 @@ class ProjectDetailsOverview extends Prompt
     /**
      * Get the prompt's arguments.
      *
-     * @return array<int, \Laravel\Mcp\Server\Prompts\Argument>
+     * @return array<int, Argument>
      */
     public function arguments(): array
     {

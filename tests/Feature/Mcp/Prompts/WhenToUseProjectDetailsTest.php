@@ -1,5 +1,6 @@
 <?php
 
+use App\Mcp\Prompts\WhenToUseProjectDetails;
 use App\Models\Lesson;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -15,7 +16,7 @@ beforeEach(function () {
 });
 
 test('returns guidance on when to use Project Details vs Lessons Learned', function () {
-    $prompt = new \App\Mcp\Prompts\WhenToUseProjectDetails;
+    $prompt = new WhenToUseProjectDetails;
     $response = $prompt->handle(new Request([]));
     $content = getResponseText($response);
 
@@ -44,7 +45,7 @@ test('includes count of project details for current project', function () {
         ->count();
     expect($expectedCount)->toBe(3);
 
-    $prompt = new \App\Mcp\Prompts\WhenToUseProjectDetails;
+    $prompt = new WhenToUseProjectDetails;
     $response = $prompt->handle(new Request(['project' => 'disambiguation-project']));
     $content = getResponseText($response);
 
@@ -73,7 +74,7 @@ test('excludes generic and other projects from count', function () {
         ->count();
     expect($expectedCount)->toBe(1);
 
-    $prompt = new \App\Mcp\Prompts\WhenToUseProjectDetails;
+    $prompt = new WhenToUseProjectDetails;
     $response = $prompt->handle(new Request(['project' => 'disambiguation-project']));
     $content = getResponseText($response);
 

@@ -1,5 +1,6 @@
 <?php
 
+use App\Mcp\Prompts\LessonsLearnedOverview;
 use App\Models\Lesson;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -23,7 +24,7 @@ test('provides overview of available lessons', function () {
         'is_generic' => false, // Should be excluded
     ]);
 
-    $prompt = new \App\Mcp\Prompts\LessonsLearnedOverview();
+    $prompt = new LessonsLearnedOverview;
     $request = new Request([]);
 
     $response = $prompt->handle($request);
@@ -39,7 +40,7 @@ test('lists available categories', function () {
     Lesson::factory()->create(['category' => 'routing', 'is_generic' => true]);
     Lesson::factory()->create(['category' => 'validation', 'is_generic' => true]);
 
-    $prompt = new \App\Mcp\Prompts\LessonsLearnedOverview();
+    $prompt = new LessonsLearnedOverview;
     $request = new Request([]);
 
     $response = $prompt->handle($request);
@@ -56,7 +57,7 @@ test('includes popular tags', function () {
         'is_generic' => true,
     ]);
 
-    $prompt = new \App\Mcp\Prompts\LessonsLearnedOverview();
+    $prompt = new LessonsLearnedOverview;
     $request = new Request([]);
 
     $response = $prompt->handle($request);
@@ -73,7 +74,7 @@ test('includes recent lessons', function () {
         'is_generic' => true,
     ]);
 
-    $prompt = new \App\Mcp\Prompts\LessonsLearnedOverview();
+    $prompt = new LessonsLearnedOverview;
     $request = new Request([]);
 
     $response = $prompt->handle($request);
@@ -84,7 +85,7 @@ test('includes recent lessons', function () {
 });
 
 test('handles empty lessons gracefully', function () {
-    $prompt = new \App\Mcp\Prompts\LessonsLearnedOverview();
+    $prompt = new LessonsLearnedOverview;
     $request = new Request([]);
 
     $response = $prompt->handle($request);

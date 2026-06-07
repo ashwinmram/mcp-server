@@ -1,5 +1,6 @@
 <?php
 
+use App\Mcp\Tools\GetProjectDetailsOverview;
 use App\Models\Lesson;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -26,7 +27,7 @@ test('returns overview with total and by category', function () {
         'category' => 'routing',
     ]);
 
-    $tool = new \App\Mcp\Tools\GetProjectDetailsOverview;
+    $tool = new GetProjectDetailsOverview;
     $response = $tool->handle(new Request([]));
     $data = getResponseData($response);
 
@@ -55,7 +56,7 @@ test('excludes generic lessons and other projects', function () {
         'category' => 'auth',
     ]);
 
-    $tool = new \App\Mcp\Tools\GetProjectDetailsOverview;
+    $tool = new GetProjectDetailsOverview;
     $response = $tool->handle(new Request([]));
     $data = getResponseData($response);
 

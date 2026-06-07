@@ -1,5 +1,6 @@
 <?php
 
+use App\Mcp\Prompts\ProjectDetailsByCategory;
 use App\Models\Lesson;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -36,7 +37,7 @@ test('returns project details for category', function () {
         'category' => 'routing',
     ]);
 
-    $prompt = new \App\Mcp\Prompts\ProjectDetailsByCategory;
+    $prompt = new ProjectDetailsByCategory;
     $response = $prompt->handle(new Request(['category' => 'auth']));
     $content = getResponseText($response);
 
@@ -50,7 +51,7 @@ test('returns project details for category', function () {
 });
 
 test('returns message when category is missing', function () {
-    $prompt = new \App\Mcp\Prompts\ProjectDetailsByCategory;
+    $prompt = new ProjectDetailsByCategory;
     $response = $prompt->handle(new Request([]));
     $content = getResponseText($response);
 
@@ -64,7 +65,7 @@ test('returns message for non-existent category', function () {
         'category' => 'auth',
     ]);
 
-    $prompt = new \App\Mcp\Prompts\ProjectDetailsByCategory;
+    $prompt = new ProjectDetailsByCategory;
     $response = $prompt->handle(new Request(['category' => 'nonexistent']));
     $content = getResponseText($response);
 
@@ -80,7 +81,7 @@ test('limits results to 10 and suggests tool for more', function () {
         'category' => 'auth',
     ]);
 
-    $prompt = new \App\Mcp\Prompts\ProjectDetailsByCategory;
+    $prompt = new ProjectDetailsByCategory;
     $response = $prompt->handle(new Request(['category' => 'auth']));
     $content = getResponseText($response);
 
@@ -103,7 +104,7 @@ test('only includes details for bound project', function () {
         'title' => 'Other auth',
     ]);
 
-    $prompt = new \App\Mcp\Prompts\ProjectDetailsByCategory;
+    $prompt = new ProjectDetailsByCategory;
     $response = $prompt->handle(new Request(['category' => 'auth']));
     $content = getResponseText($response);
 

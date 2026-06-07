@@ -1,5 +1,6 @@
 <?php
 
+use App\Mcp\Tools\SearchProjectDetails;
 use App\Models\Lesson;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
@@ -27,7 +28,7 @@ test('returns only project details for bound project', function () {
         'content' => 'Different project details',
     ]);
 
-    $tool = new \App\Mcp\Tools\SearchProjectDetails;
+    $tool = new SearchProjectDetails;
     $response = $tool->handle(new Request([]));
     $data = getResponseData($response);
 
@@ -48,7 +49,7 @@ test('excludes generic lessons', function () {
         'content' => 'Project detail',
     ]);
 
-    $tool = new \App\Mcp\Tools\SearchProjectDetails;
+    $tool = new SearchProjectDetails;
     $response = $tool->handle(new Request([]));
     $data = getResponseData($response);
 
@@ -68,7 +69,7 @@ test('filters by category', function () {
         'category' => 'routing',
     ]);
 
-    $tool = new \App\Mcp\Tools\SearchProjectDetails;
+    $tool = new SearchProjectDetails;
     $response = $tool->handle(new Request(['category' => 'auth']));
     $data = getResponseData($response);
 
