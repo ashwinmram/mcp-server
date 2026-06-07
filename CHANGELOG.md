@@ -1,5 +1,21 @@
 # Changelog
 
+## [1.4.0] - 2026-06-07
+
+### Added
+
+- Dashboard stats with 30-day period-over-period comparisons for knowledge base and project details
+- `DashboardStatsService` aggregating lesson counts, retrievals, helpfulness rate, and per-source-project metrics
+- `DashboardController` and `DashboardStatsSection.vue` reusable stat card component
+- Per-source-project stat cards (one card per distinct `source_project`)
+- Dashboard i18n keys (`dashboard.*`) and TypeScript types for stat props
+- Feature tests for dashboard stats structure, seeded values, and empty state
+
+### Changed
+
+- Replaced dashboard placeholder UI with live stats from the database
+- Dashboard route now uses `DashboardController` instead of an inline closure
+
 ## [1.3.0] - 2026-06-07
 
 ### Added

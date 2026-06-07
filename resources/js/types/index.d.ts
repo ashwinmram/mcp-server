@@ -41,3 +41,17 @@ export interface User {
 }
 
 export type BreadcrumbItemType = BreadcrumbItem;
+
+export interface DashboardStatItem {
+    name: string;
+    stat: string;
+    previousStat: string;
+    change: string;
+    changeType: 'increase' | 'decrease';
+}
+
+export interface DashboardStats {
+    knowledgeBase: DashboardStatItem[];
+    projectDetails: DashboardStatItem[];
+    bySourceProject: DashboardStatItem[];
+}
