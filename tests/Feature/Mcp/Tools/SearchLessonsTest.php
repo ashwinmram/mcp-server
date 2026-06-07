@@ -250,3 +250,83 @@ test('includes deprecated lessons when include_deprecated is true', function () 
     expect($lessonIds)->toContain($activeLesson->id)
         ->and($lessonIds)->toContain($deprecatedLesson->id);
 });
+
+test('defaults to relevance ordering when no query and no order_by', function () {
+    $this->artisan('migrate', ['--path' => 'database/migrations/2026_01_18_095618_add_relevance_score_and_versioning_to_lessons_table.php'])->assertSuccessful();
+
+    $highRelevance = Lesson::factory()->create([
+        'is_generic' => true,
+        'relevance_score' => 0.95,
+        'created_at' => now()->subDays(10),
+    ]);
+    Lesson::factory()->create([
+        'is_generic' => true,
+        'relevance_score' => 0.05,
+        'created_at' => now(),
+    ]);
+
+    $tool = new SearchLessons;
+    $data = getResponseData($tool->handle(new Request(['limit' => 1])));
+
+    expect($data['results'][0]['id'])->toBe($highRelevance->id)
+        ->and($data['ordered_by'])->toBe('relevance');
+});
+
+test('order_by created_at returns newest first', function () {
+    $older = Lesson::factory()->create([
+        'is_generic' => true,
+        'created_at' => now()->subDays(5),
+    ]);
+    $newer = Lesson::factory()->create([
+        'is_generic' => true,
+        'created_at' => now(),
+    ]);
+
+    $tool = new SearchLessons;
+    $data = getResponseData($tool->handle(new Request([
+        'order_by' => 'created_at',
+        'limit' => 2,
+    ])));
+
+    expect($data['results'][0]['id'])->toBe($newer->id)
+        ->and($data['ordered_by'])->toBe('created_at');
+});
+
+test('filters by source_project', function () {
+    Lesson::factory()->create([
+        'is_generic' => true,
+        'source_project' => 'filter-project',
+    ]);
+    Lesson::factory()->create([
+        'is_generic' => true,
+        'source_project' => 'other-project',
+    ]);
+
+    $tool = new SearchLessons;
+    $data = getResponseData($tool->handle(new Request(['source_project' => 'filter-project'])));
+
+    expect($data['count'])->toBe(1)
+        ->and($data['results'][0]['source_project'])->toBe('filter-project');
+});
+
+test('filters by days parameter', function () {
+    Lesson::factory()->create([
+        'is_generic' => true,
+        'source_project' => 'days-filter-project',
+        'created_at' => now()->subDays(10),
+    ]);
+    $recent = Lesson::factory()->create([
+        'is_generic' => true,
+        'source_project' => 'days-filter-project',
+        'created_at' => now()->subDay(),
+    ]);
+
+    $tool = new SearchLessons;
+    $data = getResponseData($tool->handle(new Request([
+        'days' => 3,
+        'source_project' => 'days-filter-project',
+    ])));
+
+    expect($data['count'])->toBe(1)
+        ->and($data['results'][0]['id'])->toBe($recent->id);
+});

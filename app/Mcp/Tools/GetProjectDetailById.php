@@ -1,0 +1,59 @@
+<?php
+
+namespace App\Mcp\Tools;
+
+use App\Mcp\Support\LessonPresenter;
+use App\Models\Lesson;
+use Illuminate\Contracts\JsonSchema\JsonSchema;
+use Laravel\Mcp\Request;
+use Laravel\Mcp\Response;
+use Laravel\Mcp\Server\Tool;
+
+class GetProjectDetailById extends Tool
+{
+    protected string $description = <<<'MARKDOWN'
+        Fetch a single project-specific detail by UUID for the current project. Use after seeing a truncated snippet in project-details://overview or project-details://recent.
+    MARKDOWN;
+
+    public function handle(Request $request): Response
+    {
+        $project = app('mcp.project');
+        $lessonId = $request->get('lesson_id');
+        $includeDeprecated = (bool) $request->get('include_deprecated', false);
+
+        if (empty($lessonId)) {
+            return Response::error('lesson_id is required');
+        }
+
+        $query = Lesson::query()
+            ->projectDetails()
+            ->bySourceProject($project)
+            ->where('id', $lessonId);
+
+        if (! $includeDeprecated) {
+            $query->active();
+        }
+
+        $lesson = $query->first();
+
+        if (! $lesson) {
+            return Response::error('Project detail not found');
+        }
+
+        return Response::json([
+            'project' => $project,
+            'detail' => LessonPresenter::toProjectDetailArray($lesson),
+        ]);
+    }
+
+    /**
+     * @return array<string, JsonSchema>
+     */
+    public function schema(JsonSchema $schema): array
+    {
+        return [
+            'lesson_id' => $schema->string()->required()->description('UUID of the project detail to fetch'),
+            'include_deprecated' => $schema->boolean()->default(false)->description('Whether to include deprecated entries'),
+        ];
+    }
+}

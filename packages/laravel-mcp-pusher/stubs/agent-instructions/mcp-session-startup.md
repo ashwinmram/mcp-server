@@ -13,12 +13,15 @@ Copy this content into your AI client's project instructions (see package README
 2. **Use the LessonsLearnedOverview prompt** for an updated overview of available lessons
 
 3. **Query relevant lessons** for the current task using:
-   - **SearchLessons** — keyword, category, or tags (FULLTEXT + relevance scoring)
+   - **SearchLessons** — keyword, category, or tags (default sort: relevance)
+   - **GetRecentLessons** — latest generic lessons (chronological)
+   - **GetLessonById** — fetch full lesson by UUID
+   - **GetLatestCaptureSummary** — latest generic + project detail (pass `source_project` on Lessons server)
    - **GetLessonByCategory** — browse by category
    - **GetLessonTags** — discover tags
    - **FindRelatedLessons** — related lessons by topic
    - **SuggestSearchQueries** — expand search terms
-   - **GetTopLessons** — highest relevance lessons (optionally by category)
+   - **GetTopLessons** — highest relevance (NOT most recent)
    - **GetCategoryStatistics** — category usage and value stats
 
 4. **Apply lessons** to coding decisions; query again when topics arise
@@ -31,7 +34,8 @@ For **project-specific** details (paths, env, conventions for the current repo):
 
 - Use the **Project Details** MCP server (`/mcp/project-details?project=<source>`)
 - The `project` query param must match `--source` when running `php artisan mcp:push`
-- Tools: **SearchProjectDetails**, **GetProjectDetailsByCategory**, **GetProjectDetailsOverview**
+- Tools: **SearchProjectDetails**, **GetRecentProjectDetails**, **GetProjectDetailById**, **GetLatestCaptureSummary**, **GetProjectDetailsByCategory**, **GetProjectDetailsOverview**, **FindRelatedProjectDetails**, **MarkProjectDetailHelpful**, **SuggestProjectDetailSearchQueries**, **GetProjectDetailsCategoryStatistics**
+- Resources: **project-details://overview**, **project-details://recent**
 - At session start, call **GetProjectDetailsOverview** when that server is connected
 
 Do not use a Project Details server scoped to a different project than the codebase you are editing.
@@ -40,7 +44,9 @@ Do not use a Project Details server scoped to a different project than the codeb
 
 **When to query lessons:** new features, errors, refactors, architecture decisions, best-practice questions.
 
-**How to query:** SearchLessons (set `include_related=true` when helpful), GetLessonByCategory, FindRelatedLessons, SuggestSearchQueries, GetTopLessons, GetCategoryStatistics, MarkLessonHelpful for feedback.
+**How to query:** SearchLessons (set `include_related=true` when helpful), GetRecentLessons or GetLatestCaptureSummary for latest entries, GetLessonById after overview/recent snippets, GetLessonByCategory, FindRelatedLessons, SuggestSearchQueries, GetTopLessons, GetCategoryStatistics, MarkLessonHelpful for feedback.
+
+**Latest vs relevant:** SearchLessons without a query sorts by relevance (unchanged). Use GetRecentLessons / GetRecentProjectDetails for chronological queries.
 
 **Usage tracking:** Retrieving lessons via SearchLessons improves future relevance ranking automatically.
 

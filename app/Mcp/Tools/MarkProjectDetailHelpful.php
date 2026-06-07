@@ -10,29 +10,34 @@ use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Tool;
 
-class MarkLessonHelpful extends Tool
+class MarkProjectDetailHelpful extends Tool
 {
     protected string $description = <<<'MARKDOWN'
-        Mark a lesson as helpful or not helpful. This provides explicit feedback that improves relevance scoring.
+        Mark a project detail as helpful or not helpful. Provides explicit feedback that improves relevance scoring for project-specific knowledge.
     MARKDOWN;
 
     public function handle(Request $request): Response
     {
+        $project = app('mcp.project');
         $lessonId = $request->get('lesson_id');
         $wasHelpful = (bool) $request->get('was_helpful', true);
 
         if (empty($lessonId)) {
-            return Response::error('Lesson ID is required');
+            return Response::error('lesson_id is required');
         }
 
         if (! Schema::hasTable('lesson_usages')) {
             return Response::error('Usage tracking is not available. Please run migrations first.');
         }
 
-        $lesson = Lesson::find($lessonId);
+        $lesson = Lesson::query()
+            ->projectDetails()
+            ->bySourceProject($project)
+            ->where('id', $lessonId)
+            ->first();
 
         if (! $lesson) {
-            return Response::error("Lesson with ID {$lessonId} not found");
+            return Response::error('Project detail not found');
         }
 
         try {
@@ -42,9 +47,9 @@ class MarkLessonHelpful extends Tool
                 return Response::error('Usage tracking is not available. Please run migrations first.');
             }
 
-            return Response::json($result);
+            return Response::json(array_merge($result, ['project' => $project]));
         } catch (\Exception $e) {
-            return Response::error('Failed to mark lesson: '.$e->getMessage());
+            return Response::error('Failed to mark project detail: '.$e->getMessage());
         }
     }
 
@@ -54,8 +59,8 @@ class MarkLessonHelpful extends Tool
     public function schema(JsonSchema $schema): array
     {
         return [
-            'lesson_id' => $schema->string()->required()->description('The ID of the lesson to mark'),
-            'was_helpful' => $schema->boolean()->default(true)->description('Whether the lesson was helpful (default: true)'),
+            'lesson_id' => $schema->string()->required()->description('UUID of the project detail to mark'),
+            'was_helpful' => $schema->boolean()->default(true)->description('Whether the detail was helpful (default: true)'),
         ];
     }
 }

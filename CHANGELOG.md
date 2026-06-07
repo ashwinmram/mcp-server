@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.8.0] - 2026-06-07
+
+### Added
+
+- MCP query ergonomics: `GetRecentLessons`, `GetRecentProjectDetails`, `GetLessonById`, `GetProjectDetailById`, and `GetLatestCaptureSummary` tools
+- Project Details server parity: `FindRelatedProjectDetails`, `MarkProjectDetailHelpful`, `SuggestProjectDetailSearchQueries`, and `GetProjectDetailsCategoryStatistics`
+- Resources `lessons://recent` and `project-details://recent` for chronological session-start browsing with ids
+- Shared `LessonPresenter`, `LessonQueryFilters`, and `LessonHelpfulnessRecorder` support classes
+- Search filters on `SearchLessons` and `SearchProjectDetails`: `order_by`, `since`, `until`, `days`, and `source_project` (lessons only)
+
+### Changed
+
+- `GetProjectDetailsOverview` JSON now includes `recent_entries` and `latest_updated_at`
+- Overview resources include lesson/detail ids and created timestamps in recent sections
+- `GetTopLessons` description clarifies relevance vs recency; agent instruction stubs updated accordingly
+- `SearchLessons` default sort remains relevance-first (backward compatible); response includes `ordered_by`
+
 ## [1.7.1] - 2026-06-07
 
 ### Changed

@@ -76,3 +76,30 @@ test('filters by category', function () {
     expect($data['count'])->toBe(1)
         ->and($data['results'][0]['category'])->toBe('auth');
 });
+
+test('returns ordered_by in response', function () {
+    $tool = new SearchProjectDetails;
+    $data = getResponseData($tool->handle(new Request([])));
+
+    expect($data)->toHaveKey('ordered_by')
+        ->and($data['ordered_by'])->toBe('updated_at');
+});
+
+test('filters by days parameter', function () {
+    Lesson::factory()->create([
+        'source_project' => 'test-project',
+        'is_generic' => false,
+        'updated_at' => now()->subDays(10),
+    ]);
+    $recent = Lesson::factory()->create([
+        'source_project' => 'test-project',
+        'is_generic' => false,
+        'updated_at' => now()->subDay(),
+    ]);
+
+    $tool = new SearchProjectDetails;
+    $data = getResponseData($tool->handle(new Request(['days' => 3])));
+
+    expect($data['count'])->toBe(1)
+        ->and($data['results'][0]['id'])->toBe($recent->id);
+});

@@ -2,6 +2,8 @@
 
 namespace App\Mcp\Tools;
 
+use App\Mcp\Support\LessonPresenter;
+use App\Mcp\Support\LessonQueryFilters;
 use App\Models\Lesson;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Mcp\Request;
@@ -10,16 +12,10 @@ use Laravel\Mcp\Server\Tool;
 
 class GetLessonByCategory extends Tool
 {
-    /**
-     * The tool's description.
-     */
     protected string $description = <<<'MARKDOWN'
         Get all lessons in a specific category. Useful for finding lessons related to a particular topic like validation, routing, security, etc.
     MARKDOWN;
 
-    /**
-     * Handle the tool request.
-     */
     public function handle(Request $request): Response
     {
         $category = $request->get('category');
@@ -29,48 +25,18 @@ class GetLessonByCategory extends Tool
         }
 
         $limit = (int) ($request->get('limit', 10));
+        $query = Lesson::query()->generic();
 
-        // Check if this is a subcategory query
-        // Subcategories are kebab-case (e.g., component-architecture)
-        // Regular categories are typically single words or snake_case
-        $isSubcategory = str_contains($category, '-') &&
-                         $category !== 'lessons-learned' &&
-                         Lesson::query()->generic()->bySubcategory($category)->exists();
+        LessonQueryFilters::applyCategoryFilter($query, $category, false);
 
-        if ($isSubcategory) {
-            // Query by subcategory
-            $lessons = Lesson::query()
-                ->generic()
-                ->bySubcategory($category)
-                ->orderBy('created_at', 'desc')
-                ->limit($limit)
-                ->get();
-        } else {
-            // Query by category (maintains backward compatibility)
-            // For "lessons-learned", this will return all lessons regardless of subcategory
-            $lessons = Lesson::query()
-                ->generic()
-                ->byCategory($category)
-                ->orderBy('created_at', 'desc')
-                ->limit($limit)
-                ->get();
-        }
+        $lessons = $query
+            ->orderBy('created_at', 'desc')
+            ->limit($limit)
+            ->get();
 
-        $results = $lessons->map(function (Lesson $lesson) {
-            return [
-                'id' => $lesson->id,
-                'type' => $lesson->type,
-                'category' => $lesson->category,
-                'subcategory' => $lesson->subcategory,
-                'title' => $lesson->title,
-                'summary' => $lesson->summary,
-                'tags' => $lesson->tags,
-                'content' => $lesson->content,
-                'source_project' => $lesson->source_project, // Keep for backward compatibility
-                'source_projects' => $lesson->source_projects ?? [$lesson->source_project],
-                'created_at' => $lesson->created_at->toIso8601String(),
-            ];
-        })->toArray();
+        $results = $lessons->map(
+            fn (Lesson $lesson) => LessonPresenter::toGenericArray($lesson)
+        )->toArray();
 
         return Response::json([
             'category' => $category,
@@ -80,8 +46,6 @@ class GetLessonByCategory extends Tool
     }
 
     /**
-     * Get the tool's input schema.
-     *
      * @return array<string, JsonSchema>
      */
     public function schema(JsonSchema $schema): array

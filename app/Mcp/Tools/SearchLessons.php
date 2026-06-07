@@ -2,27 +2,23 @@
 
 namespace App\Mcp\Tools;
 
+use App\Mcp\Support\LessonHelpfulnessRecorder;
+use App\Mcp\Support\LessonPresenter;
+use App\Mcp\Support\LessonQueryFilters;
 use App\Models\Lesson;
 use App\Models\LessonUsage;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Illuminate\Support\Facades\Schema;
-use Illuminate\Support\Str;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Tool;
 
 class SearchLessons extends Tool
 {
-    /**
-     * The tool's description.
-     */
     protected string $description = <<<'MARKDOWN'
-        Search for lessons learned by keyword, category, or tags. Returns matching lessons with their content.
+        Search for lessons learned by keyword, category, or tags. Returns matching lessons with their content. Default sort is relevance — use GetRecentLessons for chronological queries or set order_by to created_at.
     MARKDOWN;
 
-    /**
-     * Handle the tool request.
-     */
     public function handle(Request $request): Response
     {
         $query = Lesson::query()->generic();
@@ -30,130 +26,65 @@ class SearchLessons extends Tool
         $includeRelated = (bool) $request->get('include_related', false);
         $includeDeprecated = (bool) $request->get('include_deprecated', false);
 
-        // Filter out deprecated lessons by default (unless explicitly requested)
         if (! $includeDeprecated) {
             $query->active();
         }
 
-        // Search by keyword using FULLTEXT search, fallback to LIKE if no results
         if ($searchQuery) {
-            // Try FULLTEXT first
-            $fulltextQuery = clone $query;
-            $fulltextQuery->whereRaw('MATCH(content) AGAINST(? IN NATURAL LANGUAGE MODE)', [$searchQuery]);
-            $fulltextCount = $fulltextQuery->count();
-
-            if ($fulltextCount > 0) {
-                // Use FULLTEXT search
-                $query->whereRaw('MATCH(content) AGAINST(? IN NATURAL LANGUAGE MODE)', [$searchQuery]);
-            } else {
-                // Fallback to LIKE search for better compatibility with small datasets
-                $query->where('content', 'like', '%'.$searchQuery.'%');
-            }
+            LessonQueryFilters::applyFulltextSearch($query, $searchQuery);
         }
 
-        // Filter by category or subcategory
         if ($request->get('category')) {
-            $category = $request->get('category');
-            // Check if it's a subcategory
-            $isSubcategory = str_contains($category, '-') &&
-                             $category !== 'lessons-learned' &&
-                             Lesson::query()->generic()->bySubcategory($category)->exists();
-
-            if ($isSubcategory) {
-                $query->bySubcategory($category);
-            } else {
-                $query->byCategory($category);
-            }
+            LessonQueryFilters::applyCategoryFilter(
+                $query,
+                $request->get('category'),
+                false,
+            );
         }
 
-        // Filter by tags
-        if ($request->get('tags') && is_array($request->get('tags'))) {
-            $query->byTags($request->get('tags'));
+        LessonQueryFilters::applyTagsFilter($query, $request->get('tags'));
+
+        if ($request->get('source_project')) {
+            LessonQueryFilters::applySourceProjectFilter($query, $request->get('source_project'));
         }
+
+        LessonQueryFilters::applyDateRange(
+            $query,
+            $request->get('since'),
+            $request->get('until'),
+            $request->get('days') !== null ? (int) $request->get('days') : null,
+        );
 
         $limit = (int) ($request->get('limit', 10));
+        $hasRelevanceScore = LessonQueryFilters::hasRelevanceScoreColumn();
+        $usingFulltext = $searchQuery ? LessonQueryFilters::isUsingFulltext($query) : false;
 
-        // Order by FULLTEXT relevance score if searching with FULLTEXT, otherwise by date
-        if ($searchQuery) {
-            // Check if we're using FULLTEXT (check if the query has MATCH clause)
-            $queryString = $query->toSql();
-            $usingFulltext = str_contains($queryString, 'MATCH');
-
-            if ($usingFulltext) {
-                // Check if relevance_score column exists (Phase 3 feature)
-                $hasRelevanceScore = Schema::hasColumn('lessons', 'relevance_score');
-
-                if ($hasRelevanceScore) {
-                    $query->selectRaw('*, MATCH(content) AGAINST(? IN NATURAL LANGUAGE MODE) as relevance', [$searchQuery])
-                        ->orderByRaw('(MATCH(content) AGAINST(? IN NATURAL LANGUAGE MODE) * 0.7) + (COALESCE(relevance_score, 0) * 0.3) DESC', [$searchQuery])
-                        ->orderBy('created_at', 'desc');
-                } else {
-                    // Phase 1: Just use FULLTEXT relevance
-                    $query->selectRaw('*, MATCH(content) AGAINST(? IN NATURAL LANGUAGE MODE) as relevance', [$searchQuery])
-                        ->orderByRaw('MATCH(content) AGAINST(? IN NATURAL LANGUAGE MODE) DESC', [$searchQuery])
-                        ->orderBy('created_at', 'desc');
-                }
-            } else {
-                // Using LIKE fallback, just order by date
-                $query->orderBy('created_at', 'desc');
-            }
-        } else {
-            // No search query - order by relevance_score if available, otherwise by date
-            $hasRelevanceScore = Schema::hasColumn('lessons', 'relevance_score');
-
-            if ($hasRelevanceScore) {
-                $query->orderBy('relevance_score', 'desc');
-            }
-
-            $query->orderBy('created_at', 'desc');
-        }
+        $orderedBy = LessonQueryFilters::applyOrderBy(
+            $query,
+            $request->get('order_by'),
+            $usingFulltext,
+            $searchQuery,
+            $hasRelevanceScore,
+            'relevance',
+            'created_at',
+        );
 
         $lessons = $query->limit($limit)->get();
 
-        // Track usage automatically for each retrieved lesson
         $this->trackUsage($lessons, $searchQuery, $request);
 
-        $results = $lessons->map(function (Lesson $lesson) use ($includeRelated) {
-            $result = [
-                'id' => $lesson->id,
-                'type' => $lesson->type,
-                'category' => $lesson->category,
-                'subcategory' => $lesson->subcategory,
-                'title' => $lesson->title,
-                'summary' => $lesson->summary,
-                'tags' => $lesson->tags,
-                'content' => $lesson->content,
-                'source_project' => $lesson->source_project, // Keep for backward compatibility
-                'source_projects' => $lesson->source_projects ?? [$lesson->source_project],
-                'created_at' => $lesson->created_at->toIso8601String(),
-            ];
-
-            // Optionally include related lessons
-            if ($includeRelated) {
-                $relatedLessons = $lesson->getAllRelatedLessons(5);
-                $result['related_lessons'] = $relatedLessons->map(function (Lesson $related) {
-                    return [
-                        'id' => $related->id,
-                        'title' => $related->title,
-                        'category' => $related->category,
-                        'relationship_type' => $related->pivot->relationship_type ?? 'related',
-                        'relevance_score' => $related->pivot->relevance_score ?? null,
-                    ];
-                })->toArray();
-            }
-
-            return $result;
-        })->toArray();
+        $results = $lessons->map(
+            fn (Lesson $lesson) => LessonPresenter::toGenericArray($lesson, $includeRelated)
+        )->toArray();
 
         return Response::json([
             'results' => $results,
             'count' => count($results),
+            'ordered_by' => $orderedBy,
         ]);
     }
 
     /**
-     * Get the tool's input schema.
-     *
      * @return array<string, JsonSchema>
      */
     public function schema(JsonSchema $schema): array
@@ -165,33 +96,32 @@ class SearchLessons extends Tool
             'limit' => $schema->integer()->default(10)->description('Maximum number of results to return'),
             'include_related' => $schema->boolean()->default(false)->description('Whether to include related lessons in the response'),
             'include_deprecated' => $schema->boolean()->default(false)->description('Whether to include deprecated lessons in the response'),
+            'order_by' => $schema->string()->nullable()->description('Sort order: relevance (default), created_at, or updated_at'),
+            'since' => $schema->string()->nullable()->description('ISO date — return lessons created on or after this date'),
+            'until' => $schema->string()->nullable()->description('ISO date — return lessons created on or before this date'),
+            'days' => $schema->integer()->nullable()->description('Shorthand for since = now minus N days'),
+            'source_project' => $schema->string()->nullable()->description('Filter to lessons originating from a specific project'),
         ];
     }
 
-    /**
-     * Track usage for lessons that were retrieved.
-     */
     protected function trackUsage($lessons, ?string $searchQuery, Request $request): void
     {
-        // Check if lesson_usages table exists (Phase 3 feature)
         if (! Schema::hasTable('lesson_usages')) {
             return;
         }
 
         $queryContext = $this->buildQueryContext($request, $searchQuery);
-        $sessionId = $this->getSessionId($request);
+        $sessionId = LessonHelpfulnessRecorder::getSessionId($request);
 
         foreach ($lessons as $lesson) {
             try {
                 LessonUsage::create([
                     'lesson_id' => $lesson->id,
                     'query_context' => $queryContext,
-                    'was_helpful' => null, // Implicit usage tracking
+                    'was_helpful' => null,
                     'session_id' => $sessionId,
                 ]);
             } catch (\Exception $e) {
-                // Silently fail usage tracking to not interrupt search
-                // Log error in debug mode
                 if (config('app.debug')) {
                     \Log::warning('Failed to track lesson usage', [
                         'lesson_id' => $lesson->id,
@@ -202,9 +132,6 @@ class SearchLessons extends Tool
         }
     }
 
-    /**
-     * Build query context string from request parameters.
-     */
     protected function buildQueryContext(Request $request, ?string $searchQuery): ?string
     {
         $parts = [];
@@ -221,23 +148,10 @@ class SearchLessons extends Tool
             $parts[] = 'tags: '.implode(', ', $request->get('tags'));
         }
 
-        return ! empty($parts) ? implode(' | ', $parts) : null;
-    }
-
-    /**
-     * Get session ID from request metadata or generate one.
-     */
-    protected function getSessionId(Request $request): ?string
-    {
-        // Try to get session ID from request metadata (if MCP provides it)
-        $metadata = $request->get('_metadata') ?? [];
-
-        if (isset($metadata['session_id'])) {
-            return $metadata['session_id'];
+        if ($request->get('source_project')) {
+            $parts[] = "source_project: {$request->get('source_project')}";
         }
 
-        // Generate a session ID based on request fingerprint
-        // This is a best-effort approach since MCP might not provide session info
-        return Str::uuid()->toString();
+        return ! empty($parts) ? implode(' | ', $parts) : null;
     }
 }

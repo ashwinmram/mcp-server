@@ -69,7 +69,7 @@ test('excludes generic lessons and other projects', function () {
 });
 
 test('includes recent project details and tags', function () {
-    Lesson::factory()->create([
+    $detail = Lesson::factory()->create([
         'source_project' => 'test-project',
         'is_generic' => false,
         'title' => 'Auth setup',
@@ -84,6 +84,8 @@ test('includes recent project details and tags', function () {
 
     expect($content)->toContain('Recent Project Details')
         ->and($content)->toContain('Auth setup')
+        ->and($content)->toContain($detail->id)
+        ->and($content)->toContain('**ID:**')
         ->and($content)->toContain('Use Sanctum for API tokens')
         ->and($content)->toContain('Tags in This Project')
         ->and($content)->toContain('mcp');

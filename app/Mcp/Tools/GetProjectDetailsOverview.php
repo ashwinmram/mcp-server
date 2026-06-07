@@ -2,6 +2,7 @@
 
 namespace App\Mcp\Tools;
 
+use App\Mcp\Support\LessonPresenter;
 use App\Models\Lesson;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Mcp\Request;
@@ -10,30 +11,22 @@ use Laravel\Mcp\Server\Tool;
 
 class GetProjectDetailsOverview extends Tool
 {
-    /**
-     * The tool's description.
-     */
     protected string $description = <<<'MARKDOWN'
-        Get a short overview of project-specific implementation details for the current project (counts by category).
+        Get an overview of project-specific implementation details for the current project including counts by category and recent entries.
     MARKDOWN;
 
-    /**
-     * Handle the tool request.
-     */
     public function handle(Request $request): Response
     {
         $project = app('mcp.project');
 
-        $total = Lesson::query()
+        $baseQuery = fn () => Lesson::query()
             ->projectDetails()
             ->bySourceProject($project)
-            ->active()
-            ->count();
+            ->active();
 
-        $byCategory = Lesson::query()
-            ->projectDetails()
-            ->bySourceProject($project)
-            ->active()
+        $total = $baseQuery()->count();
+
+        $byCategory = $baseQuery()
             ->selectRaw('category, count(*) as count')
             ->groupBy('category')
             ->orderByDesc('count')
@@ -41,16 +34,25 @@ class GetProjectDetailsOverview extends Tool
             ->mapWithKeys(fn ($row) => [$row->category => $row->count])
             ->toArray();
 
+        $recentDetails = $baseQuery()
+            ->orderBy('updated_at', 'desc')
+            ->limit(5)
+            ->get();
+
+        $latestUpdated = $recentDetails->first()?->updated_at;
+
         return Response::json([
             'project' => $project,
             'total_entries' => $total,
             'by_category' => $byCategory,
+            'recent_entries' => $recentDetails->map(
+                fn (Lesson $lesson) => LessonPresenter::toSummaryArray($lesson)
+            )->toArray(),
+            'latest_updated_at' => $latestUpdated?->toIso8601String(),
         ]);
     }
 
     /**
-     * Get the tool's input schema.
-     *
      * @return array<string, JsonSchema>
      */
     public function schema(JsonSchema $schema): array

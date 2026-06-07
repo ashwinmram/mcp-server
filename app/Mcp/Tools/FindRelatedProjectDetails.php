@@ -9,14 +9,15 @@ use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
 use Laravel\Mcp\Server\Tool;
 
-class FindRelatedLessons extends Tool
+class FindRelatedProjectDetails extends Tool
 {
     protected string $description = <<<'MARKDOWN'
-        Find related lessons for a specific lesson. Returns lessons that are related through the lesson_relationships table, including relationship type and relevance score.
+        Find related project details for a specific detail entry in the current project. Returns lessons related through the lesson_relationships table.
     MARKDOWN;
 
     public function handle(Request $request): Response
     {
+        $project = app('mcp.project');
         $lessonId = $request->get('lesson_id');
         $relationshipType = $request->get('relationship_type');
         $limit = (int) ($request->get('limit', 10));
@@ -25,10 +26,14 @@ class FindRelatedLessons extends Tool
             return Response::error('lesson_id is required');
         }
 
-        $lesson = Lesson::find($lessonId);
+        $lesson = Lesson::query()
+            ->projectDetails()
+            ->bySourceProject($project)
+            ->where('id', $lessonId)
+            ->first();
 
         if (! $lesson) {
-            return Response::error('Lesson not found');
+            return Response::error('Project detail not found');
         }
 
         if ($relationshipType) {
@@ -37,14 +42,17 @@ class FindRelatedLessons extends Tool
             $relatedLessons = $lesson->getAllRelatedLessons($limit);
         }
 
-        $results = $relatedLessons->map(
-            fn (Lesson $related) => LessonPresenter::toRelatedArray($related)
-        )->toArray();
+        $relatedLessons = $relatedLessons->filter(function (Lesson $related) use ($project) {
+            return ! $related->is_generic && $related->source_project === $project;
+        });
+
+        $results = $relatedLessons->map(fn (Lesson $related) => LessonPresenter::toRelatedArray($related))->values()->toArray();
 
         return Response::json([
+            'project' => $project,
             'lesson_id' => $lessonId,
             'relationship_type' => $relationshipType,
-            'related_lessons' => $results,
+            'related_details' => $results,
             'count' => count($results),
         ]);
     }
@@ -55,9 +63,9 @@ class FindRelatedLessons extends Tool
     public function schema(JsonSchema $schema): array
     {
         return [
-            'lesson_id' => $schema->string()->required()->description('UUID of the lesson to find related lessons for'),
+            'lesson_id' => $schema->string()->required()->description('UUID of the project detail to find related entries for'),
             'relationship_type' => $schema->string()->nullable()->description('Filter by relationship type: prerequisite, related, alternative, or supersedes'),
-            'limit' => $schema->integer()->default(10)->description('Maximum number of related lessons to return'),
+            'limit' => $schema->integer()->default(10)->description('Maximum number of related details to return'),
         ];
     }
 }

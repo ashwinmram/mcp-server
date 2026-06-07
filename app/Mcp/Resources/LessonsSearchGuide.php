@@ -104,6 +104,38 @@ Best for discovering connected knowledge and exploring topic relationships.
 - Explore prerequisite, alternative, or superseding lessons
 - Understand topic relationships and dependencies
 
+### 5. Chronological Queries (GetRecentLessons / GetLatestCaptureSummary)
+
+**When to Use:**
+- "What was the latest lesson captured?"
+- "What changed in the knowledge base this week?"
+- Session startup when you care about recency, not relevance
+
+**Do NOT use SearchLessons without a query for this** — empty-query SearchLessons sorts by **relevance**, not date.
+
+**Tools:**
+- `GetRecentLessons` — newest generic lessons (`order_by: created_at` default)
+- `GetLatestCaptureSummary` — latest generic + latest project detail (when `source_project` provided)
+- `GetLessonById` — full content after seeing a truncated id in `lessons://overview` or `lessons://recent`
+- `lessons://recent` resource — quick markdown list with ids
+
+### 6. order_by on SearchLessons
+
+Optional parameter: `relevance` (default), `created_at`, or `updated_at`.
+
+- **Default `relevance`** preserves existing behavior for browse and search
+- Use **`created_at`** only when you need keyword search results sorted by date
+- For pure chronological browse, prefer **GetRecentLessons**
+
+### 7. Date-Range Filters
+
+On **SearchLessons** and **GetRecentLessons**:
+
+- `since` / `until` — ISO date bounds on `created_at`
+- `days` — shorthand for `since = now minus N days`
+
+Example: `{"days": 7, "limit": 10}` on GetRecentLessons for last week's captures.
+
 ## When to Query Lessons
 
 **At Session Start:**

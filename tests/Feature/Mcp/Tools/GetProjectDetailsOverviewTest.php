@@ -63,3 +63,21 @@ test('excludes generic lessons and other projects', function () {
     expect($data['total_entries'])->toBe(1)
         ->and($data['by_category']['auth'])->toBe(1);
 });
+
+test('includes recent entries and latest updated timestamp', function () {
+    $detail = Lesson::factory()->create([
+        'source_project' => 'overview-project',
+        'is_generic' => false,
+        'title' => 'Recent detail',
+        'updated_at' => now(),
+    ]);
+
+    $tool = new GetProjectDetailsOverview;
+    $data = getResponseData($tool->handle(new Request([])));
+
+    expect($data)->toHaveKey('recent_entries')
+        ->and($data['recent_entries'])->toHaveCount(1)
+        ->and($data['recent_entries'][0]['id'])->toBe($detail->id)
+        ->and($data['recent_entries'][0]['title'])->toBe('Recent detail')
+        ->and($data['latest_updated_at'])->not->toBeNull();
+});

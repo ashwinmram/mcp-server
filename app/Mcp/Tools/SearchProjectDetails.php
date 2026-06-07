@@ -2,6 +2,8 @@
 
 namespace App\Mcp\Tools;
 
+use App\Mcp\Support\LessonPresenter;
+use App\Mcp\Support\LessonQueryFilters;
 use App\Models\Lesson;
 use Illuminate\Contracts\JsonSchema\JsonSchema;
 use Laravel\Mcp\Request;
@@ -10,16 +12,10 @@ use Laravel\Mcp\Server\Tool;
 
 class SearchProjectDetails extends Tool
 {
-    /**
-     * The tool's description.
-     */
     protected string $description = <<<'MARKDOWN'
-        Search project-specific implementation details by keyword, category, or tags. Returns matching details for the current project only.
+        Search project-specific implementation details by keyword, category, or tags. Returns matching details for the current project only. Use GetRecentProjectDetails for chronological queries.
     MARKDOWN;
 
-    /**
-     * Handle the tool request.
-     */
     public function handle(Request $request): Response
     {
         $project = app('mcp.project');
@@ -35,78 +31,57 @@ class SearchProjectDetails extends Tool
         }
 
         if ($searchQuery) {
-            $fulltextQuery = clone $query;
-            $fulltextQuery->whereRaw('MATCH(content) AGAINST(? IN NATURAL LANGUAGE MODE)', [$searchQuery]);
-            $fulltextCount = $fulltextQuery->count();
-
-            if ($fulltextCount > 0) {
-                $query->whereRaw('MATCH(content) AGAINST(? IN NATURAL LANGUAGE MODE)', [$searchQuery]);
-            } else {
-                $query->where('content', 'like', '%'.$searchQuery.'%');
-            }
+            LessonQueryFilters::applyFulltextSearch($query, $searchQuery);
         }
 
         if ($request->get('category')) {
-            $category = $request->get('category');
-            $isSubcategory = str_contains($category, '-') &&
-                Lesson::query()->projectDetails()->bySourceProject($project)->bySubcategory($category)->exists();
-
-            if ($isSubcategory) {
-                $query->bySubcategory($category);
-            } else {
-                $query->byCategory($category);
-            }
+            LessonQueryFilters::applyCategoryFilter(
+                $query,
+                $request->get('category'),
+                true,
+                $project,
+            );
         }
 
-        if ($request->get('tags') && is_array($request->get('tags'))) {
-            $query->byTags($request->get('tags'));
-        }
+        LessonQueryFilters::applyTagsFilter($query, $request->get('tags'));
+
+        LessonQueryFilters::applyDateRange(
+            $query,
+            $request->get('since'),
+            $request->get('until'),
+            $request->get('days') !== null ? (int) $request->get('days') : null,
+            'updated_at',
+        );
 
         $limit = (int) ($request->get('limit', 10));
+        $usingFulltext = $searchQuery ? LessonQueryFilters::isUsingFulltext($query) : false;
+        $defaultOrderBy = $searchQuery ? 'relevance' : 'updated_at';
 
-        if ($searchQuery) {
-            $queryString = $query->toSql();
-            $usingFulltext = str_contains($queryString, 'MATCH');
-
-            if ($usingFulltext) {
-                $query->selectRaw('*, MATCH(content) AGAINST(? IN NATURAL LANGUAGE MODE) as relevance', [$searchQuery])
-                    ->orderByRaw('MATCH(content) AGAINST(? IN NATURAL LANGUAGE MODE) DESC', [$searchQuery])
-                    ->orderBy('updated_at', 'desc');
-            } else {
-                $query->orderBy('updated_at', 'desc');
-            }
-        } else {
-            $query->orderBy('updated_at', 'desc');
-        }
+        $orderedBy = LessonQueryFilters::applyOrderBy(
+            $query,
+            $request->get('order_by'),
+            $usingFulltext,
+            $searchQuery,
+            false,
+            $defaultOrderBy,
+            'updated_at',
+        );
 
         $lessons = $query->limit($limit)->get();
 
-        $results = $lessons->map(function (Lesson $lesson) {
-            return [
-                'id' => $lesson->id,
-                'type' => $lesson->type,
-                'category' => $lesson->category,
-                'subcategory' => $lesson->subcategory,
-                'title' => $lesson->title,
-                'summary' => $lesson->summary,
-                'tags' => $lesson->tags,
-                'content' => $lesson->content,
-                'source_project' => $lesson->source_project,
-                'created_at' => $lesson->created_at->toIso8601String(),
-                'updated_at' => $lesson->updated_at->toIso8601String(),
-            ];
-        })->toArray();
+        $results = $lessons->map(
+            fn (Lesson $lesson) => LessonPresenter::toProjectDetailArray($lesson)
+        )->toArray();
 
         return Response::json([
             'project' => $project,
             'results' => $results,
             'count' => count($results),
+            'ordered_by' => $orderedBy,
         ]);
     }
 
     /**
-     * Get the tool's input schema.
-     *
      * @return array<string, JsonSchema>
      */
     public function schema(JsonSchema $schema): array
@@ -117,6 +92,10 @@ class SearchProjectDetails extends Tool
             'tags' => $schema->array()->nullable()->description('Array of tags to filter by'),
             'limit' => $schema->integer()->default(10)->description('Maximum number of results to return'),
             'include_deprecated' => $schema->boolean()->default(false)->description('Whether to include deprecated entries'),
+            'order_by' => $schema->string()->nullable()->description('Sort order: updated_at (default when browsing), relevance (when searching), or created_at'),
+            'since' => $schema->string()->nullable()->description('ISO date — return details updated on or after this date'),
+            'until' => $schema->string()->nullable()->description('ISO date — return details updated on or before this date'),
+            'days' => $schema->integer()->nullable()->description('Shorthand for since = now minus N days'),
         ];
     }
 }

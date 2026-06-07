@@ -2,6 +2,7 @@
 
 namespace App\Mcp\Resources;
 
+use App\Mcp\Support\LessonPresenter;
 use App\Models\Lesson;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
@@ -59,7 +60,7 @@ class LessonsOverviewResource extends Resource
 
         $content = "# Lessons Learned Overview\n\n";
         $content .= 'This document provides an overview of lessons learned from previous coding sessions. ';
-        $content .= "Use the SearchLessons, GetLessonByCategory, and GetLessonTags tools to query specific lessons.\n\n";
+        $content .= "Use the SearchLessons, GetRecentLessons, GetLessonById, and GetLessonTags tools to query specific lessons.\n\n";
 
         $content .= "## Summary\n\n";
         $content .= "- **Total Lessons:** {$totalLessons}\n";
@@ -110,11 +111,14 @@ class LessonsOverviewResource extends Resource
         if ($recentLessons->isNotEmpty()) {
             $content .= "## Recent Lessons\n\n";
             foreach ($recentLessons->take(5) as $lesson) {
-                $content .= '### '.ucfirst($lesson->type).' Lesson';
+                $title = LessonPresenter::displayTitle($lesson);
+                $content .= "### {$title}";
                 if ($lesson->category) {
                     $content .= " ({$lesson->category})";
                 }
                 $content .= "\n\n";
+                $content .= "**ID:** `{$lesson->id}`\n\n";
+                $content .= "**Created:** {$lesson->created_at->diffForHumans()}\n\n";
 
                 if (! empty($lesson->tags)) {
                     $content .= '**Tags:** '.implode(', ', array_slice($lesson->tags, 0, 5));
@@ -135,9 +139,13 @@ class LessonsOverviewResource extends Resource
 
         $content .= "\n## How to Use\n\n";
         $content .= "Use the following MCP tools to query lessons:\n\n";
-        $content .= "- **SearchLessons** - Search by keyword, category, subcategory, or tags\n";
+        $content .= "- **SearchLessons** - Search by keyword, category, subcategory, or tags (default sort: relevance)\n";
+        $content .= "- **GetRecentLessons** - Latest generic lessons in chronological order\n";
+        $content .= "- **GetLessonById** - Fetch full lesson content by UUID\n";
+        $content .= "- **GetLatestCaptureSummary** - Latest generic lesson plus optional project detail\n";
         $content .= "- **GetLessonByCategory** - Get all lessons in a specific category or subcategory\n";
         $content .= "- **GetLessonTags** - List all available tags\n";
+        $content .= "- **lessons://recent** - Markdown list of recent lessons with ids\n";
         $content .= "- **LessonsLearnedOverview** prompt - Get an updated overview\n";
         $content .= "- **LessonsByCategory** prompt - Get lessons for a specific category\n\n";
         $content .= '**Note:** Subcategories (like `component-architecture`, `database-backend`) can be queried directly using GetLessonByCategory or SearchLessons. ';

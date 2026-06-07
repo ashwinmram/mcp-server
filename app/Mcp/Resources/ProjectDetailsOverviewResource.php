@@ -2,6 +2,7 @@
 
 namespace App\Mcp\Resources;
 
+use App\Mcp\Support\LessonPresenter;
 use App\Models\Lesson;
 use Laravel\Mcp\Request;
 use Laravel\Mcp\Response;
@@ -64,7 +65,7 @@ class ProjectDetailsOverviewResource extends Resource
         $content = "# Project Details Overview\n\n";
         $content .= "Project: **{$project}**\n\n";
         $content .= 'This document summarizes project-specific implementation details for the current project. ';
-        $content .= "Use SearchProjectDetails, GetProjectDetailsByCategory, and GetProjectDetailsOverview to query specific details.\n\n";
+        $content .= "Use SearchProjectDetails, GetRecentProjectDetails, GetProjectDetailById, GetProjectDetailsByCategory, and GetProjectDetailsOverview to query specific details.\n\n";
 
         $content .= "## Summary\n\n";
         $content .= "- **Total Details:** {$totalDetails}\n";
@@ -110,11 +111,14 @@ class ProjectDetailsOverviewResource extends Resource
         if ($recentDetails->isNotEmpty()) {
             $content .= "## Recent Project Details\n\n";
             foreach ($recentDetails->take(5) as $detail) {
-                $content .= '### '.($detail->title ?? ucfirst($detail->type ?? 'Detail'));
+                $title = LessonPresenter::displayTitle($detail);
+                $content .= "### {$title}";
                 if ($detail->category) {
                     $content .= " ({$detail->category})";
                 }
                 $content .= "\n\n";
+                $content .= "**ID:** `{$detail->id}`\n\n";
+                $content .= "**Created:** {$detail->created_at->diffForHumans()}\n\n";
 
                 if (! empty($detail->tags)) {
                     $content .= '**Tags:** '.implode(', ', array_slice($detail->tags, 0, 5));
@@ -139,8 +143,12 @@ class ProjectDetailsOverviewResource extends Resource
         $content .= "- **Lessons Learned** (generic): General Laravel/Pest/Inertia patterns, testing patterns, best practices not tied to one repo.\n\n";
         $content .= "**Tools:**\n\n";
         $content .= "- **SearchProjectDetails** - Search by keyword, category, or tags within this project\n";
+        $content .= "- **GetRecentProjectDetails** - Latest project details in chronological order\n";
+        $content .= "- **GetProjectDetailById** - Fetch full detail content by UUID\n";
+        $content .= "- **GetLatestCaptureSummary** - Latest generic lesson plus latest project detail\n";
         $content .= "- **GetProjectDetailsByCategory** - List all details in a category for this project\n";
-        $content .= "- **GetProjectDetailsOverview** - Get counts by category (JSON)\n";
+        $content .= "- **GetProjectDetailsOverview** - Get counts by category and recent entries (JSON)\n";
+        $content .= "- **project-details://recent** - Markdown list of recent details with ids\n";
         $content .= "- **ProjectDetailsOverview** prompt - Quick summary without opening this resource\n";
         $content .= "- **ProjectDetailsByCategory** prompt - Get details for a specific category\n";
         $content .= "- **WhenToUseProjectDetails** prompt - When to use Project Details vs Lessons Learned\n";
