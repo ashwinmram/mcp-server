@@ -204,21 +204,23 @@ Shared config: `~/.gemini/config/mcp_config.json` (Antigravity IDE and CLI share
 
 ## Agent startup instructions
 
-So agents query lessons at session start, install Cursor rules (consumer projects):
+Install agent instructions for your AI client:
+
+| Client | Command |
+|--------|---------|
+| **Cursor** | `php artisan mcp:install-cursor-rules` |
+| **Claude Code** | `php artisan mcp:install-claude-instructions` |
+| **Google Antigravity** | `php artisan mcp:install-antigravity-skills` |
+| **All** | `php artisan mcp:install-agent-instructions` |
+
+See [agent-instructions README](packages/laravel-mcp-pusher/stubs/agent-instructions/README.md) for flags and manual paths.
 
 ```bash
-php artisan mcp:install-cursor-rules
+# Example: full setup for Cursor + Claude + Antigravity (workspace skills)
+php artisan mcp:install-agent-instructions --with-hooks --with-claude-md --with-cursorrules
 ```
 
-Or copy [stubs/agent-instructions/mcp-session-startup.md](packages/laravel-mcp-pusher/stubs/agent-instructions/mcp-session-startup.md) into your client:
-
-| IDE | Where to place startup instructions |
-|-----|-------------------------------------|
-| **Cursor** | `php artisan mcp:install-cursor-rules` → `.cursor/rules/` (see [cursor-rules README](packages/laravel-mcp-pusher/stubs/cursor-rules/README.md)) |
-| **Claude Code** | Project `CLAUDE.md` or user-level instructions |
-| **Google Antigravity** | Shared skill under `~/.gemini/skills/` |
-
-This monorepo uses `.cursorrules` for Cursor-specific MCP tool names; consumer projects should use `mcp:install-cursor-rules` or the neutral stubs above.
+This monorepo uses a short `.cursorrules` index; consumer projects should use the install commands above or copy stubs from `packages/laravel-mcp-pusher/stubs/`.
 
 ## How sessions use the MCP server
 

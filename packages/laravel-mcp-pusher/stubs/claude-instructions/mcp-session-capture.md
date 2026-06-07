@@ -1,0 +1,20 @@
+# MCP session knowledge capture (3.0)
+
+## Best practice
+
+Do not hand-type `mcp:append` JSON. Copy the **short knowledge capture prompt** from the mcp-pusher README (`#knowledge-capture-prompt`) into your agent — or use macOS Text Replacement (`/mcpcap`). See `#prompt-reference` for field details.
+
+The agent gathers git log + diff, synthesizes learnings from the session and commits, and runs `php artisan mcp:append` per lesson into `docs/.mcp-session/lessons-draft.jsonl` (generic) or `project-details-draft.jsonl` (project). Do not append raw commit one-liners.
+
+## End of session (manual)
+
+1. Review `docs/.mcp-session/*-draft.jsonl`; delete raw git-salvage lines (titles like `Git commit: …`)
+2. **Only if drafts are incomplete and work is committed:** `php artisan mcp:extract-session` (default: latest commit; see mcp-pusher README for `HEAD~N` / seeding)
+3. `php artisan mcp:push --source=<project>` once
+
+## Do not
+
+- Rely on chat memory after compaction
+- Run `mcp:extract-session` every session
+- Expect extract to read staged or unstaged files — commit first
+- Use removed commands `mcp:push-lessons` or `mcp:push-project-details`

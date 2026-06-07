@@ -1,0 +1,10 @@
+# MCP + Lessons Learned workflow
+
+This project uses the Lessons Learned MCP server and ashwinmram/mcp-pusher.
+
+- **Session startup:** Follow `.claude/rules/mcp-session-startup.md` (query lessons + project details at session start).
+- **Knowledge capture:** Follow `.claude/rules/mcp-session-capture.md` before compaction or at session end.
+- **Push once:** `php artisan mcp:push --source=<your-project>` — must match Project Details MCP `?project=`.
+- **Install or refresh:** `php artisan mcp:install-claude-instructions`
+
+For Laravel stack conventions, connect Laravel Boost MCP if available.

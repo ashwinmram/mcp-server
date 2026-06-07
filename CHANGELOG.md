@@ -1,5 +1,15 @@
 # Changelog
 
+## [1.6.0] - 2026-06-07
+
+### Added
+
+- Document multi-IDE agent instruction install commands in README
+
+### Changed
+
+- Embedded mcp-pusher **3.0.12** with Claude Code and Google Antigravity install commands
+
 ## [1.5.0] - 2026-06-07
 
 ### Added

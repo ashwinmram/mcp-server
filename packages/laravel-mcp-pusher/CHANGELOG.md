@@ -1,5 +1,19 @@
 # Changelog
 
+## 3.0.12 - 2026-06-07
+
+### Added
+
+- **`mcp:install-claude-instructions`** — installs `.claude/rules/` startup and capture rules; optional `--with-claude-md`
+- **`mcp:install-antigravity-skills`** — installs workspace skills under `.agent/skills/` or `--global` to `~/.gemini/antigravity/global_skills/`
+- **`mcp:install-agent-instructions`** — installs Cursor, Claude, and/or Antigravity instructions in one command
+- **`AgentInstructionInstaller`** shared helper for stub copying
+- Stubs: `stubs/claude-instructions/`, `stubs/antigravity-skills/`, `stubs/agent-instructions/README.md`
+
+### Changed
+
+- README and cursor-rules README document all three IDE install paths
+
 ## 3.0.11 - 2026-06-07
 
 ### Added

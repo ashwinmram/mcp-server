@@ -113,7 +113,18 @@ Full setup: [mcp-server README](https://github.com/ashwinmram/mcp-server#configu
 
 ## Agent startup instructions
 
-Install Cursor rules in one command (recommended):
+Install agent instructions for your AI client:
+
+| Client | Command |
+|--------|---------|
+| **Cursor** | `php artisan mcp:install-cursor-rules` |
+| **Claude Code** | `php artisan mcp:install-claude-instructions` |
+| **Google Antigravity** | `php artisan mcp:install-antigravity-skills` |
+| **All** | `php artisan mcp:install-agent-instructions` |
+
+See [`stubs/agent-instructions/README.md`](stubs/agent-instructions/README.md) for flags and manual install paths.
+
+### Cursor
 
 ```bash
 php artisan mcp:install-cursor-rules
@@ -121,20 +132,36 @@ php artisan mcp:install-cursor-rules
 
 Optional: `--with-hooks` (preCompact capture), `--with-cursorrules` (short `.cursorrules` index), `--force` (overwrite).
 
-This copies `stubs/cursor-rules/*.mdc` into `.cursor/rules/`:
+Copies `stubs/cursor-rules/*.mdc` into `.cursor/rules/`:
 
 | Rule | When it applies |
 |------|-----------------|
 | `mcp-session-startup.mdc` | **Always** — query lessons + project details at session start |
 | `mcp-session-capture.mdc` | **On demand** — `mcp:append` + `mcp:push` workflow |
 
-See `stubs/cursor-rules/README.md` for manual install and team-sharing tips.
+### Claude Code
 
-| IDE | Where to place |
-|-----|----------------|
-| **Cursor** | Run `mcp:install-cursor-rules` or copy `stubs/cursor-rules/*.mdc` → `.cursor/rules/` |
-| **Claude Code** | `CLAUDE.md` in project root (from `stubs/agent-instructions/mcp-session-startup.md`) |
-| **Google Antigravity** | Skill under `~/.gemini/skills/` |
+```bash
+php artisan mcp:install-claude-instructions [--with-claude-md]
+```
+
+Copies modular rules into `.claude/rules/` (`mcp-session-startup.md`, `mcp-session-capture.md`). Optional `--with-claude-md` adds a short root `CLAUDE.md` index.
+
+### Google Antigravity
+
+```bash
+php artisan mcp:install-antigravity-skills [--global]
+```
+
+Installs workspace skills under `.agent/skills/mcp-session-startup/` and `mcp-session-capture/` (each with `SKILL.md`). Use `--global` for `~/.gemini/antigravity/global_skills/`. Commit `.agent/skills/` to share with your team.
+
+### Install all clients
+
+```bash
+php artisan mcp:install-agent-instructions [--with-hooks] [--with-claude-md] [--with-cursorrules] [--global]
+```
+
+Limit scope: `php artisan mcp:install-agent-instructions cursor claude`
 
 ## End of session
 
@@ -190,7 +217,31 @@ Add session drafts to `.gitignore` (see `stubs/gitignore-mcp-session.example`):
 php artisan mcp:install-cursor-rules [--force] [--with-hooks] [--with-cursorrules]
 ```
 
-Installs Cursor rules for MCP session startup and knowledge capture into `.cursor/rules/`. Use `--with-hooks` to also install the preCompact hook; `--with-cursorrules` copies a short `.cursorrules` index.
+Installs Cursor rules for MCP session startup and knowledge capture into `.cursor/rules/`.
+
+### `mcp:install-claude-instructions`
+
+```bash
+php artisan mcp:install-claude-instructions [--force] [--with-claude-md]
+```
+
+Installs Claude Code rules into `.claude/rules/`. Optional `--with-claude-md` copies a short `CLAUDE.md` index.
+
+### `mcp:install-antigravity-skills`
+
+```bash
+php artisan mcp:install-antigravity-skills [--force] [--global]
+```
+
+Installs Antigravity skills into `.agent/skills/` (workspace) or `~/.gemini/antigravity/global_skills/` with `--global`.
+
+### `mcp:install-agent-instructions`
+
+```bash
+php artisan mcp:install-agent-instructions [cursor|claude|antigravity ...] [--force] [--with-hooks] [--with-claude-md] [--with-cursorrules] [--global]
+```
+
+Runs the install commands above for one or more clients (default: all).
 
 ### `mcp:append`
 
