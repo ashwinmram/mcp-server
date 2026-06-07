@@ -48,6 +48,8 @@ export interface DashboardStatItem {
     previousStat: string;
     change: string;
     changeType: 'increase' | 'decrease';
+    comparisonType: 'snapshot' | 'prior_period';
+    changeFormat: 'relative' | 'points';
 }
 
 export interface DashboardStats {

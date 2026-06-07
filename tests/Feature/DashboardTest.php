@@ -41,7 +41,7 @@ test('dashboard includes stats with correct structure', function () {
             ->has('stats.projectDetails', 3)
             ->has('stats.bySourceProject', 3)
             ->has('stats.knowledgeBase.0', fn (Assert $stat) => $stat
-                ->hasAll(['name', 'stat', 'previousStat', 'change', 'changeType'])
+                ->hasAll(['name', 'stat', 'previousStat', 'change', 'changeType', 'comparisonType', 'changeFormat'])
             )
             ->where('stats.bySourceProject.0.name', 'legacy-project')
             ->where('stats.bySourceProject.0.stat', '0')
@@ -72,6 +72,26 @@ test('dashboard stats reflect seeded knowledge base data', function () {
             ->where('stats.projectDetails.1.previousStat', '2')
             ->where('stats.projectDetails.2.stat', '1')
             ->where('stats.projectDetails.2.previousStat', '2'));
+});
+
+test('dashboard stats include comparison metadata', function () {
+    seedDashboardStatsData();
+
+    $user = User::factory()->create();
+    $this->actingAs($user);
+
+    $this->get(route('dashboard'))
+        ->assertOk()
+        ->assertInertia(fn (Assert $page) => $page
+            ->where('stats.knowledgeBase.0.comparisonType', 'snapshot')
+            ->where('stats.knowledgeBase.0.changeFormat', 'relative')
+            ->where('stats.knowledgeBase.1.comparisonType', 'prior_period')
+            ->where('stats.knowledgeBase.1.changeFormat', 'relative')
+            ->where('stats.knowledgeBase.2.comparisonType', 'prior_period')
+            ->where('stats.knowledgeBase.2.changeFormat', 'points')
+            ->where('stats.projectDetails.0.comparisonType', 'snapshot')
+            ->where('stats.projectDetails.2.comparisonType', 'prior_period')
+            ->where('stats.bySourceProject.0.comparisonType', 'snapshot'));
 });
 
 test('dashboard shows empty state when no projects exist', function () {

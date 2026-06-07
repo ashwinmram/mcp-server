@@ -26,6 +26,20 @@ The mcp-pusher package pushes session drafts from `docs/.mcp-session/*.jsonl` to
 - **Resources:** `lessons://overview`, `lessons://search-guide`
 - **Prompts:** LessonsLearnedOverview, LessonsByCategory
 
+## Dashboard
+
+Authenticated users can view live stats at `/dashboard`. Each card shows a current value, a baseline, and a variance badge.
+
+Two comparison patterns are used, both anchored on **30 days**:
+
+| Metric | Current value | Baseline (gray text) | Badge change |
+|--------|---------------|----------------------|--------------|
+| Total Lessons, Total Project Details, Source Projects, per-source-project cards | Cumulative count now | Same count at **30 days ago** | Percent change |
+| Retrievals, Details Added | Count in **last 30 days** | Count in **prior 30 days** (days 30–60 ago) | Percent change |
+| Helpfulness Rate | Rate in last 30 days | Rate in prior 30 days | **Percentage-point** change (e.g. 60% vs 50% = +10.0 points) |
+
+See in-app [Documentation](/documentation) for the same details.
+
 ## Prerequisites
 
 - PHP 8.2+, Laravel 12

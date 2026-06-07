@@ -3,12 +3,44 @@ import { useTranslations } from '@/composables/useTranslations';
 import type { DashboardStatItem } from '@/types';
 import { ArrowDown, ArrowUp } from 'lucide-vue-next';
 
-defineProps<{
-    title: string;
-    stats: DashboardStatItem[];
-}>();
+withDefaults(
+    defineProps<{
+        title: string;
+        stats: DashboardStatItem[];
+        description?: string;
+    }>(),
+    {
+        description: undefined,
+    },
+);
 
 const { t } = useTranslations();
+
+function comparisonLabel(item: DashboardStatItem): string {
+    const key =
+        item.comparisonType === 'snapshot'
+            ? 'dashboard.vs_snapshot'
+            : 'dashboard.vs_prior_period';
+
+    return t(key).replace(':stat', item.previousStat);
+}
+
+function changeTooltip(item: DashboardStatItem): string {
+    return item.changeFormat === 'points'
+        ? t('dashboard.change_points')
+        : t('dashboard.change_relative');
+}
+
+function changeSrOnly(item: DashboardStatItem): string {
+    const direction =
+        item.changeType === 'increase' ? 'Increased' : 'Decreased';
+
+    if (item.changeFormat === 'points') {
+        return `${direction} by ${item.change} (percentage points)`;
+    }
+
+    return `${direction} by ${item.change}`;
+}
 </script>
 
 <template>
@@ -18,6 +50,12 @@ const { t } = useTranslations();
         >
             {{ title }}
         </h3>
+        <p
+            v-if="description"
+            class="mt-1 text-sm text-gray-500 dark:text-gray-400"
+        >
+            {{ description }}
+        </p>
         <dl
             class="mt-5 grid grid-cols-1 divide-gray-200 overflow-hidden rounded-lg bg-white shadow md:grid-cols-3 md:divide-x md:divide-y-0 dark:divide-white/10 dark:bg-gray-800/75 dark:shadow-none dark:ring-1 dark:ring-inset dark:ring-white/10"
         >
@@ -35,18 +73,19 @@ const { t } = useTranslations();
                     class="mt-1 flex items-baseline justify-between md:block lg:flex"
                 >
                     <div
-                        class="flex items-baseline text-2xl font-semibold text-indigo-600 dark:text-indigo-400"
+                        class="flex flex-wrap items-baseline gap-x-2 text-2xl font-semibold text-indigo-600 dark:text-indigo-400"
                     >
                         {{ item.stat }}
                         <span
-                            class="ml-2 text-sm font-medium text-gray-500 dark:text-gray-400"
+                            class="text-sm font-medium text-gray-500 dark:text-gray-400"
                         >
-                            {{ t('dashboard.from') }} {{ item.previousStat }}
+                            {{ comparisonLabel(item) }}
                         </span>
                     </div>
 
                     <div
                         v-if="item.change !== '—'"
+                        :title="changeTooltip(item)"
                         :class="[
                             item.changeType === 'increase'
                                 ? 'bg-green-100 text-green-800 dark:bg-green-400/10 dark:text-green-400'
@@ -65,12 +104,7 @@ const { t } = useTranslations();
                             aria-hidden="true"
                         />
                         <span class="sr-only">
-                            {{
-                                item.changeType === 'increase'
-                                    ? 'Increased'
-                                    : 'Decreased'
-                            }}
-                            by
+                            {{ changeSrOnly(item) }}
                         </span>
                         {{ item.change }}
                     </div>

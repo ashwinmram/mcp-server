@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.7.0] - 2026-06-07
+
+### Added
+
+- Dashboard stats comparison metadata (`comparisonType`, `changeFormat`) for explicit baseline labels
+- Dashboard intro blurb and per-card comparison labels (snapshot vs prior 30 days)
+- Documentation page section and README subsection explaining dashboard variance periods
+
+### Changed
+
+- Dashboard stat cards now show `vs X (30 days ago)` or `vs X (prior 30 days)` instead of ambiguous `from X`
+- Helpfulness Rate badge includes tooltip and screen-reader text clarifying percentage-point change
+
 ## [1.6.0] - 2026-06-07
 
 ### Added

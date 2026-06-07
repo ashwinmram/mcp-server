@@ -42,8 +42,8 @@ class DashboardStatsService
         $helpfulnessPrevious = $this->helpfulnessRate($genericQuery(), $sixtyDaysAgo, $thirtyDaysAgo);
 
         return [
-            $this->formatStatCard(__('messages.dashboard.total_lessons'), $totalLessonsCurrent, $totalLessonsPrevious),
-            $this->formatStatCard(__('messages.dashboard.retrievals'), $retrievalsCurrent, $retrievalsPrevious),
+            $this->formatStatCard(__('messages.dashboard.total_lessons'), $totalLessonsCurrent, $totalLessonsPrevious, 'snapshot'),
+            $this->formatStatCard(__('messages.dashboard.retrievals'), $retrievalsCurrent, $retrievalsPrevious, 'prior_period'),
             $this->formatHelpfulnessCard($helpfulnessCurrent, $helpfulnessPrevious),
         ];
     }
@@ -69,9 +69,9 @@ class DashboardStatsService
         $addedPrevious = $this->countLessonsCreatedBetween($projectDetailsQuery(), $sixtyDaysAgo, $thirtyDaysAgo);
 
         return [
-            $this->formatStatCard(__('messages.dashboard.total_project_details'), $totalCurrent, $totalPrevious),
-            $this->formatStatCard(__('messages.dashboard.source_projects'), $sourceProjectsCurrent, $sourceProjectsPrevious),
-            $this->formatStatCard(__('messages.dashboard.details_added'), $addedCurrent, $addedPrevious),
+            $this->formatStatCard(__('messages.dashboard.total_project_details'), $totalCurrent, $totalPrevious, 'snapshot'),
+            $this->formatStatCard(__('messages.dashboard.source_projects'), $sourceProjectsCurrent, $sourceProjectsPrevious, 'snapshot'),
+            $this->formatStatCard(__('messages.dashboard.details_added'), $addedCurrent, $addedPrevious, 'prior_period'),
         ];
     }
 
@@ -92,7 +92,7 @@ class DashboardStatsService
             $current = $this->countProjectDetailsForSource($slug);
             $previous = $this->countProjectDetailsForSource($slug, $thirtyDaysAgo);
 
-            return $this->formatStatCard($slug, $current, $previous);
+            return $this->formatStatCard($slug, $current, $previous, 'snapshot');
         })->values()->all();
     }
 
@@ -177,9 +177,9 @@ class DashboardStatsService
     }
 
     /**
-     * @return array{name: string, stat: string, previousStat: string, change: string, changeType: 'increase'|'decrease'}
+     * @return array{name: string, stat: string, previousStat: string, change: string, changeType: 'increase'|'decrease', comparisonType: 'snapshot'|'prior_period', changeFormat: 'relative'|'points'}
      */
-    private function formatStatCard(string $name, int|float $current, int|float $previous): array
+    private function formatStatCard(string $name, int|float $current, int|float $previous, string $comparisonType): array
     {
         return [
             'name' => $name,
@@ -187,11 +187,13 @@ class DashboardStatsService
             'previousStat' => $this->formatNumber($previous),
             'change' => $this->formatPercentChange($current, $previous),
             'changeType' => $this->determineChangeType($current, $previous),
+            'comparisonType' => $comparisonType,
+            'changeFormat' => 'relative',
         ];
     }
 
     /**
-     * @return array{name: string, stat: string, previousStat: string, change: string, changeType: 'increase'|'decrease'}
+     * @return array{name: string, stat: string, previousStat: string, change: string, changeType: 'increase'|'decrease', comparisonType: 'snapshot'|'prior_period', changeFormat: 'relative'|'points'}
      */
     private function formatHelpfulnessCard(?float $current, ?float $previous): array
     {
@@ -202,6 +204,8 @@ class DashboardStatsService
                 'previousStat' => $previous !== null ? $this->formatPercent($previous) : 'N/A',
                 'change' => '—',
                 'changeType' => 'increase',
+                'comparisonType' => 'prior_period',
+                'changeFormat' => 'points',
             ];
         }
 
@@ -213,6 +217,8 @@ class DashboardStatsService
             'previousStat' => $previous !== null ? $this->formatPercent($previous) : 'N/A',
             'change' => $pointChange !== null ? sprintf('%+.1f%%', $pointChange) : '—',
             'changeType' => ($pointChange ?? 0) >= 0 ? 'increase' : 'decrease',
+            'comparisonType' => 'prior_period',
+            'changeFormat' => 'points',
         ];
     }
 

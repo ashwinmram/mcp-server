@@ -41,6 +41,10 @@ const docSections = computed(() => [
         body: 'documentation.section_overview_body',
     },
     {
+        title: 'documentation.section_dashboard_title',
+        body: 'documentation.section_dashboard_body',
+    },
+    {
         title: 'documentation.section_setup_title',
         body: 'documentation.section_setup_body',
     },
