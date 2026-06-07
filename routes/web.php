@@ -10,8 +10,15 @@ Route::get('lang/{locale}', [LanguageController::class, 'swap'])->name('locale.s
 Route::get('/', function () {
     return Inertia::render('Welcome', [
         'canRegister' => Features::enabled(Features::registration()),
+        'demoVideoId' => config('landing.demo_video_id'),
     ]);
 })->name('home');
+
+Route::get('documentation', function () {
+    return Inertia::render('Documentation', [
+        'canRegister' => Features::enabled(Features::registration()),
+    ]);
+})->name('documentation');
 
 Route::get('dashboard', function () {
     return Inertia::render('Dashboard');

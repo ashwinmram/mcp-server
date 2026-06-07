@@ -1,5 +1,24 @@
 # Changelog
 
+## [1.3.0] - 2026-06-07
+
+### Added
+
+- Public landing page with MCP feature cards and YouTube explainer video embed
+- Public `/documentation` page with MCP setup and usage content
+- Shared `MarketingSiteHeader` for guest marketing pages
+- `config/landing.php` with hardcoded explainer video ID (`PNt151KVCO0`)
+- MCP Server logo (`public/logo.png`) and favicon (`public/favicon.png`)
+- Feature tests: `WelcomeTest`, `DocumentationTest`
+
+### Changed
+
+- App branding defaults to **Lessons Learned MCP Server** (`APP_NAME`, page title, shared Inertia `name` prop)
+- Sidebar logo label displays **MCP Server**
+- Auth pages (Login, Register, password reset, verify email, 2FA) use Credit Tracker–style layout with horizontal logo and `LoaderCircle` submit spinners
+- GitHub links point to [ashwinmram/mcp-server](https://github.com/ashwinmram/mcp-server)
+- README: **Explainer video** section with clickable YouTube thumbnail
+
 ## [1.2.8] - 2026-06-06
 
 ### Changed

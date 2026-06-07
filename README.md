@@ -2,6 +2,12 @@
 
 Central MCP server for storing and querying lessons learned and project-specific implementation details. A Laravel application that exposes two MCP endpoints for any MCP-capable AI client — [Cursor](https://cursor.com), [Claude Code](https://code.claude.com/docs/en/mcp), [Google Antigravity](https://antigravity.google/), and others.
 
+## Explainer Video
+
+[![MCP Server explainer video](https://img.youtube.com/vi/PNt151KVCO0/maxresdefault.jpg)](https://youtu.be/PNt151KVCO0)
+
+Watch the explainer on [YouTube](https://youtu.be/PNt151KVCO0).
+
 ## Use with ashwinmram/mcp-pusher
 
 **This server works with the [ashwinmram/mcp-pusher](https://github.com/ashwinmram/mcp-pusher) package** to push lessons and project details from your Laravel projects via HTTP API.

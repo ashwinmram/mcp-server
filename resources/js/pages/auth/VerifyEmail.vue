@@ -1,12 +1,12 @@
 <script setup lang="ts">
 import TextLink from '@/components/TextLink.vue';
 import { Button } from '@/components/ui/button';
-import { Spinner } from '@/components/ui/spinner';
 import { useTranslations } from '@/composables/useTranslations';
 import AuthLayout from '@/layouts/AuthLayout.vue';
 import { logout } from '@/routes';
 import { send } from '@/routes/verification';
 import { Form, Head } from '@inertiajs/vue3';
+import { LoaderCircle } from 'lucide-vue-next';
 
 defineProps<{
     status?: string;
@@ -35,7 +35,7 @@ const { t } = useTranslations();
             v-slot="{ processing }"
         >
             <Button :disabled="processing" variant="secondary">
-                <Spinner v-if="processing" />
+                <LoaderCircle v-if="processing" class="h-4 w-4 animate-spin" />
                 {{ t('auth.resend_verification_email') }}
             </Button>
 

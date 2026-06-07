@@ -3,11 +3,11 @@ import InputError from '@/components/InputError.vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Spinner } from '@/components/ui/spinner';
 import { useTranslations } from '@/composables/useTranslations';
 import AuthLayout from '@/layouts/AuthLayout.vue';
 import { store } from '@/routes/password/confirm';
 import { Form, Head } from '@inertiajs/vue3';
+import { LoaderCircle } from 'lucide-vue-next';
 
 const { t } = useTranslations();
 </script>
@@ -46,7 +46,10 @@ const { t } = useTranslations();
                         :disabled="processing"
                         data-test="confirm-password-button"
                     >
-                        <Spinner v-if="processing" />
+                        <LoaderCircle
+                            v-if="processing"
+                            class="h-4 w-4 animate-spin"
+                        />
                         {{ t('auth.confirm_password_button') }}
                     </Button>
                 </div>

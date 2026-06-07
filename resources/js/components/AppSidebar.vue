@@ -12,7 +12,7 @@ import {
     SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { useTranslations } from '@/composables/useTranslations';
-import { dashboard } from '@/routes';
+import { dashboard, documentation } from '@/routes';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
 import { BookOpen, Folder, LayoutGrid } from 'lucide-vue-next';
@@ -27,17 +27,22 @@ const mainNavItems = computed<NavItem[]>(() => [
         href: dashboard(),
         icon: LayoutGrid,
     },
+    {
+        title: t('nav.documentation'),
+        href: documentation(),
+        icon: BookOpen,
+    },
 ]);
 
 const footerNavItems = computed<NavItem[]>(() => [
     {
         title: t('nav.github_repo'),
-        href: 'https://github.com/laravel/vue-starter-kit',
+        href: 'https://github.com/ashwinmram/mcp-server',
         icon: Folder,
     },
     {
         title: t('nav.documentation'),
-        href: 'https://laravel.com/docs/starter-kits#vue',
+        href: documentation(),
         icon: BookOpen,
     },
 ]);
@@ -50,7 +55,7 @@ const footerNavItems = computed<NavItem[]>(() => [
                 <SidebarMenuItem>
                     <SidebarMenuButton size="lg" as-child>
                         <Link :href="dashboard()">
-                            <AppLogo />
+                            <AppLogo display-name="MCP Server" />
                         </Link>
                     </SidebarMenuButton>
                 </SidebarMenuItem>

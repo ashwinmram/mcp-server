@@ -33,7 +33,7 @@ import { useActiveUrl } from '@/composables/useActiveUrl';
 import { useTranslations } from '@/composables/useTranslations';
 import { getInitials } from '@/composables/useInitials';
 import { toUrl } from '@/lib/utils';
-import { dashboard } from '@/routes';
+import { dashboard, documentation } from '@/routes';
 import type { BreadcrumbItem, NavItem } from '@/types';
 import type { InertiaLinkProps } from '@inertiajs/vue3';
 import { Link, usePage } from '@inertiajs/vue3';
@@ -59,6 +59,15 @@ function activeItemStyles(url: NonNullable<InertiaLinkProps['href']>) {
         : '';
 }
 
+function isExternalUrl(href: NonNullable<NavItem['href']>) {
+    const url = toUrl(href);
+
+    return (
+        typeof url === 'string' &&
+        (url.startsWith('http://') || url.startsWith('https://'))
+    );
+}
+
 const mainNavItems = computed<NavItem[]>(() => [
     {
         title: t('nav.dashboard'),
@@ -70,12 +79,12 @@ const mainNavItems = computed<NavItem[]>(() => [
 const rightNavItems = computed<NavItem[]>(() => [
     {
         title: t('nav.github_repo'),
-        href: 'https://github.com/laravel/vue-starter-kit',
+        href: 'https://github.com/ashwinmram/mcp-server',
         icon: Folder,
     },
     {
         title: t('nav.documentation'),
-        href: 'https://laravel.com/docs/starter-kits#vue',
+        href: documentation(),
         icon: BookOpen,
     },
 ]);
@@ -126,21 +135,37 @@ const rightNavItems = computed<NavItem[]>(() => [
                                     </Link>
                                 </nav>
                                 <div class="flex flex-col space-y-4">
-                                    <a
+                                    <template
                                         v-for="item in rightNavItems"
                                         :key="item.title"
-                                        :href="toUrl(item.href)"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        class="flex items-center space-x-2 text-sm font-medium"
                                     >
-                                        <component
-                                            v-if="item.icon"
-                                            :is="item.icon"
-                                            class="h-5 w-5"
-                                        />
-                                        <span>{{ item.title }}</span>
-                                    </a>
+                                        <a
+                                            v-if="isExternalUrl(item.href)"
+                                            :href="toUrl(item.href)"
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            class="flex items-center space-x-2 text-sm font-medium"
+                                        >
+                                            <component
+                                                v-if="item.icon"
+                                                :is="item.icon"
+                                                class="h-5 w-5"
+                                            />
+                                            <span>{{ item.title }}</span>
+                                        </a>
+                                        <Link
+                                            v-else
+                                            :href="item.href"
+                                            class="flex items-center space-x-2 text-sm font-medium"
+                                        >
+                                            <component
+                                                v-if="item.icon"
+                                                :is="item.icon"
+                                                class="h-5 w-5"
+                                            />
+                                            <span>{{ item.title }}</span>
+                                        </Link>
+                                    </template>
                                 </div>
                             </div>
                         </SheetContent>
@@ -213,6 +238,7 @@ const rightNavItems = computed<NavItem[]>(() => [
                                                 class="group h-9 w-9 cursor-pointer"
                                             >
                                                 <a
+                                                    v-if="isExternalUrl(item.href)"
                                                     :href="toUrl(item.href)"
                                                     target="_blank"
                                                     rel="noopener noreferrer"
@@ -225,6 +251,15 @@ const rightNavItems = computed<NavItem[]>(() => [
                                                         class="size-5 opacity-80 group-hover:opacity-100"
                                                     />
                                                 </a>
+                                                <Link v-else :href="item.href">
+                                                    <span class="sr-only">{{
+                                                        item.title
+                                                    }}</span>
+                                                    <component
+                                                        :is="item.icon"
+                                                        class="size-5 opacity-80 group-hover:opacity-100"
+                                                    />
+                                                </Link>
                                             </Button>
                                         </TooltipTrigger>
                                         <TooltipContent>
