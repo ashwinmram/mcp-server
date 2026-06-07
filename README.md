@@ -204,15 +204,21 @@ Shared config: `~/.gemini/config/mcp_config.json` (Antigravity IDE and CLI share
 
 ## Agent startup instructions
 
-So agents query lessons at session start, copy [stubs/agent-instructions/mcp-session-startup.md](packages/laravel-mcp-pusher/stubs/agent-instructions/mcp-session-startup.md) into your client:
+So agents query lessons at session start, install Cursor rules (consumer projects):
+
+```bash
+php artisan mcp:install-cursor-rules
+```
+
+Or copy [stubs/agent-instructions/mcp-session-startup.md](packages/laravel-mcp-pusher/stubs/agent-instructions/mcp-session-startup.md) into your client:
 
 | IDE | Where to place startup instructions |
 |-----|-------------------------------------|
-| **Cursor** | `.cursor/rules/` (e.g. `mcp-session-capture.mdc`) and/or `.cursorrules` |
+| **Cursor** | `php artisan mcp:install-cursor-rules` → `.cursor/rules/` (see [cursor-rules README](packages/laravel-mcp-pusher/stubs/cursor-rules/README.md)) |
 | **Claude Code** | Project `CLAUDE.md` or user-level instructions |
 | **Google Antigravity** | Shared skill under `~/.gemini/skills/` |
 
-This monorepo uses `.cursorrules` for Cursor-specific tool names; consumer projects should use the neutral stub above.
+This monorepo uses `.cursorrules` for Cursor-specific MCP tool names; consumer projects should use `mcp:install-cursor-rules` or the neutral stubs above.
 
 ## How sessions use the MCP server
 

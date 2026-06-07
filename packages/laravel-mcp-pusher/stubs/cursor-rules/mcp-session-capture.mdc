@@ -3,8 +3,6 @@ description: Capture session knowledge with mcp-pusher (capture prompt + push on
 alwaysApply: false
 ---
 
-<!-- Canonical copy: stubs/cursor-rules/mcp-session-capture.mdc — install via php artisan mcp:install-cursor-rules -->
-
 # MCP session knowledge capture (3.0)
 
 ## Best practice

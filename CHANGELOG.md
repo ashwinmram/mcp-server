@@ -1,5 +1,16 @@
 # Changelog
 
+## [1.5.0] - 2026-06-07
+
+### Added
+
+- Document `mcp:install-cursor-rules` in README for one-command Cursor rule setup in consumer projects
+
+### Changed
+
+- Slim `.cursorrules` to a short index pointing at `.cursor/rules/` (detailed MCP instructions moved to installable rule stubs)
+- Embedded mcp-pusher **3.0.11** with `mcp:install-cursor-rules` command and `stubs/cursor-rules/` templates
+
 ## [1.4.0] - 2026-06-07
 
 ### Added

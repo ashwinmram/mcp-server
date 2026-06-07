@@ -113,12 +113,27 @@ Full setup: [mcp-server README](https://github.com/ashwinmram/mcp-server#configu
 
 ## Agent startup instructions
 
-Copy `stubs/agent-instructions/mcp-session-startup.md` so agents query lessons at session start:
+Install Cursor rules in one command (recommended):
+
+```bash
+php artisan mcp:install-cursor-rules
+```
+
+Optional: `--with-hooks` (preCompact capture), `--with-cursorrules` (short `.cursorrules` index), `--force` (overwrite).
+
+This copies `stubs/cursor-rules/*.mdc` into `.cursor/rules/`:
+
+| Rule | When it applies |
+|------|-----------------|
+| `mcp-session-startup.mdc` | **Always** — query lessons + project details at session start |
+| `mcp-session-capture.mdc` | **On demand** — `mcp:append` + `mcp:push` workflow |
+
+See `stubs/cursor-rules/README.md` for manual install and team-sharing tips.
 
 | IDE | Where to place |
 |-----|----------------|
-| **Cursor** | `.cursor/rules/mcp-session-capture.mdc` (from `stubs/mcp-session-capture.mdc`) plus optional project rules |
-| **Claude Code** | `CLAUDE.md` in project root |
+| **Cursor** | Run `mcp:install-cursor-rules` or copy `stubs/cursor-rules/*.mdc` → `.cursor/rules/` |
+| **Claude Code** | `CLAUDE.md` in project root (from `stubs/agent-instructions/mcp-session-startup.md`) |
 | **Google Antigravity** | Skill under `~/.gemini/skills/` |
 
 ## End of session
@@ -168,6 +183,14 @@ Add session drafts to `.gitignore` (see `stubs/gitignore-mcp-session.example`):
 ```
 
 ## Commands
+
+### `mcp:install-cursor-rules`
+
+```bash
+php artisan mcp:install-cursor-rules [--force] [--with-hooks] [--with-cursorrules]
+```
+
+Installs Cursor rules for MCP session startup and knowledge capture into `.cursor/rules/`. Use `--with-hooks` to also install the preCompact hook; `--with-cursorrules` copies a short `.cursorrules` index.
 
 ### `mcp:append`
 
@@ -292,7 +315,9 @@ chmod +x .cursor/hooks/pre-compact-checkpoint.sh
 | `pre-compact-checkpoint.sh` | Reads `knowledge-capture-prompt.txt`, outputs `user_message` |
 | `knowledge-capture-prompt.txt` | Same text as [Knowledge capture prompt](#knowledge-capture-prompt) (hook reads this file) |
 
-**Optional Cursor rule:** `stubs/mcp-session-capture.mdc` → `.cursor/rules/mcp-session-capture.mdc`
+**Optional Cursor rules:** `php artisan mcp:install-cursor-rules --with-hooks --with-cursorrules`
+
+Manual rule copy: `stubs/cursor-rules/mcp-session-capture.mdc` → `.cursor/rules/` (legacy path `stubs/mcp-session-capture.mdc` is identical)
 
 **Troubleshooting:** `chmod +x` the script; paste the capture prompt manually if `preCompact` never fires.
 

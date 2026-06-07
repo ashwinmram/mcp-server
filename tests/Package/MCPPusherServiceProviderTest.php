@@ -8,6 +8,7 @@ test('service provider registers mcp knowledge commands', function () {
     expect(array_key_exists('mcp:append', $commands))->toBeTrue()
         ->and(array_key_exists('mcp:push', $commands))->toBeTrue()
         ->and(array_key_exists('mcp:extract-session', $commands))->toBeTrue()
+        ->and(array_key_exists('mcp:install-cursor-rules', $commands))->toBeTrue()
         ->and(array_key_exists('mcp:push-lessons', $commands))->toBeFalse()
         ->and(array_key_exists('mcp:push-project-details', $commands))->toBeFalse();
 });

@@ -5,6 +5,7 @@ namespace LaravelMcpPusher;
 use Illuminate\Support\ServiceProvider;
 use LaravelMcpPusher\Commands\AppendKnowledge;
 use LaravelMcpPusher\Commands\ExtractSession;
+use LaravelMcpPusher\Commands\InstallCursorRules;
 use LaravelMcpPusher\Commands\PushKnowledge;
 
 class MCPPusherServiceProvider extends ServiceProvider
@@ -30,6 +31,7 @@ class MCPPusherServiceProvider extends ServiceProvider
                 AppendKnowledge::class,
                 PushKnowledge::class,
                 ExtractSession::class,
+                InstallCursorRules::class,
             ]);
 
             $this->publishes([

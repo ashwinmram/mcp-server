@@ -1,5 +1,18 @@
 # Changelog
 
+## 3.0.11 - 2026-06-07
+
+### Added
+
+- **`mcp:install-cursor-rules`** — installs Cursor rules from `stubs/cursor-rules/` into `.cursor/rules/`
+- **`stubs/cursor-rules/`** — `mcp-session-startup.mdc` (always apply), `mcp-session-capture.mdc`, `cursorrules.example`, and setup README
+- Flags: `--force`, `--with-hooks` (preCompact hook + capture prompt), `--with-cursorrules` (short `.cursorrules` index)
+
+### Changed
+
+- README documents one-command Cursor rule install and updates agent startup instructions
+- Legacy `stubs/mcp-session-capture.mdc` points to canonical `stubs/cursor-rules/` copy
+
 ## 3.0.10 - 2026-06-06
 
 ### Changed
