@@ -11,7 +11,7 @@
         "inertia"
     ],
     "license": "MIT",
-    "version": "1.8.0",
+    "version": "1.8.1",
     "repositories": [
         {
             "type": "path",
@@ -54,7 +54,7 @@
     },
     "scripts": {
         "post-update-cmd": [
-            "@php artisan boost:update --ansi",
+            "@php -r \"if (is_dir('vendor/laravel/boost')) { passthru('php artisan boost:update --ansi'); }\"",
             "@php artisan vendor:publish --tag=laravel-assets --ansi --force"
         ],
         "setup": [

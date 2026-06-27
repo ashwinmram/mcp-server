@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.8.1] - 2026-06-27
+
+### Fixed
+
+- Skip `boost:update` in Composer `post-update-cmd` when `laravel/boost` is not installed, preventing production `composer install --no-dev` failures
+
 ## [1.8.0] - 2026-06-07
 
 ### Added
